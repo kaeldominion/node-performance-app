@@ -25,6 +25,9 @@ export default function Navbar() {
             <Link href="/programs" className="text-muted-text hover:text-text-white transition-colors">
               Programs
             </Link>
+            <Link href="/exercises" className="text-muted-text hover:text-text-white transition-colors">
+              Exercises
+            </Link>
             {user && (
               <>
                 <Link href="/ai/workout-builder" className="text-muted-text hover:text-text-white transition-colors">
