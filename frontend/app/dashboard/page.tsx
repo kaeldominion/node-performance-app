@@ -35,8 +35,8 @@ export default function Dashboard() {
       return;
     }
 
-    // Load dashboard data once we have a user (only if not already loading)
-    if (user && loading && todaySession === null) {
+    // Load dashboard data once we have a user
+    if (user) {
       loadDashboardData();
     }
   }, [user, authLoading]);
