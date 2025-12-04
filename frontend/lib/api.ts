@@ -158,5 +158,30 @@ export const aiApi = {
   },
 };
 
+// Admin API - Exercises
+export const adminApi = {
+  // Exercises
+  getExercises: async () => {
+    const response = await api.get('/exercises');
+    return response.data;
+  },
+  getExercise: async (id: string) => {
+    const response = await api.get(`/exercises/${id}`);
+    return response.data;
+  },
+  createExercise: async (data: any) => {
+    const response = await api.post('/exercises', data);
+    return response.data;
+  },
+  updateExercise: async (id: string, data: any) => {
+    const response = await api.patch(`/exercises/${id}`, data);
+    return response.data;
+  },
+  deleteExercise: async (id: string) => {
+    const response = await api.delete(`/exercises/${id}`);
+    return response.data;
+  },
+};
+
 export default api;
 
