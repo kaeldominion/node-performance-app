@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { workoutsApi, sessionsApi } from '@/lib/api';
+import { WorkoutDeckPlayer } from '@/components/workout/WorkoutDeckPlayer';
 import SectionWarmup from '@/components/workout/SectionWarmup';
 import SectionEMOM from '@/components/workout/SectionEMOM';
 import SectionAMRAP from '@/components/workout/SectionAMRAP';
@@ -49,6 +50,7 @@ export default function WorkoutPlayerPage() {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [rpe, setRpe] = useState(5);
   const [notes, setNotes] = useState('');
+  const [deckMode, setDeckMode] = useState(true);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -96,14 +98,14 @@ export default function WorkoutPlayerPage() {
     }
   };
 
-  const handleCompleteWorkout = async () => {
+  const handleCompleteWorkout = async (finalRpe: number, finalNotes: string) => {
     if (!sessionId) return;
 
     try {
       await sessionsApi.complete(sessionId, {
         completed: true,
-        rpe,
-        notes,
+        rpe: finalRpe,
+        notes: finalNotes,
       });
       router.push('/');
     } catch (error) {
@@ -124,6 +126,18 @@ export default function WorkoutPlayerPage() {
     return null;
   }
 
+  // Use deck mode by default
+  if (deckMode) {
+    return (
+      <WorkoutDeckPlayer
+        workout={workout}
+        sessionId={sessionId}
+        onComplete={handleCompleteWorkout}
+      />
+    );
+  }
+
+  // Fallback to regular view
   const section = workout.sections[currentSection];
   const isFirstSection = currentSection === 0;
   const isLastSection = currentSection === workout.sections.length - 1;

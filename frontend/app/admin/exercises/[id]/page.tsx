@@ -89,7 +89,11 @@ export default function ExerciseEditPage() {
         suitableArchetypes: exercise.suitableArchetypes || [],
         indoorFriendly: exercise.indoorFriendly ?? true,
         notes: exercise.notes || '',
-        tiers: TIERS.map((tier) => tierMap[tier] || { tier, description: '', typicalReps: '' }),
+        tiers: TIERS.map((tier) => ({
+          tier,
+          description: tierMap[tier]?.description || '',
+          typicalReps: tierMap[tier]?.typicalReps || '',
+        })),
       });
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load exercise');
