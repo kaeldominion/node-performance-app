@@ -1,8 +1,12 @@
-import { clerkMiddleware } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-// Simplified middleware - just use Clerk's default protection
-// Public routes are handled by Clerk automatically based on SignIn/SignUp components
-export default clerkMiddleware();
+// Simple middleware that doesn't use Clerk (temporary fix)
+// We'll handle auth in the components instead
+export function middleware(request: NextRequest) {
+  // Just pass through for now - auth will be handled by components
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: [
