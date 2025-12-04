@@ -26,9 +26,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.warn('No token found when refreshing user');
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+      
       const userData = await userApi.getMe();
+      console.log('User data fetched:', userData);
       setUser(userData);
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Refresh user error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+      // Clear invalid token
+      localStorage.removeItem('token');
       setUser(null);
     } finally {
       setLoading(false);
@@ -46,10 +63,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      await authApi.login({ email, password });
+      const response = await authApi.login({ email, password });
+      console.log('Login API response:', response);
+      
+      // Small delay to ensure token is saved
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       await refreshUser();
     } catch (error: any) {
       console.error('Login error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
       // Re-throw to let the UI handle it
       throw error;
     }
