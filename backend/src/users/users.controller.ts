@@ -25,12 +25,14 @@ export class UsersController {
     
     // If user doesn't exist, create them (handles webhook delays)
     if (!user) {
-      user = await this.usersService.createFromClerk({
+      await this.usersService.createFromClerk({
         id: req.user.id,
         email: req.user.email,
         role: req.user.role,
         isAdmin: req.user.isAdmin,
       });
+      // Fetch again with profile included to match return type
+      user = await this.usersService.findOne(req.user.id);
     }
     
     return user;
