@@ -14,16 +14,23 @@ export class UsersService {
   }
 
   async findByEmail(email: string) {
+    // This is used internally for auth, so we need passwordHash
     return this.prisma.user.findUnique({
       where: { email },
     });
   }
 
   async findOne(id: string) {
-    return this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { id },
       include: { profile: true },
     });
+    
+    if (!user) return null;
+    
+    // Remove passwordHash from response
+    const { passwordHash, ...userWithoutPassword } = user;
+    return userWithoutPassword;
   }
 
   async updateProfile(userId: string, updateDto: UpdateUserProfileDto) {
