@@ -45,8 +45,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    await authApi.login({ email, password });
-    await refreshUser();
+    try {
+      await authApi.login({ email, password });
+      await refreshUser();
+    } catch (error: any) {
+      console.error('Login error:', error);
+      // Re-throw to let the UI handle it
+      throw error;
+    }
   };
 
   const register = async (email: string, password: string, name?: string) => {
