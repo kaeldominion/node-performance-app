@@ -27,21 +27,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-
-  // If Clerk key is missing, render without ClerkProvider (graceful degradation)
-  if (!clerkKey) {
-    console.warn('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is not set. Clerk features will be disabled.');
-    return (
-      <html lang="en" className="dark">
-        <body
-          className={`${spaceGrotesk.variable} ${manrope.variable} antialiased bg-dark text-text-white`}
-        >
-          {children}
-        </body>
-      </html>
-    );
-  }
+  const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '';
 
   return (
     <ClerkProvider publishableKey={clerkKey}>
