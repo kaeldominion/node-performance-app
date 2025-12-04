@@ -102,8 +102,8 @@ export default function ClientDetailPage() {
     return null;
   }
 
-  const trendsChartData = Array.isArray(trends)
-    ? trends.map((day: any) => ({
+  const trendsChartData = trends?.dailyStats
+    ? trends.dailyStats.map((day: any) => ({
         date: new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         sessions: day.sessions,
         avgRPE: Math.round(day.avgRPE * 10) / 10,
