@@ -124,13 +124,11 @@ export class GymsService {
       },
       update: {
         status: status || 'ACTIVE',
-        membershipType: membershipType || undefined,
       },
       create: {
         gymId,
         userId,
         status: status || 'ACTIVE',
-        membershipType: membershipType || undefined,
       },
       include: {
         user: {
@@ -204,8 +202,7 @@ export class GymsService {
         workoutId: createDto.workoutId,
         scheduledAt: new Date(createDto.scheduledAt),
         duration: createDto.duration,
-        maxCapacity: createDto.maxCapacity || createDto.capacity,
-        instructorId: createDto.instructorId,
+        capacity: createDto.maxCapacity || createDto.capacity,
       },
       include: {
         workout: true,
