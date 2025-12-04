@@ -49,5 +49,25 @@ export class UsersService {
       where: { userId },
     });
   }
+
+  async findAll() {
+    const users = await this.prisma.user.findMany({
+      include: { profile: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    
+    // Remove passwordHash from all users
+    return users.map(({ passwordHash, ...user }) => user);
+  }
+
+  async setAdmin(userId: string, isAdmin: boolean) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { isAdmin },
+    });
+    
+    const { passwordHash, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  }
 }
 
