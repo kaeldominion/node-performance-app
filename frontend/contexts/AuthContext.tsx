@@ -58,6 +58,16 @@ export function useAuth(): AuthContextType {
       return;
     }
 
+    // Only fetch if we don't already have this user's data
+    const currentUserId = dbUser?.id;
+    const clerkUserId = clerkUser.id;
+    
+    if (currentUserId === clerkUserId) {
+      // Already have this user's data, don't refetch
+      setLoading(false);
+      return;
+    }
+
     // Fetch user data from our database
     const fetchUserData = async () => {
       setLoading(true);
@@ -82,7 +92,7 @@ export function useAuth(): AuthContextType {
     };
 
     fetchUserData();
-  }, [clerkUser, clerkLoaded]);
+  }, [clerkUser, clerkLoaded, dbUser?.id]);
 
   const login = async (email: string, password: string) => {
     // Clerk handles login through their UI components

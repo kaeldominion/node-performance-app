@@ -18,8 +18,8 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "NØDE Performance App",
-  description: "Elite performance training platform with structured workouts, AI-generated sessions, and comprehensive tracking",
+  title: "NØDE OS",
+  description: "NØDE OS - Performance Training Infrastructure. Elite training platform with structured workouts, AI-generated sessions, and comprehensive tracking",
 };
 
 export default function RootLayout({

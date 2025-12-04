@@ -30,7 +30,7 @@ export default function LoginPage() {
             <h1 className="text-5xl font-bold mb-3 font-heading">
               N<span className="text-node-volt">Ø</span>DE
             </h1>
-            <p className="text-muted-text text-lg font-body">Performance Training Platform</p>
+            <p className="text-muted-text text-lg font-body">Performance Training Infrastructure</p>
           </div>
 
           <SignIn

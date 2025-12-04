@@ -8,17 +8,24 @@ import Link from 'next/link';
 export default function LandingPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [maxLoadingReached, setMaxLoadingReached] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && user) {
-      router.push('/dashboard');
+    // Only redirect once when we confirm user is logged in
+    if (!authLoading && user && !redirecting) {
+      setRedirecting(true);
+      // Small delay to prevent flash
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 100);
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, redirecting]);
 
-  // Don't show loading screen - just show the landing page immediately
-  // Clerk will handle auth state in the background
-  if (user) return null;
+  // Always show landing page - redirect happens in background
+  // This prevents flickering
+  if (redirecting) {
+    return null; // Redirecting, don't show anything
+  }
 
   return (
     <div className="min-h-screen bg-dark text-text-white relative overflow-hidden">
@@ -66,7 +73,7 @@ export default function LandingPage() {
           <div className="space-y-8 max-w-3xl">
             <div className="inline-flex items-center gap-2 px-4 py-2 thin-border border-node-volt/40 bg-node-volt/10 backdrop-blur-sm">
               <span className="w-2 h-2 bg-node-volt animate-pulse" />
-              <span className="text-[11px] font-heading text-node-volt uppercase tracking-[0.3em]">Performance OS</span>
+              <span className="text-[11px] font-heading text-node-volt uppercase tracking-[0.3em]">NØDE OS</span>
             </div>
             <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-7xl font-heading font-bold leading-[0.95] tracking-tight drop-shadow-2xl">
               BUILDING INFRASTRUCTURE FOR HUMAN <span className="text-node-volt">OPTIMIZATION.</span>
@@ -361,7 +368,7 @@ export default function LandingPage() {
             <Link href="/gym" className="hover:text-node-volt transition-colors">Gyms</Link>
           </div>
           <div className="text-sm text-muted-text font-body">
-            © {new Date().getFullYear()} NØDE Performance. All rights reserved.
+            © {new Date().getFullYear()} NØDE OS. All rights reserved.
           </div>
         </div>
       </footer>
