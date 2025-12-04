@@ -29,67 +29,78 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-deep-asphalt p-4">
-      <div className="w-full max-w-md bg-concrete-grey border border-border-dark rounded-lg p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2">
-            N<span className="text-node-volt">Ø</span>DE
-          </h1>
-          <p className="text-muted-text">Performance Training Platform</p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-deep-asphalt p-6">
+      {/* Background effects */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-0 w-96 h-96 bg-node-volt/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl" />
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="bg-red-900/20 border border-red-500/50 rounded p-3 text-red-400 text-sm">
-              {error}
+      <div className="relative w-full max-w-md">
+        <div className="bg-concrete-grey/80 backdrop-blur-xl border border-border-dark/50 rounded-3xl p-10 shadow-2xl">
+          {/* Logo */}
+          <div className="text-center mb-10">
+            <h1 className="text-5xl font-black mb-3" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+              N<span className="text-node-volt">Ø</span>DE
+            </h1>
+            <p className="text-muted-text text-lg">Performance Training Platform</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400 text-sm">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label htmlFor="email" className="block text-sm font-semibold text-text-white">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full bg-tech-grey/50 border border-border-dark/50 rounded-xl px-4 py-3.5 text-text-white placeholder:text-muted-text/50 focus:outline-none focus:border-node-volt/50 focus:ring-2 focus:ring-node-volt/20 transition-all"
+                placeholder="you@example.com"
+              />
             </div>
-          )}
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-2">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full bg-tech-grey border border-border-dark rounded px-4 py-2 text-text-white focus:outline-none focus:border-node-volt"
-            />
-          </div>
+            <div className="space-y-2">
+              <label htmlFor="password" className="block text-sm font-semibold text-text-white">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full bg-tech-grey/50 border border-border-dark/50 rounded-xl px-4 py-3.5 text-text-white placeholder:text-muted-text/50 focus:outline-none focus:border-node-volt/50 focus:ring-2 focus:ring-node-volt/20 transition-all"
+                placeholder="••••••••"
+              />
+            </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-2">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full bg-tech-grey border border-border-dark rounded px-4 py-2 text-text-white focus:outline-none focus:border-node-volt"
-            />
-          </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-node-volt text-deep-asphalt font-bold py-4 rounded-xl hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 shadow-[0_0_20px_rgba(204,255,0,0.3)] hover:shadow-[0_0_30px_rgba(204,255,0,0.5)]"
+              style={{ fontFamily: 'var(--font-space-grotesk)' }}
+            >
+              {loading ? 'Logging in...' : 'Login'}
+            </button>
+          </form>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-node-volt text-deep-asphalt font-bold py-3 rounded hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-          >
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-
-        <p className="mt-6 text-center text-muted-text text-sm">
-          Don't have an account?{' '}
-          <Link href="/auth/register" className="text-node-volt hover:underline">
-            Register
-          </Link>
-        </p>
+          <p className="mt-8 text-center text-muted-text text-sm">
+            Don't have an account?{' '}
+            <Link href="/auth/register" className="text-node-volt font-semibold hover:text-node-volt/80 transition-colors">
+              Register
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
 }
-

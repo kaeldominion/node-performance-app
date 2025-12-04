@@ -2,20 +2,13 @@
 
 /* NØDE Design System - Color Palette */
 :root {
-  /* NØDE Volt - Primary accent */
   --node-volt: #ccff00;
-  
-  /* Dark Mode Foundation */
-  --deep-asphalt: #121212;
-  --concrete-grey: #1e1e1e;
+  --deep-asphalt: #0a0a0a;
+  --concrete-grey: #1a1a1a;
   --tech-grey: #252525;
-  
-  /* Text Colors */
   --text-white: #ffffff;
-  --muted-text: #b0b0b0;
-  
-  /* Borders */
-  --border-dark: #333333;
+  --muted-text: #a0a0a0;
+  --border-dark: #2a2a2a;
 }
 
 @theme inline {
@@ -26,9 +19,6 @@
   --color-text-white: var(--text-white);
   --color-muted-text: var(--muted-text);
   --color-border-dark: var(--border-dark);
-  
-  --font-headline: var(--font-space-grotesk);
-  --font-body: var(--font-manrope);
 }
 
 * {
@@ -42,68 +32,26 @@ body {
   height: 100%;
   background: var(--deep-asphalt);
   color: var(--text-white);
-  font-family: var(--font-manrope), 'Inter', 'Roboto', sans-serif;
+  font-family: var(--font-manrope), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
 }
 
-/* Typography */
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-space-grotesk), 'DM Sans', 'Archivo', sans-serif;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--text-white);
+/* Remove default link styling */
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
-h1 {
-  font-weight: 700;
+/* Input and form elements */
+input, textarea, select {
+  font-family: inherit;
+  color: inherit;
 }
 
-h2 {
-  font-weight: 500;
-}
-
-p, span, div, a {
-  font-family: var(--font-manrope), 'Inter', 'Roboto', sans-serif;
-  color: var(--muted-text);
-  font-weight: 400;
-}
-
-/* Utility Classes */
-.text-volt {
-  color: var(--node-volt);
-}
-
-.bg-deep-asphalt {
-  background-color: var(--deep-asphalt);
-}
-
-.bg-concrete-grey {
-  background-color: var(--concrete-grey);
-}
-
-.bg-tech-grey {
-  background-color: var(--tech-grey);
-}
-
-.border-dark {
-  border-color: var(--border-dark);
-}
-
-/* Animations */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.5s ease-out;
+input:focus, textarea:focus, select:focus {
+  outline: none;
 }
 
 /* Fullscreen support */

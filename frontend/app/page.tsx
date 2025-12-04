@@ -42,26 +42,26 @@ export default function LandingPage() {
     <div className="min-h-screen bg-deep-asphalt text-text-white">
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Animated background */}
+        {/* Background */}
         <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-deep-asphalt via-concrete-grey/30 to-deep-asphalt" />
-          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_20%,rgba(204,255,0,0.15),transparent_50%)]" />
-          <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(circle_at_70%_80%,rgba(74,158,255,0.1),transparent_50%)]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-deep-asphalt via-concrete-grey/20 to-deep-asphalt" />
+          <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-node-volt/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-3xl" />
         </div>
 
         {/* Content */}
         <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-32 text-center">
           <div className="mb-16 space-y-8">
-            <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black leading-[0.95] tracking-tight" style={{ 
+            <h1 className="text-7xl sm:text-8xl md:text-9xl lg:text-[12rem] font-black leading-[0.9] tracking-tight" style={{ 
               fontFamily: 'var(--font-space-grotesk)',
             }}>
               <span className="block">Train with</span>
-              <span className="block text-node-volt drop-shadow-[0_0_40px_rgba(204,255,0,0.6)]">NØDE</span>
+              <span className="block text-node-volt drop-shadow-[0_0_60px_rgba(204,255,0,0.8)]">NØDE</span>
             </h1>
-            <p className="text-xl sm:text-2xl md:text-3xl text-muted-text max-w-2xl mx-auto font-light leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
+            <p className="text-2xl sm:text-3xl md:text-4xl text-muted-text max-w-3xl mx-auto font-light leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
               The training OS for serious athletes
             </p>
-            <p className="text-base sm:text-lg text-muted-text/80 max-w-xl mx-auto leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
+            <p className="text-lg sm:text-xl text-muted-text/80 max-w-2xl mx-auto leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
               Build strength, develop your engine, and track every rep with precision
             </p>
           </div>
@@ -69,7 +69,7 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-5 justify-center items-center">
             <Link
               href="/auth/register"
-              className="group relative px-10 py-5 bg-node-volt text-deep-asphalt font-bold rounded-2xl text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_50px_rgba(204,255,0,0.6)]"
+              className="group relative px-12 py-6 bg-node-volt text-deep-asphalt font-black rounded-2xl text-xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_60px_rgba(204,255,0,0.7)]"
               style={{ fontFamily: 'var(--font-space-grotesk)' }}
             >
               Start Training
@@ -77,7 +77,7 @@ export default function LandingPage() {
             </Link>
             <Link
               href="#features"
-              className="px-10 py-5 bg-concrete-grey/80 backdrop-blur-sm border border-border-dark/50 text-text-white rounded-2xl font-semibold text-lg transition-all duration-300 hover:bg-tech-grey/80 hover:border-node-volt/30"
+              className="px-12 py-6 bg-concrete-grey/80 backdrop-blur-sm border border-border-dark/50 text-text-white rounded-2xl font-bold text-xl transition-all duration-300 hover:bg-tech-grey/80 hover:border-node-volt/30"
             >
               Learn More
             </Link>
@@ -93,129 +93,129 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-32 bg-gradient-to-b from-deep-asphalt to-concrete-grey/50">
+      <section id="features" className="py-32 bg-gradient-to-b from-deep-asphalt to-concrete-grey/30">
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
           <div className="text-center mb-24">
-            <h2 className="text-5xl sm:text-6xl md:text-7xl font-black mb-6 tracking-tight" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+            <h2 className="text-6xl sm:text-7xl md:text-8xl font-black mb-8 tracking-tight" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               Everything You Need
             </h2>
-            <p className="text-xl sm:text-2xl text-muted-text max-w-2xl mx-auto leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
+            <p className="text-2xl sm:text-3xl text-muted-text max-w-3xl mx-auto leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
               A complete training platform built for performance
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center mb-32">
-            <div className="space-y-6">
-              <h3 className="text-4xl sm:text-5xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center mb-32">
+            <div className="space-y-8">
+              <h3 className="text-5xl sm:text-6xl font-black" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                 Full-Screen Workout Player
               </h3>
-              <p className="text-lg sm:text-xl text-muted-text leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
+              <p className="text-xl sm:text-2xl text-muted-text leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
                 Immersive deck mode with built-in timers, audio cues, and smooth transitions. Train distraction-free with cinematic presentation.
               </p>
-              <ul className="space-y-4 text-muted-text" style={{ fontFamily: 'var(--font-manrope)' }}>
+              <ul className="space-y-5 text-muted-text" style={{ fontFamily: 'var(--font-manrope)' }}>
                 <li className="flex items-start gap-4">
-                  <span className="text-node-volt text-2xl font-bold mt-0.5">✓</span>
-                  <span className="text-base leading-relaxed">EMOM, AMRAP, and countdown timers</span>
+                  <span className="text-node-volt text-2xl font-black mt-1">✓</span>
+                  <span className="text-lg leading-relaxed">EMOM, AMRAP, and countdown timers</span>
                 </li>
                 <li className="flex items-start gap-4">
-                  <span className="text-node-volt text-2xl font-bold mt-0.5">✓</span>
-                  <span className="text-base leading-relaxed">Audio cues and transitions</span>
+                  <span className="text-node-volt text-2xl font-black mt-1">✓</span>
+                  <span className="text-lg leading-relaxed">Audio cues and transitions</span>
                 </li>
                 <li className="flex items-start gap-4">
-                  <span className="text-node-volt text-2xl font-bold mt-0.5">✓</span>
-                  <span className="text-base leading-relaxed">Tier-based prescriptions (Silver/Gold/Black)</span>
+                  <span className="text-node-volt text-2xl font-black mt-1">✓</span>
+                  <span className="text-lg leading-relaxed">Tier-based prescriptions (Silver/Gold/Black)</span>
                 </li>
               </ul>
             </div>
             <div className="relative">
-              <div className="bg-gradient-to-br from-tech-grey to-concrete-grey border border-border-dark/50 rounded-3xl p-16 aspect-video flex items-center justify-center shadow-2xl">
+              <div className="bg-gradient-to-br from-tech-grey to-concrete-grey border border-border-dark/50 rounded-3xl p-20 aspect-video flex items-center justify-center shadow-2xl">
                 <div className="text-center">
-                  <div className="text-8xl mb-6">📱</div>
-                  <p className="text-muted-text text-lg">Workout Player</p>
+                  <div className="text-9xl mb-8">📱</div>
+                  <p className="text-muted-text text-xl">Workout Player</p>
                 </div>
               </div>
-              <div className="absolute -inset-2 bg-node-volt/20 rounded-3xl blur-2xl opacity-60" />
+              <div className="absolute -inset-3 bg-node-volt/20 rounded-3xl blur-3xl opacity-60" />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center mb-32">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center mb-32">
             <div className="relative order-2 lg:order-1">
-              <div className="bg-gradient-to-br from-tech-grey to-concrete-grey border border-border-dark/50 rounded-3xl p-16 aspect-video flex items-center justify-center shadow-2xl">
+              <div className="bg-gradient-to-br from-tech-grey to-concrete-grey border border-border-dark/50 rounded-3xl p-20 aspect-video flex items-center justify-center shadow-2xl">
                 <div className="text-center">
-                  <div className="text-8xl mb-6">📊</div>
-                  <p className="text-muted-text text-lg">Progress Dashboard</p>
+                  <div className="text-9xl mb-8">📊</div>
+                  <p className="text-muted-text text-xl">Progress Dashboard</p>
                 </div>
               </div>
-              <div className="absolute -inset-2 bg-blue-500/20 rounded-3xl blur-2xl opacity-60" />
+              <div className="absolute -inset-3 bg-blue-500/20 rounded-3xl blur-3xl opacity-60" />
             </div>
-            <div className="space-y-6 order-1 lg:order-2">
-              <h3 className="text-4xl sm:text-5xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+            <div className="space-y-8 order-1 lg:order-2">
+              <h3 className="text-5xl sm:text-6xl font-black" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                 Advanced Progress Tracking
               </h3>
-              <p className="text-lg sm:text-xl text-muted-text leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
+              <p className="text-xl sm:text-2xl text-muted-text leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
                 Track every metric that matters. Volume, RPE, strength PRs, and engine development—all visualized beautifully.
               </p>
-              <ul className="space-y-4 text-muted-text" style={{ fontFamily: 'var(--font-manrope)' }}>
+              <ul className="space-y-5 text-muted-text" style={{ fontFamily: 'var(--font-manrope)' }}>
                 <li className="flex items-start gap-4">
-                  <span className="text-node-volt text-2xl font-bold mt-0.5">✓</span>
-                  <span className="text-base leading-relaxed">Strength progress graphs</span>
+                  <span className="text-node-volt text-2xl font-black mt-1">✓</span>
+                  <span className="text-lg leading-relaxed">Strength progress graphs</span>
                 </li>
                 <li className="flex items-start gap-4">
-                  <span className="text-node-volt text-2xl font-bold mt-0.5">✓</span>
-                  <span className="text-base leading-relaxed">RPE distribution and trends</span>
+                  <span className="text-node-volt text-2xl font-black mt-1">✓</span>
+                  <span className="text-lg leading-relaxed">RPE distribution and trends</span>
                 </li>
                 <li className="flex items-start gap-4">
-                  <span className="text-node-volt text-2xl font-bold mt-0.5">✓</span>
-                  <span className="text-base leading-relaxed">Personal records tracking</span>
+                  <span className="text-node-volt text-2xl font-black mt-1">✓</span>
+                  <span className="text-lg leading-relaxed">Personal records tracking</span>
                 </li>
               </ul>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-            <div className="space-y-6">
-              <h3 className="text-4xl sm:text-5xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
+            <div className="space-y-8">
+              <h3 className="text-5xl sm:text-6xl font-black" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                 AI Workout Generator
               </h3>
-              <p className="text-lg sm:text-xl text-muted-text leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
+              <p className="text-xl sm:text-2xl text-muted-text leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
                 Generate custom workouts tailored to your goals, equipment, and available time. Powered by advanced AI that understands the NØDE framework.
               </p>
-              <ul className="space-y-4 text-muted-text" style={{ fontFamily: 'var(--font-manrope)' }}>
+              <ul className="space-y-5 text-muted-text" style={{ fontFamily: 'var(--font-manrope)' }}>
                 <li className="flex items-start gap-4">
-                  <span className="text-node-volt text-2xl font-bold mt-0.5">✓</span>
-                  <span className="text-base leading-relaxed">Archetype-specific generation</span>
+                  <span className="text-node-volt text-2xl font-black mt-1">✓</span>
+                  <span className="text-lg leading-relaxed">Archetype-specific generation</span>
                 </li>
                 <li className="flex items-start gap-4">
-                  <span className="text-node-volt text-2xl font-bold mt-0.5">✓</span>
-                  <span className="text-base leading-relaxed">Equipment and space filtering</span>
+                  <span className="text-node-volt text-2xl font-black mt-1">✓</span>
+                  <span className="text-lg leading-relaxed">Equipment and space filtering</span>
                 </li>
                 <li className="flex items-start gap-4">
-                  <span className="text-node-volt text-2xl font-bold mt-0.5">✓</span>
-                  <span className="text-base leading-relaxed">Instant workout creation</span>
+                  <span className="text-node-volt text-2xl font-black mt-1">✓</span>
+                  <span className="text-lg leading-relaxed">Instant workout creation</span>
                 </li>
               </ul>
             </div>
             <div className="relative">
-              <div className="bg-gradient-to-br from-tech-grey to-concrete-grey border border-border-dark/50 rounded-3xl p-16 aspect-video flex items-center justify-center shadow-2xl">
+              <div className="bg-gradient-to-br from-tech-grey to-concrete-grey border border-border-dark/50 rounded-3xl p-20 aspect-video flex items-center justify-center shadow-2xl">
                 <div className="text-center">
-                  <div className="text-8xl mb-6">🤖</div>
-                  <p className="text-muted-text text-lg">AI Builder</p>
+                  <div className="text-9xl mb-8">🤖</div>
+                  <p className="text-muted-text text-xl">AI Builder</p>
                 </div>
               </div>
-              <div className="absolute -inset-2 bg-purple-500/20 rounded-3xl blur-2xl opacity-60" />
+              <div className="absolute -inset-3 bg-purple-500/20 rounded-3xl blur-3xl opacity-60" />
             </div>
           </div>
         </div>
       </section>
 
       {/* Method Section */}
-      <section className="py-32 bg-concrete-grey/50">
+      <section className="py-32 bg-concrete-grey/30">
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
           <div className="text-center mb-24">
-            <h2 className="text-5xl sm:text-6xl md:text-7xl font-black mb-6 tracking-tight" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+            <h2 className="text-6xl sm:text-7xl md:text-8xl font-black mb-8 tracking-tight" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               The N<span className="text-node-volt">Ø</span>DE Method
             </h2>
-            <p className="text-xl sm:text-2xl text-muted-text max-w-2xl mx-auto leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
+            <p className="text-2xl sm:text-3xl text-muted-text max-w-3xl mx-auto leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
               Six distinct workout archetypes, each designed for a specific training adaptation
             </p>
           </div>
@@ -231,7 +231,7 @@ export default function LandingPage() {
             ].map((archetype) => (
               <div
                 key={archetype.name}
-                className="group relative bg-tech-grey/50 backdrop-blur-sm border border-border-dark/50 rounded-2xl p-8 hover:border-node-volt/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(204,255,0,0.1)]"
+                className="group relative bg-tech-grey/50 backdrop-blur-sm border border-border-dark/50 rounded-2xl p-8 hover:border-node-volt/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(204,255,0,0.15)]"
               >
                 <h3 className="text-4xl font-black mb-4" style={{ 
                   fontFamily: 'var(--font-space-grotesk)',
@@ -239,7 +239,7 @@ export default function LandingPage() {
                 }}>
                   {archetype.name}
                 </h3>
-                <p className="text-muted-text leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
+                <p className="text-muted-text leading-relaxed text-base" style={{ fontFamily: 'var(--font-manrope)' }}>
                   {archetype.desc}
                 </p>
               </div>
@@ -249,13 +249,13 @@ export default function LandingPage() {
       </section>
 
       {/* Exercise Library */}
-      <section className="py-32 bg-gradient-to-b from-concrete-grey/50 to-deep-asphalt">
+      <section className="py-32 bg-gradient-to-b from-concrete-grey/30 to-deep-asphalt">
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
           <div className="text-center mb-20">
-            <h2 className="text-5xl sm:text-6xl md:text-7xl font-black mb-6 tracking-tight" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+            <h2 className="text-6xl sm:text-7xl md:text-8xl font-black mb-8 tracking-tight" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               Exercise Library
             </h2>
-            <p className="text-xl sm:text-2xl text-muted-text max-w-2xl mx-auto leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
+            <p className="text-2xl sm:text-3xl text-muted-text max-w-3xl mx-auto leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
               120+ exercises with detailed metadata, tier prescriptions, and movement patterns
             </p>
           </div>
@@ -264,10 +264,10 @@ export default function LandingPage() {
             {['Dumbbell Bench Press', 'Kettlebell Clean', 'Sandbag Carry', 'Run 1km'].map((exercise) => (
               <div
                 key={exercise}
-                className="group bg-tech-grey/50 backdrop-blur-sm border border-border-dark/50 rounded-xl p-6 text-center hover:border-node-volt/50 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(204,255,0,0.1)]"
+                className="group bg-tech-grey/50 backdrop-blur-sm border border-border-dark/50 rounded-xl p-6 text-center hover:border-node-volt/50 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(204,255,0,0.15)]"
               >
-                <div className="text-text-white text-sm font-medium mb-3">{exercise}</div>
-                <div className="text-node-volt text-xs font-semibold tracking-wider">SILVER • GOLD • BLACK</div>
+                <div className="text-text-white text-sm font-semibold mb-3">{exercise}</div>
+                <div className="text-node-volt text-xs font-bold tracking-wider">SILVER • GOLD • BLACK</div>
               </div>
             ))}
           </div>
@@ -275,7 +275,7 @@ export default function LandingPage() {
           <div className="text-center">
             <Link
               href="/auth/register"
-              className="inline-block px-10 py-4 bg-node-volt text-deep-asphalt font-bold rounded-2xl hover:scale-105 transition-all duration-300 shadow-[0_0_30px_rgba(204,255,0,0.3)] hover:shadow-[0_0_40px_rgba(204,255,0,0.5)]"
+              className="inline-block px-12 py-5 bg-node-volt text-deep-asphalt font-black rounded-2xl text-lg hover:scale-105 transition-all duration-300 shadow-[0_0_30px_rgba(204,255,0,0.4)] hover:shadow-[0_0_50px_rgba(204,255,0,0.6)]"
               style={{ fontFamily: 'var(--font-space-grotesk)' }}
             >
               Explore Exercises
@@ -288,10 +288,10 @@ export default function LandingPage() {
       <section className="py-32 bg-deep-asphalt">
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
           <div className="text-center mb-24">
-            <h2 className="text-5xl sm:text-6xl md:text-7xl font-black mb-6 tracking-tight" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+            <h2 className="text-6xl sm:text-7xl md:text-8xl font-black mb-8 tracking-tight" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               Choose Your Plan
             </h2>
-            <p className="text-xl sm:text-2xl text-muted-text max-w-2xl mx-auto leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
+            <p className="text-2xl sm:text-3xl text-muted-text max-w-3xl mx-auto leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
               Start free, upgrade when you're ready
             </p>
           </div>
@@ -327,12 +327,12 @@ export default function LandingPage() {
                 key={plan.name}
                 className={`relative bg-concrete-grey/50 backdrop-blur-sm border rounded-3xl p-10 transition-all duration-300 ${
                   plan.highlight
-                    ? 'border-node-volt/50 scale-105 shadow-[0_0_40px_rgba(204,255,0,0.2)]'
+                    ? 'border-node-volt/50 scale-105 shadow-[0_0_50px_rgba(204,255,0,0.25)]'
                     : 'border-border-dark/50 hover:border-node-volt/30 hover:scale-[1.02]'
                 }`}
               >
                 {plan.highlight && (
-                  <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-node-volt text-deep-asphalt px-5 py-1.5 rounded-full text-sm font-bold">
+                  <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-node-volt text-deep-asphalt px-6 py-2 rounded-full text-sm font-black">
                     POPULAR
                   </div>
                 )}
@@ -351,7 +351,7 @@ export default function LandingPage() {
                 <ul className="space-y-4 mb-10" style={{ fontFamily: 'var(--font-manrope)' }}>
                   {plan.features.map((feature, idx) => (
                     <li key={idx} className="flex items-start gap-3 text-muted-text">
-                      <span className="text-node-volt text-xl font-bold mt-0.5">✓</span>
+                      <span className="text-node-volt text-xl font-black mt-0.5">✓</span>
                       <span className="text-base">{feature}</span>
                     </li>
                   ))}
@@ -359,9 +359,9 @@ export default function LandingPage() {
 
                 <Link
                   href="/auth/register"
-                  className={`block w-full text-center font-bold py-4 rounded-2xl transition-all duration-300 ${
+                  className={`block w-full text-center font-black py-4 rounded-2xl transition-all duration-300 ${
                     plan.highlight
-                      ? 'bg-node-volt text-deep-asphalt hover:scale-105 shadow-[0_0_30px_rgba(204,255,0,0.3)] hover:shadow-[0_0_40px_rgba(204,255,0,0.5)]'
+                      ? 'bg-node-volt text-deep-asphalt hover:scale-105 shadow-[0_0_30px_rgba(204,255,0,0.4)] hover:shadow-[0_0_50px_rgba(204,255,0,0.6)]'
                       : 'bg-tech-grey/50 border border-border-dark/50 text-text-white hover:bg-concrete-grey/50 hover:border-node-volt/30'
                   }`}
                   style={{ fontFamily: 'var(--font-space-grotesk)' }}
@@ -375,17 +375,17 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-32 bg-gradient-to-b from-concrete-grey/50 to-deep-asphalt">
+      <section className="py-32 bg-gradient-to-b from-concrete-grey/30 to-deep-asphalt">
         <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12 text-center">
-          <h2 className="text-5xl sm:text-6xl md:text-7xl font-black mb-8 tracking-tight" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+          <h2 className="text-6xl sm:text-7xl md:text-8xl font-black mb-10 tracking-tight" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
             Ready to Transform Your Training?
           </h2>
-          <p className="text-xl sm:text-2xl text-muted-text mb-12 leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
+          <p className="text-2xl sm:text-3xl text-muted-text mb-12 leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
             Join athletes who train with precision, track with purpose, and perform at their peak.
           </p>
           <Link
             href="/auth/register"
-            className="inline-block px-14 py-5 bg-node-volt text-deep-asphalt font-bold rounded-2xl text-lg hover:scale-105 transition-all duration-300 shadow-[0_0_30px_rgba(204,255,0,0.3)] hover:shadow-[0_0_40px_rgba(204,255,0,0.5)]"
+            className="inline-block px-16 py-6 bg-node-volt text-deep-asphalt font-black rounded-2xl text-xl hover:scale-105 transition-all duration-300 shadow-[0_0_40px_rgba(204,255,0,0.4)] hover:shadow-[0_0_60px_rgba(204,255,0,0.6)]"
             style={{ fontFamily: 'var(--font-space-grotesk)' }}
           >
             Start Your Free Account
