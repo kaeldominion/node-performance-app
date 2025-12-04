@@ -2,6 +2,15 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// Helper to create tier prescriptions
+function createTiers(silver?: any, gold?: any, black?: any) {
+  const tiers = [];
+  if (silver) tiers.push({ tier: 'SILVER' as const, ...silver });
+  if (gold) tiers.push({ tier: 'GOLD' as const, ...gold });
+  if (black) tiers.push({ tier: 'BLACK' as const, ...black });
+  return tiers.length > 0 ? { create: tiers } : undefined;
+}
+
 async function main() {
   console.log('🌱 Seeding NØDE database with all archetypes...');
 
@@ -66,26 +75,12 @@ async function main() {
                         exerciseName: 'Conventional Deadlift',
                         description: 'Full lockout, controlled descent',
                         repScheme: '10',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: '60% 1RM',
-                            targetReps: 10,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: '70% 1RM',
-                            targetReps: 10,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: '80% 1RM',
-                            targetReps: 10,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: '60% 1RM', targetReps: 10 },
+                            { tier: 'GOLD', load: '70% 1RM', targetReps: 10 },
+                            { tier: 'BLACK', load: '80% 1RM', targetReps: 10 },
+                          ],
                         },
                       },
                       {
@@ -94,26 +89,12 @@ async function main() {
                         exerciseName: 'Conventional Deadlift',
                         description: 'Maintain form',
                         repScheme: '8',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: '65% 1RM',
-                            targetReps: 8,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: '75% 1RM',
-                            targetReps: 8,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: '85% 1RM',
-                            targetReps: 8,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: '65% 1RM', targetReps: 8 },
+                            { tier: 'GOLD', load: '75% 1RM', targetReps: 8 },
+                            { tier: 'BLACK', load: '85% 1RM', targetReps: 8 },
+                          ],
                         },
                       },
                       {
@@ -122,26 +103,12 @@ async function main() {
                         exerciseName: 'Conventional Deadlift',
                         description: 'Final two sets',
                         repScheme: '8-8',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: '65% 1RM',
-                            targetReps: 8,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: '75% 1RM',
-                            targetReps: 8,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: '85% 1RM',
-                            targetReps: 8,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: '65% 1RM', targetReps: 8 },
+                            { tier: 'GOLD', load: '75% 1RM', targetReps: 8 },
+                            { tier: 'BLACK', load: '85% 1RM', targetReps: 8 },
+                          ],
                         },
                       },
                     ],
@@ -160,26 +127,12 @@ async function main() {
                         exerciseName: 'Bulgarian Split Squat',
                         description: 'Full depth, front foot elevated',
                         repScheme: '12 each',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: 'Bodyweight',
-                            targetReps: 12,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: '2x12 kg',
-                            targetReps: 12,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: '2x20 kg',
-                            targetReps: 12,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: 'Bodyweight', targetReps: 12 },
+                            { tier: 'GOLD', load: '2x12 kg', targetReps: 12 },
+                            { tier: 'BLACK', load: '2x20 kg', targetReps: 12 },
+                          ],
                         },
                       },
                       {
@@ -188,26 +141,12 @@ async function main() {
                         exerciseName: 'KB Swings',
                         description: 'Full extension',
                         repScheme: '15',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: '16 kg',
-                            targetReps: 15,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: '20 kg',
-                            targetReps: 15,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: '24 kg',
-                            targetReps: 15,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: '16 kg', targetReps: 15 },
+                            { tier: 'GOLD', load: '20 kg', targetReps: 15 },
+                            { tier: 'BLACK', load: '24 kg', targetReps: 15 },
+                          ],
                         },
                       },
                     ],
@@ -272,26 +211,12 @@ async function main() {
                         exerciseName: 'BB Strict Press',
                         description: 'Full lockout overhead',
                         repScheme: '6',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: '40 kg',
-                            targetReps: 6,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: '50 kg',
-                            targetReps: 6,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: '60 kg',
-                            targetReps: 6,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: '40 kg', targetReps: 6 },
+                            { tier: 'GOLD', load: '50 kg', targetReps: 6 },
+                            { tier: 'BLACK', load: '60 kg', targetReps: 6 },
+                          ],
                         },
                       },
                       {
@@ -300,26 +225,12 @@ async function main() {
                         exerciseName: 'Weighted Pull-ups',
                         description: 'Chest to bar',
                         repScheme: '8',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: 'Bodyweight',
-                            targetReps: 8,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: '+10 kg',
-                            targetReps: 8,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: '+20 kg',
-                            targetReps: 8,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: 'Bodyweight', targetReps: 8 },
+                            { tier: 'GOLD', load: '+10 kg', targetReps: 8 },
+                            { tier: 'BLACK', load: '+20 kg', targetReps: 8 },
+                          ],
                         },
                       },
                     ],
@@ -338,26 +249,12 @@ async function main() {
                         exerciseName: 'DB Incline Bench',
                         description: '30° incline',
                         repScheme: '12',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: '2x12 kg',
-                            targetReps: 12,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: '2x16 kg',
-                            targetReps: 12,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: '2x20 kg',
-                            targetReps: 12,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: '2x12 kg', targetReps: 12 },
+                            { tier: 'GOLD', load: '2x16 kg', targetReps: 12 },
+                            { tier: 'BLACK', load: '2x20 kg', targetReps: 12 },
+                          ],
                         },
                       },
                       {
@@ -366,26 +263,12 @@ async function main() {
                         exerciseName: 'DB Rows',
                         description: 'Full range of motion',
                         repScheme: '12 each',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: '16 kg',
-                            targetReps: 12,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: '20 kg',
-                            targetReps: 12,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: '24 kg',
-                            targetReps: 12,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: '16 kg', targetReps: 12 },
+                            { tier: 'GOLD', load: '20 kg', targetReps: 12 },
+                            { tier: 'BLACK', load: '24 kg', targetReps: 12 },
+                          ],
                         },
                       },
                     ],
@@ -453,26 +336,12 @@ async function main() {
                         exerciseName: 'Box Jumps',
                         description: 'Full extension at top',
                         repScheme: '10',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: '20" box',
-                            targetReps: 10,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: '24" box',
-                            targetReps: 10,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: '30" box',
-                            targetReps: 10,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: '20" box', targetReps: 10 },
+                            { tier: 'GOLD', load: '24" box', targetReps: 10 },
+                            { tier: 'BLACK', load: '30" box', targetReps: 10 },
+                          ],
                         },
                       },
                       {
@@ -483,26 +352,12 @@ async function main() {
                         repScheme: '15 cals',
                         distance: 15,
                         distanceUnit: 'cal',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: 'Erg',
-                            targetReps: 12,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: 'Erg',
-                            targetReps: 15,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: 'Erg',
-                            targetReps: 18,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: 'Erg', targetReps: 12 },
+                            { tier: 'GOLD', load: 'Erg', targetReps: 15 },
+                            { tier: 'BLACK', load: 'Erg', targetReps: 18 },
+                          ],
                         },
                       },
                       {
@@ -511,26 +366,12 @@ async function main() {
                         exerciseName: 'KB Swings',
                         description: 'Full extension',
                         repScheme: '12',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: '16 kg',
-                            targetReps: 12,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: '20 kg',
-                            targetReps: 12,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: '24 kg',
-                            targetReps: 12,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: '16 kg', targetReps: 12 },
+                            { tier: 'GOLD', load: '20 kg', targetReps: 12 },
+                            { tier: 'BLACK', load: '24 kg', targetReps: 12 },
+                          ],
                         },
                       },
                       {
@@ -539,26 +380,12 @@ async function main() {
                         exerciseName: 'Burpees',
                         description: 'Full range of motion',
                         repScheme: '8',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: 'Bodyweight',
-                            targetReps: 8,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: 'Bodyweight',
-                            targetReps: 10,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: 'Bodyweight',
-                            targetReps: 12,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: 'Bodyweight', targetReps: 8 },
+                            { tier: 'GOLD', load: 'Bodyweight', targetReps: 10 },
+                            { tier: 'BLACK', load: 'Bodyweight', targetReps: 12 },
+                          ],
                         },
                       },
                     ],
@@ -624,26 +451,12 @@ async function main() {
                         exerciseName: 'KB Swings',
                         description: 'Full extension',
                         repScheme: '20',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: '16 kg',
-                            targetReps: 20,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: '20 kg',
-                            targetReps: 20,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: '24 kg',
-                            targetReps: 20,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: '16 kg', targetReps: 20 },
+                            { tier: 'GOLD', load: '20 kg', targetReps: 20 },
+                            { tier: 'BLACK', load: '24 kg', targetReps: 20 },
+                          ],
                         },
                       },
                       {
@@ -652,26 +465,12 @@ async function main() {
                         exerciseName: 'Burpees',
                         description: 'Full range',
                         repScheme: '15',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: 'Bodyweight',
-                            targetReps: 15,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: 'Bodyweight',
-                            targetReps: 15,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: 'Bodyweight',
-                            targetReps: 20,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: 'Bodyweight', targetReps: 15 },
+                            { tier: 'GOLD', load: 'Bodyweight', targetReps: 15 },
+                            { tier: 'BLACK', load: 'Bodyweight', targetReps: 20 },
+                          ],
                         },
                       },
                       {
@@ -680,26 +479,12 @@ async function main() {
                         exerciseName: 'Box Jumps',
                         description: 'Full extension',
                         repScheme: '12',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: '20" box',
-                            targetReps: 12,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: '24" box',
-                            targetReps: 12,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: '30" box',
-                            targetReps: 12,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: '20" box', targetReps: 12 },
+                            { tier: 'GOLD', load: '24" box', targetReps: 12 },
+                            { tier: 'BLACK', load: '30" box', targetReps: 12 },
+                          ],
                         },
                       },
                     ],
@@ -737,26 +522,12 @@ async function main() {
                         exerciseName: 'Thrusters',
                         description: 'Full depth, full extension',
                         repScheme: '15',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: '2x12 kg',
-                            targetReps: 15,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: '2x16 kg',
-                            targetReps: 15,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: '2x20 kg',
-                            targetReps: 15,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: '2x12 kg', targetReps: 15 },
+                            { tier: 'GOLD', load: '2x16 kg', targetReps: 15 },
+                            { tier: 'BLACK', load: '2x20 kg', targetReps: 15 },
+                          ],
                         },
                       },
                       {
@@ -765,27 +536,12 @@ async function main() {
                         exerciseName: 'Pull-ups',
                         description: 'Dead hang to chin over',
                         repScheme: '12',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: 'Bodyweight',
-                            targetReps: 10,
-                            notes: 'Use assistance if needed',
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: 'Bodyweight',
-                            targetReps: 12,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: 'Bodyweight',
-                            targetReps: 15,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: 'Bodyweight', targetReps: 10, notes: 'Use assistance if needed' },
+                            { tier: 'GOLD', load: 'Bodyweight', targetReps: 12 },
+                            { tier: 'BLACK', load: 'Bodyweight', targetReps: 15 },
+                          ],
                         },
                       },
                       {
@@ -794,27 +550,12 @@ async function main() {
                         exerciseName: 'Double Unders',
                         description: 'Rope passes twice per jump',
                         repScheme: '50',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: 'Jump Rope',
-                            targetReps: 30,
-                            notes: 'Single unders if needed',
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: 'Jump Rope',
-                            targetReps: 50,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: 'Jump Rope',
-                            targetReps: 75,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: 'Jump Rope', targetReps: 30, notes: 'Single unders if needed' },
+                            { tier: 'GOLD', load: 'Jump Rope', targetReps: 50 },
+                            { tier: 'BLACK', load: 'Jump Rope', targetReps: 75 },
+                          ],
                         },
                       },
                     ],
@@ -882,26 +623,12 @@ async function main() {
                         repScheme: '500m',
                         distance: 500,
                         distanceUnit: 'm',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: 'Erg',
-                            targetReps: 1,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: 'Erg',
-                            targetReps: 1,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: 'Erg',
-                            targetReps: 1,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: 'Erg', targetReps: 1 },
+                            { tier: 'GOLD', load: 'Erg', targetReps: 1 },
+                            { tier: 'BLACK', load: 'Erg', targetReps: 1 },
+                          ],
                         },
                       },
                       {
@@ -910,26 +637,12 @@ async function main() {
                         exerciseName: 'KB Swings',
                         description: 'Full extension',
                         repScheme: '30',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: '16 kg',
-                            targetReps: 30,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: '20 kg',
-                            targetReps: 30,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: '24 kg',
-                            targetReps: 30,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: '16 kg', targetReps: 30 },
+                            { tier: 'GOLD', load: '20 kg', targetReps: 30 },
+                            { tier: 'BLACK', load: '24 kg', targetReps: 30 },
+                          ],
                         },
                       },
                       {
@@ -938,26 +651,12 @@ async function main() {
                         exerciseName: 'Burpees',
                         description: 'Full range',
                         repScheme: '20',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: 'Bodyweight',
-                            targetReps: 20,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: 'Bodyweight',
-                            targetReps: 20,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: 'Bodyweight',
-                            targetReps: 25,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: 'Bodyweight', targetReps: 20 },
+                            { tier: 'GOLD', load: 'Bodyweight', targetReps: 20 },
+                            { tier: 'BLACK', load: 'Bodyweight', targetReps: 25 },
+                          ],
                         },
                       },
                       {
@@ -968,26 +667,12 @@ async function main() {
                         repScheme: '400m',
                         distance: 400,
                         distanceUnit: 'm',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: 'Bodyweight',
-                            targetReps: 1,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: 'Bodyweight',
-                            targetReps: 1,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: 'Bodyweight',
-                            targetReps: 1,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: 'Bodyweight', targetReps: 1 },
+                            { tier: 'GOLD', load: 'Bodyweight', targetReps: 1 },
+                            { tier: 'BLACK', load: 'Bodyweight', targetReps: 1 },
+                          ],
                         },
                       },
                     ],
@@ -1052,26 +737,12 @@ async function main() {
                         exerciseName: 'Tempo Goblet Squats',
                         description: '3-1-3-1 tempo (3s down, 1s pause, 3s up, 1s pause)',
                         repScheme: '3x8',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: '12 kg',
-                            targetReps: 8,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: '16 kg',
-                            targetReps: 8,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: '20 kg',
-                            targetReps: 8,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: '12 kg', targetReps: 8 },
+                            { tier: 'GOLD', load: '16 kg', targetReps: 8 },
+                            { tier: 'BLACK', load: '20 kg', targetReps: 8 },
+                          ],
                         },
                       },
                       {
@@ -1080,26 +751,12 @@ async function main() {
                         exerciseName: 'KB Flow Sequence',
                         description: 'Swings → Cleans → Presses → Snatches',
                         repScheme: '3 rounds',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: '12 kg',
-                            targetReps: 5,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: '16 kg',
-                            targetReps: 5,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: '20 kg',
-                            targetReps: 5,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: '12 kg', targetReps: 5 },
+                            { tier: 'GOLD', load: '16 kg', targetReps: 5 },
+                            { tier: 'BLACK', load: '20 kg', targetReps: 5 },
+                          ],
                         },
                       },
                     ],
@@ -1121,26 +778,12 @@ async function main() {
                         exerciseName: 'Turkish Get-ups',
                         description: 'Slow, controlled, one side per round',
                         repScheme: '1 each',
-                        tierSilver: {
-                          create: {
-                            tier: 'SILVER',
-                            load: '12 kg',
-                            targetReps: 1,
-                          },
-                        },
-                        tierGold: {
-                          create: {
-                            tier: 'GOLD',
-                            load: '16 kg',
-                            targetReps: 1,
-                          },
-                        },
-                        tierBlack: {
-                          create: {
-                            tier: 'BLACK',
-                            load: '20 kg',
-                            targetReps: 1,
-                          },
+                        tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: '12 kg', targetReps: 1 },
+                            { tier: 'GOLD', load: '16 kg', targetReps: 1 },
+                            { tier: 'BLACK', load: '20 kg', targetReps: 1 },
+                          ],
                         },
                       },
                     ],
@@ -1246,27 +889,13 @@ async function main() {
                       exerciseName: 'KB Russian Swings',
                       description: 'Full extension at the top',
                       repScheme: '10',
-                      tierSilver: {
-                        create: {
-                          tier: 'SILVER',
-                          load: '12 kg',
-                          targetReps: 10,
+                      tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: '12 kg', targetReps: 10 },
+                            { tier: 'GOLD', load: '16 kg', targetReps: 10 },
+                            { tier: 'BLACK', load: '20 kg', targetReps: 10 },
+                          ],
                         },
-                      },
-                      tierGold: {
-                        create: {
-                          tier: 'GOLD',
-                          load: '16 kg',
-                          targetReps: 10,
-                        },
-                      },
-                      tierBlack: {
-                        create: {
-                          tier: 'BLACK',
-                          load: '20 kg',
-                          targetReps: 10,
-                        },
-                      },
                     },
                     {
                       order: 1,
@@ -1274,27 +903,13 @@ async function main() {
                       exerciseName: 'Burpees',
                       description: 'Full range of motion',
                       repScheme: '10',
-                      tierSilver: {
-                        create: {
-                          tier: 'SILVER',
-                          load: 'Bodyweight',
-                          targetReps: 8,
+                      tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: 'Bodyweight', targetReps: 8 },
+                            { tier: 'GOLD', load: 'Bodyweight', targetReps: 10 },
+                            { tier: 'BLACK', load: 'Bodyweight', targetReps: 12 },
+                          ],
                         },
-                      },
-                      tierGold: {
-                        create: {
-                          tier: 'GOLD',
-                          load: 'Bodyweight',
-                          targetReps: 10,
-                        },
-                      },
-                      tierBlack: {
-                        create: {
-                          tier: 'BLACK',
-                          load: 'Bodyweight',
-                          targetReps: 12,
-                        },
-                      },
                     },
                     {
                       order: 2,
@@ -1304,27 +919,13 @@ async function main() {
                       repScheme: '100 cals',
                       distance: 100,
                       distanceUnit: 'cal',
-                      tierSilver: {
-                        create: {
-                          tier: 'SILVER',
-                          load: 'Erg',
-                          targetReps: 80,
+                      tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: 'Erg', targetReps: 80 },
+                            { tier: 'GOLD', load: 'Erg', targetReps: 100 },
+                            { tier: 'BLACK', load: 'Erg', targetReps: 120 },
+                          ],
                         },
-                      },
-                      tierGold: {
-                        create: {
-                          tier: 'GOLD',
-                          load: 'Erg',
-                          targetReps: 100,
-                        },
-                      },
-                      tierBlack: {
-                        create: {
-                          tier: 'BLACK',
-                          load: 'Erg',
-                          targetReps: 120,
-                        },
-                      },
                     },
                     {
                       order: 3,
@@ -1332,27 +933,12 @@ async function main() {
                       exerciseName: 'Pull-ups',
                       description: 'Dead hang to chin over bar',
                       repScheme: '10',
-                      tierSilver: {
-                        create: {
-                          tier: 'SILVER',
-                          load: 'Bodyweight',
-                          targetReps: 5,
-                          notes: 'Use assistance if needed',
-                        },
-                      },
-                      tierGold: {
-                        create: {
-                          tier: 'GOLD',
-                          load: 'Bodyweight',
-                          targetReps: 10,
-                        },
-                      },
-                      tierBlack: {
-                        create: {
-                          tier: 'BLACK',
-                          load: 'Bodyweight',
-                          targetReps: 15,
-                        },
+                      tierPrescriptions: {
+                        create: [
+                          { tier: 'SILVER', load: 'Bodyweight', targetReps: 5, notes: 'Use assistance if needed' },
+                          { tier: 'GOLD', load: 'Bodyweight', targetReps: 10 },
+                          { tier: 'BLACK', load: 'Bodyweight', targetReps: 15 },
+                        ],
                       },
                     },
                   ],
@@ -1372,27 +958,13 @@ async function main() {
                       exerciseName: 'Thrusters',
                       description: 'Full depth squat, full overhead extension',
                       repScheme: '15',
-                      tierSilver: {
-                        create: {
-                          tier: 'SILVER',
-                          load: '2x12 kg',
-                          targetReps: 15,
+                      tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: '2x12 kg', targetReps: 15 },
+                            { tier: 'GOLD', load: '2x15 kg', targetReps: 15 },
+                            { tier: 'BLACK', load: '2x20 kg', targetReps: 15 },
+                          ],
                         },
-                      },
-                      tierGold: {
-                        create: {
-                          tier: 'GOLD',
-                          load: '2x15 kg',
-                          targetReps: 15,
-                        },
-                      },
-                      tierBlack: {
-                        create: {
-                          tier: 'BLACK',
-                          load: '2x20 kg',
-                          targetReps: 15,
-                        },
-                      },
                     },
                     {
                       order: 1,
@@ -1400,26 +972,12 @@ async function main() {
                       exerciseName: 'Box Jumps',
                       description: 'Full extension at the top',
                       repScheme: '12',
-                      tierSilver: {
-                        create: {
-                          tier: 'SILVER',
-                          load: '20" box',
-                          targetReps: 12,
-                        },
-                      },
-                      tierGold: {
-                        create: {
-                          tier: 'GOLD',
-                          load: '24" box',
-                          targetReps: 12,
-                        },
-                      },
-                      tierBlack: {
-                        create: {
-                          tier: 'BLACK',
-                          load: '30" box',
-                          targetReps: 12,
-                        },
+                      tierPrescriptions: {
+                        create: [
+                          { tier: 'SILVER', load: '20" box', targetReps: 12 },
+                          { tier: 'GOLD', load: '24" box', targetReps: 12 },
+                          { tier: 'BLACK', load: '30" box', targetReps: 12 },
+                        ],
                       },
                     },
                     {
@@ -1428,27 +986,12 @@ async function main() {
                       exerciseName: 'Double Unders',
                       description: 'Rope passes twice per jump',
                       repScheme: '50',
-                      tierSilver: {
-                        create: {
-                          tier: 'SILVER',
-                          load: 'Jump Rope',
-                          targetReps: 30,
-                          notes: 'Single unders if needed',
-                        },
-                      },
-                      tierGold: {
-                        create: {
-                          tier: 'GOLD',
-                          load: 'Jump Rope',
-                          targetReps: 50,
-                        },
-                      },
-                      tierBlack: {
-                        create: {
-                          tier: 'BLACK',
-                          load: 'Jump Rope',
-                          targetReps: 75,
-                        },
+                      tierPrescriptions: {
+                        create: [
+                          { tier: 'SILVER', load: 'Jump Rope', targetReps: 30, notes: 'Single unders if needed' },
+                          { tier: 'GOLD', load: 'Jump Rope', targetReps: 50 },
+                          { tier: 'BLACK', load: 'Jump Rope', targetReps: 75 },
+                        ],
                       },
                     },
                   ],
@@ -1469,24 +1012,13 @@ async function main() {
                       repScheme: '200m',
                       distance: 200,
                       distanceUnit: 'm',
-                      tierSilver: {
-                        create: {
-                          tier: 'SILVER',
-                          load: '2x16 kg',
+                      tierPrescriptions: {
+                          create: [
+                            { tier: 'SILVER', load: '2x16 kg' },
+                            { tier: 'GOLD', load: '2x20 kg' },
+                            { tier: 'BLACK', load: '2x24 kg' },
+                          ],
                         },
-                      },
-                      tierGold: {
-                        create: {
-                          tier: 'GOLD',
-                          load: '2x20 kg',
-                        },
-                      },
-                      tierBlack: {
-                        create: {
-                          tier: 'BLACK',
-                          load: '2x24 kg',
-                        },
-                      },
                     },
                   ],
                 },
