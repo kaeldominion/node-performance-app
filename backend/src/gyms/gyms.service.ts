@@ -199,8 +199,13 @@ export class GymsService {
     return this.prisma.gymClass.create({
       data: {
         gymId,
-        ...createDto,
+        name: createDto.name,
+        description: createDto.description,
+        workoutId: createDto.workoutId,
         scheduledAt: new Date(createDto.scheduledAt),
+        duration: createDto.duration,
+        maxCapacity: createDto.maxCapacity || createDto.capacity,
+        instructorId: createDto.instructorId,
       },
       include: {
         workout: true,
