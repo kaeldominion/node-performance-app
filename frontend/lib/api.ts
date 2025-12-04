@@ -223,4 +223,65 @@ export const coachApi = {
   },
 };
 
+// Gym API
+export const gymApi = {
+  getProfile: async () => {
+    const response = await api.get('/gyms/profile');
+    return response.data;
+  },
+  createProfile: async (data: any) => {
+    const response = await api.post('/gyms/profile', data);
+    return response.data;
+  },
+  getMembers: async () => {
+    const response = await api.get('/gyms/members');
+    return response.data;
+  },
+  addMember: async (data: { memberId: string; membershipType?: string; status?: string }) => {
+    const response = await api.post('/gyms/members', data);
+    return response.data;
+  },
+  removeMember: async (memberId: string) => {
+    const response = await api.delete(`/gyms/members/${memberId}`);
+    return response.data;
+  },
+  getClasses: async (startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    const response = await api.get(`/gyms/classes?${params.toString()}`);
+    return response.data;
+  },
+  createClass: async (data: {
+    name: string;
+    scheduledAt: string;
+    workoutId?: string;
+    maxCapacity?: number;
+    instructorId?: string;
+  }) => {
+    const response = await api.post('/gyms/classes', data);
+    return response.data;
+  },
+  getClass: async (classId: string) => {
+    const response = await api.get(`/gyms/classes/${classId}`);
+    return response.data;
+  },
+  updateClass: async (classId: string, data: any) => {
+    const response = await api.patch(`/gyms/classes/${classId}`, data);
+    return response.data;
+  },
+  deleteClass: async (classId: string) => {
+    const response = await api.delete(`/gyms/classes/${classId}`);
+    return response.data;
+  },
+  getClassAttendance: async (classId: string) => {
+    const response = await api.get(`/gyms/classes/${classId}/attendance`);
+    return response.data;
+  },
+  markAttendance: async (classId: string, memberId: string, attended: boolean) => {
+    const response = await api.post(`/gyms/classes/${classId}/attendance`, { memberId, attended });
+    return response.data;
+  },
+};
+
 export default api;
