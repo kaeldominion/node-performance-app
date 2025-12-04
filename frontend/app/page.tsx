@@ -16,24 +16,8 @@ export default function LandingPage() {
     }
   }, [user, authLoading, router]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setMaxLoadingReached(true);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const hasToken = typeof window !== 'undefined' && localStorage.getItem('token');
-  const shouldShowLoading = authLoading && hasToken && !maxLoadingReached && !user;
-
-  if (shouldShowLoading) {
-    return (
-      <div className="min-h-screen bg-dark flex items-center justify-center">
-        <div className="text-muted-text font-body">Loading...</div>
-      </div>
-    );
-  }
-
+  // Don't show loading screen - just show the landing page immediately
+  // Clerk will handle auth state in the background
   if (user) return null;
 
   return (

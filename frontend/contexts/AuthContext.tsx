@@ -60,11 +60,13 @@ export function useAuth(): AuthContextType {
 
     // Fetch user data from our database
     const fetchUserData = async () => {
+      setLoading(true);
       try {
         const userData = await userApi.getMe();
         setDbUser(userData);
       } catch (error) {
         console.error('Failed to fetch user data:', error);
+        // Fallback to Clerk user data if API fails
         setDbUser({
           id: clerkUser.id,
           email: clerkUser.emailAddresses[0]?.emailAddress || '',
