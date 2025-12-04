@@ -53,6 +53,7 @@ export default function LandingPage() {
             <a href="#player" className="hover:text-node-volt transition-colors">Player</a>
             <a href="#analytics" className="hover:text-node-volt transition-colors">Analytics</a>
             <a href="#ai" className="hover:text-node-volt transition-colors">AI</a>
+            <Link href="/archetypes" className="hover:text-node-volt transition-colors">Archetypes</Link>
           </div>
           <Link
             href="/auth/register"
@@ -332,6 +333,51 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Archetypes */}
+      <section id="archetypes" className="py-24 bg-dark border-t thin-border px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <span className="text-node-volt uppercase tracking-[0.25em] text-xs font-heading">Training System</span>
+            <h2 className="text-4xl sm:text-5xl font-heading font-bold mt-4 mb-6">Six Core Archetypes</h2>
+            <p className="text-muted-text font-body max-w-2xl mx-auto">
+              Each archetype has a specific structure, purpose, and progression pattern. Choose based on your goals and available time.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            {[
+              { name: 'PR1ME', desc: 'Primary Strength', icon: '💪' },
+              { name: 'FORGE', desc: 'Strength Supersets', icon: '🔥' },
+              { name: 'ENGIN3', desc: 'Hybrid EMOM', icon: '⚡' },
+              { name: 'CIRCUIT_X', desc: 'Anaerobic MetCon', icon: '🏃' },
+              { name: 'CAPAC1TY', desc: 'Long Engine', icon: '🌊' },
+              { name: 'FLOWSTATE', desc: 'Recovery Flow', icon: '🧘' },
+            ].map((archetype, idx) => (
+              <div
+                key={archetype.name}
+                className="bg-panel thin-border p-6 hover:border-node-volt transition-colors animate-fade-in"
+                style={{ animationDelay: `${idx * 0.1}s` }}
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-2xl">{archetype.icon}</span>
+                  <div>
+                    <h3 className="text-xl font-heading font-bold text-node-volt">{archetype.name}</h3>
+                    <p className="text-sm text-muted-text font-body">{archetype.desc}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="text-center">
+            <Link
+              href="/archetypes"
+              className="inline-block px-8 py-4 thin-border border-node-volt text-node-volt font-heading font-bold uppercase tracking-[0.25em] hover:bg-node-volt hover:text-dark transition-colors"
+            >
+              Learn More About Archetypes
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="py-24 bg-panel/10 border-t thin-border px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center space-y-8">
@@ -367,6 +413,7 @@ export default function LandingPage() {
             </div>
           <div className="flex gap-6 text-sm text-muted-text font-body">
             <Link href="/programs" className="hover:text-node-volt transition-colors">Programs</Link>
+            <Link href="/archetypes" className="hover:text-node-volt transition-colors">Archetypes</Link>
             <Link href="/progress" className="hover:text-node-volt transition-colors">Progress</Link>
             <Link href="/gym" className="hover:text-node-volt transition-colors">Gyms</Link>
           </div>

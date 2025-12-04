@@ -5,8 +5,8 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { AdminGuard } from './admin.guard';
-import { ClerkAuthGuard } from '../auth/clerk.guard';
-import { ClerkAdminGuard } from '../auth/clerk-admin.guard';
+import { ClerkAuthGuard } from './clerk.guard';
+import { ClerkAdminGuard } from './clerk-admin.guard';
 import { ClerkWebhookController } from './clerk-webhook.controller';
 import { UsersModule } from '../users/users.module';
 

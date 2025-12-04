@@ -33,5 +33,9 @@ export class GenerateWorkoutDto {
   @IsOptional()
   @IsEnum(WorkoutArchetype)
   archetype?: WorkoutArchetype;
+
+  @IsOptional()
+  @IsString()
+  workoutType?: 'single' | 'week' | 'month';
 }
 

@@ -19,6 +19,7 @@ export class AiService {
     availableMinutes: number;
     sectionPreferences?: string[];
     archetype?: string;
+    workoutType?: 'single' | 'week' | 'month'; // New: single workout, 1-week program, 4-week program
   }) {
     // Pass archetype to the prompt
     const archetypeParam = params.archetype || undefined;
@@ -111,24 +112,34 @@ Section Types by Archetype:
 
 Design workouts that are challenging, progressive, and aligned with the user's goals and equipment.`;
 
-    const userPrompt = `Generate a workout with these parameters:
+    const workoutType = params.workoutType || 'single';
+    const workoutTypeGuidance = this.getWorkoutTypeGuidance(workoutType);
+    
+    const userPrompt = `Generate ${workoutTypeGuidance} with these parameters:
 - Goal: ${params.goal}
 - Training Level: ${params.trainingLevel}
 - Available Equipment: ${params.equipment.join(', ')}
-- Available Time: ${params.availableMinutes} minutes
+- Available Time: ${params.availableMinutes} minutes per session
 ${archetypeParam ? `- Archetype: ${archetypeParam} (follow archetype structure exactly)` : ''}
 - Preferred Sections: ${params.sectionPreferences?.join(', ') || 'Auto-select based on archetype'}
 
-Ensure the total workout time fits within ${params.availableMinutes} minutes.`;
+${workoutTypeGuidance}
+
+Ensure each workout time fits within ${params.availableMinutes} minutes.`;
 
     try {
+      // For week/month, we need an array response
+      const responseFormat = workoutType === 'single' 
+        ? { type: 'json_object' as const }
+        : { type: 'json_object' as const }; // Still JSON object, but will contain workouts array
+
       const completion = await this.openai.chat.completions.create({
         model: 'gpt-4-turbo-preview',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        response_format: { type: 'json_object' },
+        response_format: responseFormat,
         temperature: 0.7,
       });
 
@@ -136,7 +147,18 @@ Ensure the total workout time fits within ${params.availableMinutes} minutes.`;
         completion.choices[0].message.content || '{}',
       );
 
-      // Validate and return
+      // Handle different workout types
+      if (workoutType === 'week' || workoutType === 'month') {
+        // For week/month, expect workouts array in response
+        const workouts = workoutJson.workouts || (Array.isArray(workoutJson) ? workoutJson : [workoutJson]);
+        return workouts.map((w: any, idx: number) => ({
+          ...this.validateWorkoutSchema(w),
+          dayIndex: workoutType === 'week' ? idx + 1 : undefined,
+          weekIndex: workoutType === 'month' ? Math.floor(idx / 5) + 1 : undefined,
+        }));
+      }
+
+      // Validate and return single workout
       return this.validateWorkoutSchema(workoutJson);
     } catch (error) {
       console.error('OpenAI API error:', error);
@@ -290,6 +312,47 @@ REVL/HYROX REP SCHEME PATTERNS:
 - Mixed modal: Run → Station → Run → Station pattern
 
 Use these patterns and exercise names when generating workouts.`;
+  }
+
+  private getWorkoutTypeGuidance(workoutType: string): string {
+    switch (workoutType) {
+      case 'week':
+        return `Generate a 1-WEEK PROGRAM (7 workouts). Return JSON with this structure:
+{
+  "workouts": [
+    { "name": "Day 1", "dayIndex": 1, ...workout structure... },
+    { "name": "Day 2", "dayIndex": 2, ...workout structure... },
+    ... (7 total)
+  ]
+}
+- Day 1: Load (higher intensity/volume)
+- Day 2: Active Recovery or Engine
+- Day 3: Load
+- Day 4: Active Recovery or Engine
+- Day 5: Load
+- Day 6: Deload (lower intensity, mobility focus)
+- Day 7: Rest or FLOWSTATE
+
+Progressive load across the week.`;
+      
+      case 'month':
+        return `Generate a 4-WEEK PROGRAM with progressive loading. Return JSON with this structure:
+{
+  "workouts": [
+    { "name": "Week 1 Day 1", "weekIndex": 1, "dayIndex": 1, ...workout structure... },
+    ... (20-24 total workouts)
+  ]
+}
+- Week 1: BASE (establish baseline, moderate intensity) - 5-6 workouts
+- Week 2: LOAD (increase volume/intensity) - 5-6 workouts
+- Week 3: INTENSIFY (peak intensity, lower volume) - 5-6 workouts
+- Week 4: DELOAD (recovery week, lower intensity, mobility focus) - 4-5 workouts
+
+Progressive overload: Week 1 < Week 2 < Week 3 > Week 4.`;
+      
+      default:
+        return 'Generate a SINGLE WORKOUT (one-off session).';
+    }
   }
 }
 

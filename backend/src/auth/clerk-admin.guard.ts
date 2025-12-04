@@ -1,5 +1,5 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { ClerkAuthGuard } from '../auth/clerk.guard';
+import { ClerkAuthGuard } from './clerk.guard';
 
 @Injectable()
 export class ClerkAdminGuard extends ClerkAuthGuard {

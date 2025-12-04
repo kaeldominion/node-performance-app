@@ -70,7 +70,10 @@ export default function Dashboard() {
   if (!clerkLoaded || loading) {
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center">
-        <div className="text-muted-text">Loading...</div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="loading-spinner"></div>
+          <div className="text-muted-text font-body animate-pulse-glow">Loading...</div>
+        </div>
       </div>
     );
   }
@@ -96,24 +99,22 @@ export default function Dashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-panel thin-border rounded-lg p-6">
-            <div className="text-muted-text text-sm mb-2 font-body">Streak</div>
-            <div className="text-3xl font-bold text-node-volt font-heading">
-              {stats.streak} days
+          {[
+            { label: 'Streak', value: `${stats.streak} days`, delay: '0s' },
+            { label: 'Completed', value: `${stats.completed} workouts`, delay: '0.1s' },
+            { label: 'This Week', value: `${recentSessions.length}`, delay: '0.2s' },
+          ].map((stat, idx) => (
+            <div
+              key={stat.label}
+              className="bg-panel thin-border rounded-lg p-6 hover:border-node-volt transition-colors animate-fade-in"
+              style={{ animationDelay: stat.delay }}
+            >
+              <div className="text-muted-text text-sm mb-2 font-body">{stat.label}</div>
+              <div className="text-3xl font-bold text-node-volt font-heading animate-pulse-glow">
+                {stat.value}
+              </div>
             </div>
-          </div>
-          <div className="bg-panel thin-border rounded-lg p-6">
-            <div className="text-muted-text text-sm mb-2 font-body">Completed</div>
-            <div className="text-3xl font-bold text-node-volt font-heading">
-              {stats.completed} workouts
-            </div>
-          </div>
-          <div className="bg-panel thin-border rounded-lg p-6">
-            <div className="text-muted-text text-sm mb-2 font-body">This Week</div>
-            <div className="text-3xl font-bold text-node-volt font-heading">
-              {recentSessions.length}
-            </div>
-          </div>
+          ))}
         </div>
 
         {/* Today's Session */}

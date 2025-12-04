@@ -90,6 +90,10 @@ export const workoutsApi = {
     const response = await api.get(`/workouts/${id}`);
     return response.data;
   },
+  create: async (data: any) => {
+    const response = await api.post('/workouts', data);
+    return response.data;
+  },
 };
 
 // Sessions API
@@ -121,6 +125,7 @@ export const aiApi = {
     availableMinutes: number;
     archetype?: string;
     sectionPreferences?: string[];
+    workoutType?: 'single' | 'week' | 'month';
   }) => {
     const response = await api.post('/ai/generate-workout', data);
     return response.data;

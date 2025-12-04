@@ -38,6 +38,7 @@ export default function WorkoutBuilderPage() {
     availableMinutes: 45,
     archetype: '' as string | undefined,
     sectionPreferences: ['WARMUP', 'EMOM', 'AMRAP', 'FINISHER', 'COOLDOWN'],
+    workoutType: 'single' as 'single' | 'week' | 'month', // New: single, 1-week, 4-week
   });
 
   const handleEquipmentToggle = (equipment: string) => {
@@ -67,6 +68,7 @@ export default function WorkoutBuilderPage() {
         availableMinutes: formData.availableMinutes,
         archetype: formData.archetype,
         sectionPreferences: formData.sectionPreferences,
+        workoutType: formData.workoutType,
       });
       setGeneratedWorkout(workout);
     } catch (err: any) {
@@ -80,11 +82,15 @@ export default function WorkoutBuilderPage() {
     if (!generatedWorkout) return;
 
     try {
-      // TODO: Implement save to backend
-      // For now, just navigate to view it
-      alert('Workout saved! (Save functionality to be implemented)');
-    } catch (err) {
+      setLoading(true);
+      const savedWorkout = await workoutsApi.create(generatedWorkout);
+      // Navigate to the workout page
+      router.push(`/workouts/${savedWorkout.id}`);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to save workout. Please try again.');
       console.error('Failed to save workout:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -170,6 +176,31 @@ export default function WorkoutBuilderPage() {
               />
             </div>
 
+            {/* Workout Type */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Workout Type</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { value: 'single', label: 'Single Workout', desc: 'One-off session' },
+                  { value: 'week', label: '1-Week Program', desc: '7 days with load/deload' },
+                  { value: 'month', label: '4-Week Program', desc: 'Progressive 4-week cycle' },
+                ].map((type) => (
+                  <button
+                    key={type.value}
+                    onClick={() => setFormData({ ...formData, workoutType: type.value as any })}
+                    className={`px-4 py-3 rounded border transition-colors text-left ${
+                      formData.workoutType === type.value
+                        ? 'bg-node-volt text-dark border-node-volt'
+                        : 'bg-panel thin-border text-text-white hover:border-node-volt'
+                    }`}
+                  >
+                    <div className="font-bold">{type.label}</div>
+                    <div className="text-xs opacity-80">{type.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Archetype */}
             <div>
               <label className="block text-sm font-medium mb-2">NØDE Archetype (Optional)</label>
@@ -220,9 +251,16 @@ export default function WorkoutBuilderPage() {
             <button
               onClick={handleGenerate}
               disabled={loading || formData.equipment.length === 0}
-              className="w-full bg-node-volt text-dark font-bold py-3 rounded hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+              className="w-full bg-node-volt text-dark font-bold py-3 rounded hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex items-center justify-center gap-2"
             >
-              {loading ? 'Generating Workout...' : 'Generate Workout'}
+              {loading ? (
+                <>
+                  <div className="loading-spinner w-5 h-5 border-2"></div>
+                  <span>Generating Workout...</span>
+                </>
+              ) : (
+                'Generate Workout'
+              )}
             </button>
           </div>
         </div>
@@ -302,6 +340,8 @@ export default function WorkoutBuilderPage() {
                 </div>
               ))}
             </div>
+              </div>
+            )}
           </div>
         )}
       </main>
