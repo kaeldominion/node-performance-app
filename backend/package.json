@@ -27,6 +27,7 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:seed": "ts-node prisma/seed.ts",
     "prisma:seed:exercises": "ts-node prisma/seed-exercises.ts",
+    "fix:programs-columns": "ts-node scripts/fix-programs-columns.ts",
     "postinstall": "prisma generate",
     "db:setup": "prisma generate && prisma migrate deploy && npm run prisma:seed"
   },
