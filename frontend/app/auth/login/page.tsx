@@ -49,9 +49,6 @@ export default function LoginPage() {
                 identityPreviewEditButton: 'text-node-volt',
               },
             }}
-            routing="path"
-            path="/auth/login"
-            signUpUrl="/auth/register"
             afterSignInUrl="/dashboard"
           />
         </div>
