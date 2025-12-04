@@ -297,7 +297,7 @@ export default function WorkoutPlayerPage() {
                 Cancel
               </button>
               <button
-                onClick={handleCompleteWorkout}
+                onClick={() => handleCompleteWorkout(rpe, notes)}
                 className="flex-1 bg-node-volt text-deep-asphalt font-bold px-4 py-2 rounded hover:opacity-90"
               >
                 Save & Complete

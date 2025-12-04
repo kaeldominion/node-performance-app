@@ -48,7 +48,7 @@ export function WorkoutDeckPlayer({ workout, sessionId, onComplete }: WorkoutDec
   const { playCue } = useAudioCues();
   const { progress, updateProgress } = useWorkoutProgress(workout.sections.length);
   
-  const controlsTimeoutRef = useRef<NodeJS.Timeout>();
+  const controlsTimeoutRef = useRef<number | undefined>(undefined);
   const sectionRef = useRef<HTMLDivElement>(null);
 
   const currentSection = workout.sections[currentSectionIndex];
@@ -58,14 +58,14 @@ export function WorkoutDeckPlayer({ workout, sessionId, onComplete }: WorkoutDec
   // Auto-hide controls after 3 seconds
   useEffect(() => {
     if (deckMode && isPlaying) {
-      controlsTimeoutRef.current = setTimeout(() => {
+      controlsTimeoutRef.current = window.setTimeout(() => {
         setShowControls(false);
       }, 3000);
     }
 
     return () => {
       if (controlsTimeoutRef.current) {
-        clearTimeout(controlsTimeoutRef.current);
+        window.clearTimeout(controlsTimeoutRef.current);
       }
     };
   }, [deckMode, isPlaying, currentSectionIndex]);
@@ -75,9 +75,9 @@ export function WorkoutDeckPlayer({ workout, sessionId, onComplete }: WorkoutDec
     if (deckMode) {
       setShowControls(true);
       if (controlsTimeoutRef.current) {
-        clearTimeout(controlsTimeoutRef.current);
+        window.clearTimeout(controlsTimeoutRef.current);
       }
-      controlsTimeoutRef.current = setTimeout(() => {
+      controlsTimeoutRef.current = window.setTimeout(() => {
         if (isPlaying) {
           setShowControls(false);
         }

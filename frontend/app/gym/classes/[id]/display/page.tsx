@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { gymApi, workoutsApi } from '@/lib/api';
-import WorkoutDeckPlayer from '@/components/workout/WorkoutDeckPlayer';
+import { WorkoutDeckPlayer } from '@/components/workout/WorkoutDeckPlayer';
 
 export default function GymClassDisplayPage() {
   const params = useParams();
@@ -64,7 +64,7 @@ export default function GymClassDisplayPage() {
       <WorkoutDeckPlayer
         workout={workout}
         sessionId={null}
-        onWorkoutComplete={() => {
+        onComplete={() => {
           // In display mode, just reload
           window.location.reload();
         }}

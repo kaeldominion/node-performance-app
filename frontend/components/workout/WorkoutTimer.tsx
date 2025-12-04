@@ -27,7 +27,7 @@ export function WorkoutTimer({
   const [isWorkPhase, setIsWorkPhase] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout>();
+  const intervalRef = useRef<number | undefined>(undefined);
   const { playCue } = useAudioCues();
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export function WorkoutTimer({
 
   useEffect(() => {
     if (isRunning && !isPaused && timeLeft > 0) {
-      intervalRef.current = setInterval(() => {
+      intervalRef.current = window.setInterval(() => {
         setTimeLeft((prev) => {
           const newTime = prev - 1;
           
@@ -66,7 +66,7 @@ export function WorkoutTimer({
 
     return () => {
       if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+        window.clearInterval(intervalRef.current);
       }
     };
   }, [isRunning, isPaused, timeLeft, onTick, playCue]);

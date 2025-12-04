@@ -41,6 +41,9 @@ export const authApi = {
     }
     return response.data;
   },
+  logout: () => {
+    localStorage.removeItem('token');
+  },
 };
 
 // User API
@@ -59,6 +62,10 @@ export const userApi = {
   },
   getSchedule: async () => {
     const response = await api.get('/me/schedule');
+    return response.data;
+  },
+  startProgram: async (data: { programId: string; startDate: string }) => {
+    const response = await api.post('/me/programs', data);
     return response.data;
   },
 };
