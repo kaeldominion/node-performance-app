@@ -1,10 +1,13 @@
-import { Injectable, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import { Injectable, ExecutionContext, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class AdminGuard extends JwtAuthGuard {
-  constructor(private usersService: UsersService) {
+  constructor(
+    @Inject(forwardRef(() => UsersService))
+    private usersService: UsersService
+  ) {
     super();
   }
 
