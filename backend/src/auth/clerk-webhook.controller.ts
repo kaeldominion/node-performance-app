@@ -50,15 +50,23 @@ export class ClerkWebhookController {
     const role = data.public_metadata?.role || 'HOME_USER';
     const isAdmin = data.public_metadata?.isAdmin || false;
 
-    // Create user in our database
+    if (!email) {
+      console.error('No email found for Clerk user:', clerkUserId);
+      return;
+    }
+
+    // Create user in our database using Clerk ID as the user ID
+    // This ensures the ID matches what the guard expects
     await this.prisma.user.upsert({
       where: { email },
       update: {
+        id: clerkUserId, // Update ID if it changed
         name,
         role: role as any,
         isAdmin,
       },
       create: {
+        id: clerkUserId, // Use Clerk ID as the database user ID
         email,
         name,
         passwordHash: '', // Clerk handles passwords
@@ -69,6 +77,7 @@ export class ClerkWebhookController {
   }
 
   private async handleUserUpdated(data: any) {
+    const clerkUserId = data.id;
     const email = data.email_addresses?.[0]?.email_address;
     const firstName = data.first_name;
     const lastName = data.last_name;
@@ -77,14 +86,37 @@ export class ClerkWebhookController {
     const isAdmin = data.public_metadata?.isAdmin || false;
 
     if (email) {
-      await this.prisma.user.updateMany({
-        where: { email },
-        data: {
-          name,
-          role: role as any,
-          isAdmin,
-        },
-      });
+      // Try to update by Clerk ID first, then by email as fallback
+      try {
+        await this.prisma.user.update({
+          where: { id: clerkUserId },
+          data: {
+            email, // Update email if it changed
+            name,
+            role: role as any,
+            isAdmin,
+          },
+        });
+      } catch (error) {
+        // If user doesn't exist by ID, try to upsert by email
+        await this.prisma.user.upsert({
+          where: { email },
+          update: {
+            id: clerkUserId, // Ensure ID matches Clerk ID
+            name,
+            role: role as any,
+            isAdmin,
+          },
+          create: {
+            id: clerkUserId,
+            email,
+            name,
+            passwordHash: '',
+            role: role as any,
+            isAdmin,
+          },
+        });
+      }
     }
   }
 

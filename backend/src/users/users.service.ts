@@ -13,6 +13,26 @@ export class UsersService {
     });
   }
 
+  async createFromClerk(data: { id: string; email: string; role?: string; isAdmin?: boolean; name?: string }) {
+    return this.prisma.user.upsert({
+      where: { id: data.id },
+      update: {
+        email: data.email,
+        name: data.name,
+        role: (data.role as any) || 'HOME_USER',
+        isAdmin: data.isAdmin || false,
+      },
+      create: {
+        id: data.id,
+        email: data.email,
+        name: data.name,
+        passwordHash: '', // Clerk handles passwords
+        role: (data.role as any) || 'HOME_USER',
+        isAdmin: data.isAdmin || false,
+      },
+    });
+  }
+
   async findByEmail(email: string) {
     // This is used internally for auth, so we need passwordHash
     return this.prisma.user.findUnique({

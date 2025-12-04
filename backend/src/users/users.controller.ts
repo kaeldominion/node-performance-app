@@ -21,7 +21,19 @@ export class UsersController {
 
   @Get()
   async getMe(@Request() req) {
-    return this.usersService.findOne(req.user.id);
+    let user = await this.usersService.findOne(req.user.id);
+    
+    // If user doesn't exist, create them (handles webhook delays)
+    if (!user) {
+      user = await this.usersService.createFromClerk({
+        id: req.user.id,
+        email: req.user.email,
+        role: req.user.role,
+        isAdmin: req.user.isAdmin,
+      });
+    }
+    
+    return user;
   }
 
   @Get('profile')
