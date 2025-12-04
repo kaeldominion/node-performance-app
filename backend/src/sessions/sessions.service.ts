@@ -35,7 +35,7 @@ export class SessionsService {
           },
         },
       },
-      orderBy: { performedAt: 'desc' },
+      orderBy: { startedAt: 'desc' },
       take: limit,
     });
   }
@@ -43,7 +43,7 @@ export class SessionsService {
   async findByWorkout(userId: string, workoutId: string) {
     return this.prisma.sessionLog.findMany({
       where: { userId, workoutId },
-      orderBy: { performedAt: 'desc' },
+      orderBy: { startedAt: 'desc' },
     });
   }
 }

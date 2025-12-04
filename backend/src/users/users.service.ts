@@ -69,5 +69,28 @@ export class UsersService {
     const { passwordHash, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
+
+  async updateRole(userId: string, role: string) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { role: role as any },
+    });
+    
+    const { passwordHash, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  }
+
+  async updateSubscription(userId: string, tier: string, subscriptionEnds?: Date) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        subscriptionTier: tier as any,
+        subscriptionEnds,
+      },
+    });
+    
+    const { passwordHash, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  }
 }
 
