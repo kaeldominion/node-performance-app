@@ -16,6 +16,7 @@ interface TodaySession {
 export default function LandingPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const [maxLoadingReached, setMaxLoadingReached] = useState(false);
 
   // If user is logged in, redirect to dashboard
   useEffect(() => {
@@ -24,7 +25,20 @@ export default function LandingPage() {
     }
   }, [user, authLoading, router]);
 
-  if (authLoading) {
+  // Set a maximum loading time - show landing page after 2 seconds regardless
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMaxLoadingReached(true);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Show landing page immediately - don't block on auth check
+  // Only show loading if we have a token AND haven't exceeded max loading time
+  const hasToken = typeof window !== 'undefined' && localStorage.getItem('token');
+  const shouldShowLoading = authLoading && hasToken && !maxLoadingReached && !user;
+  
+  if (shouldShowLoading) {
     return (
       <div className="min-h-screen bg-deep-asphalt flex items-center justify-center">
         <div className="text-muted-text">Loading...</div>

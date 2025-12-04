@@ -29,22 +29,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        console.warn('No token found when refreshing user');
         setUser(null);
         setLoading(false);
         return;
       }
       
-      const userData = await userApi.getMe();
+      // Add timeout to prevent long waits
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 5000)
+      );
+      
+      const userData = await Promise.race([
+        userApi.getMe(),
+        timeoutPromise,
+      ]) as any;
+      
       console.log('User data fetched:', userData);
       setUser(userData);
     } catch (error: any) {
-      console.error('Refresh user error:', error);
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-      });
+      // Silently clear invalid token - don't log errors for normal cases
+      if (error.response?.status !== 401 && error.message !== 'Request timeout') {
+        console.error('Refresh user error:', error);
+      }
       // Clear invalid token
       localStorage.removeItem('token');
       setUser(null);
