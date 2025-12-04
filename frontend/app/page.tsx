@@ -47,7 +47,7 @@ export default function LandingPage() {
 
       {/* Top nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-dark/90 backdrop-blur-md border-b thin-border">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-node-volt text-dark font-heading font-bold text-lg flex items-center justify-center">
               Ø
@@ -62,7 +62,7 @@ export default function LandingPage() {
           </div>
           <Link
             href="/auth/register"
-            className="hidden md:inline-block px-5 py-2 thin-border-node-volt text-node-volt font-heading font-bold text-xs uppercase tracking-[0.2em] hover:bg-node-volt hover:text-dark transition-colors"
+            className="hidden md:inline-block px-5 py-2 thin-border border-node-volt text-node-volt font-heading font-bold text-xs uppercase tracking-[0.2em] hover:bg-node-volt hover:text-dark transition-colors"
           >
             Join
           </Link>
@@ -78,16 +78,16 @@ export default function LandingPage() {
           <div className="grid-overlay" />
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-16 items-center">
           <div className="space-y-8 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-4 py-2 thin-border-node-volt/40 bg-node-volt/10 backdrop-blur-sm">
+            <div className="inline-flex items-center gap-2 px-4 py-2 thin-border border-node-volt/40 bg-node-volt/10 backdrop-blur-sm">
               <span className="w-2 h-2 bg-node-volt animate-pulse" />
               <span className="text-[11px] font-heading text-node-volt uppercase tracking-[0.3em]">Performance OS</span>
             </div>
             <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-7xl font-heading font-bold leading-[0.95] tracking-tight drop-shadow-2xl">
               BUILDING INFRASTRUCTURE FOR HUMAN <span className="text-node-volt">OPTIMIZATION.</span>
             </h1>
-            <p className="text-text-white text-base sm:text-lg max-w-lg border-l thin-border-node-volt/60 pl-5 font-body leading-relaxed">
+            <p className="text-text-white text-base sm:text-lg max-w-lg border-l border-node-volt/60 pl-5 font-body leading-relaxed">
               A brutalist training stack for strength, engine, and recovery. Cinematic player, deep analytics, and AI-built sessions.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 pt-2">
@@ -99,7 +99,7 @@ export default function LandingPage() {
             </Link>
             <Link
                 href="#platform"
-                className="px-8 py-4 thin-border-text-white/30 text-text-white font-heading font-bold text-sm uppercase tracking-[0.25em] hover:border-node-volt hover:text-node-volt transition-colors backdrop-blur-sm bg-panel/30"
+                className="px-8 py-4 thin-border border-text-white/30 text-text-white font-heading font-bold text-sm uppercase tracking-[0.25em] hover:border-node-volt hover:text-node-volt transition-colors backdrop-blur-sm bg-panel/30"
             >
                 Explore Platform
             </Link>
@@ -147,8 +147,8 @@ export default function LandingPage() {
       </section>
 
       {/* Platform Sections */}
-      <section id="platform" className="py-24 bg-dark border-t thin-border">
-        <div className="max-w-7xl mx-auto px-6">
+      <section id="platform" className="py-24 bg-dark border-t thin-border px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
           <div className="mb-16 max-w-2xl">
             <h2 className="text-4xl sm:text-5xl font-heading font-bold mb-4">THE NØDE STACK</h2>
             <p className="text-muted-text font-body">
@@ -207,8 +207,8 @@ export default function LandingPage() {
       </section>
 
       {/* Player Section */}
-      <section id="player" className="py-24 bg-dark border-t thin-border">
-        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
+      <section id="player" className="py-24 bg-dark border-t thin-border px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
           <div className="relative order-2 lg:order-1">
             <div className="absolute -inset-6 bg-node-volt/10 blur-3xl opacity-30" />
             <div className="relative thin-border bg-panel/80 backdrop-blur-md p-6 space-y-4">
@@ -217,7 +217,7 @@ export default function LandingPage() {
                 <span>Now Playing</span>
               </div>
               <div className="h-64 bg-gradient-to-br from-panel to-panel/60 thin-border flex items-center justify-center">
-                <div className="w-16 h-16 thin-border-node-volt flex items-center justify-center text-node-volt font-heading font-bold">
+                <div className="w-16 h-16 thin-border border-node-volt flex items-center justify-center text-node-volt font-heading font-bold">
                   Ø
           </div>
             </div>
@@ -244,7 +244,7 @@ export default function LandingPage() {
               </ul>
             <Link
               href="/auth/register"
-              className="inline-block px-8 py-4 thin-border-node-volt text-node-volt font-heading font-bold uppercase tracking-[0.25em] hover:bg-node-volt hover:text-dark transition-colors"
+              className="inline-block px-8 py-4 thin-border border-node-volt text-node-volt font-heading font-bold uppercase tracking-[0.25em] hover:bg-node-volt hover:text-dark transition-colors"
             >
               Try Deck Mode
             </Link>
@@ -253,8 +253,8 @@ export default function LandingPage() {
       </section>
 
       {/* Analytics */}
-      <section id="analytics" className="py-24 bg-dark border-t thin-border">
-        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
+      <section id="analytics" className="py-24 bg-dark border-t thin-border px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
           <div className="space-y-6">
             <span className="text-node-volt uppercase tracking-[0.25em] text-xs font-heading">Analytics</span>
             <h2 className="text-4xl sm:text-5xl font-heading font-bold">Measurable Progress</h2>
@@ -294,8 +294,8 @@ export default function LandingPage() {
       </section>
 
       {/* AI */}
-      <section id="ai" className="py-24 bg-dark border-t thin-border">
-        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
+      <section id="ai" className="py-24 bg-dark border-t thin-border px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
           <div className="relative order-2 lg:order-1">
             <div className="absolute -inset-6 bg-node-volt/10 blur-3xl opacity-30" />
             <div className="relative thin-border bg-panel/80 p-6 space-y-4">
@@ -330,7 +330,7 @@ export default function LandingPage() {
             </ul>
             <Link
               href="/auth/register"
-              className="inline-block px-8 py-4 thin-border-node-volt text-node-volt font-heading font-bold uppercase tracking-[0.25em] hover:bg-node-volt hover:text-dark transition-colors"
+              className="inline-block px-8 py-4 thin-border border-node-volt text-node-volt font-heading font-bold uppercase tracking-[0.25em] hover:bg-node-volt hover:text-dark transition-colors"
             >
               Build with AI
             </Link>
@@ -339,8 +339,8 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 bg-panel/10 border-t thin-border">
-        <div className="max-w-4xl mx-auto px-6 text-center space-y-8">
+      <section className="py-24 bg-panel/10 border-t thin-border px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center space-y-8">
           <h2 className="text-4xl sm:text-5xl font-heading font-bold">Access the NØDE</h2>
           <p className="text-muted-text font-body">
             Train with brutalist clarity. Volt highlights. Cinematic player. Analytics and AI built for lifters and coaches.
@@ -354,7 +354,7 @@ export default function LandingPage() {
             </Link>
             <Link
               href="/auth/login"
-              className="px-10 py-4 thin-border-text-white/30 text-text-white font-heading font-bold uppercase tracking-[0.25em] hover:border-node-volt hover:text-node-volt transition-colors"
+              className="px-10 py-4 thin-border border-text-white/30 text-text-white font-heading font-bold uppercase tracking-[0.25em] hover:border-node-volt hover:text-node-volt transition-colors"
             >
               Login
                 </Link>
@@ -363,8 +363,8 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-dark border-t thin-border py-16">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between gap-12">
+      <footer className="bg-dark border-t thin-border py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-12">
           <div className="flex items-center gap-3">
             <div className="w-7 h-7 bg-node-volt text-dark font-heading font-bold text-sm flex items-center justify-center">
               Ø
