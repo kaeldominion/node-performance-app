@@ -11,13 +11,16 @@ export default function LandingPage() {
   const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
+    // Don't do anything while auth is still loading
+    if (authLoading) {
+      return;
+    }
+
     // Only redirect once when we confirm user is logged in
-    if (!authLoading && user && !redirecting) {
+    if (user && !redirecting) {
       setRedirecting(true);
-      // Small delay to prevent flash
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 100);
+      // Use replace instead of push to avoid adding to history
+      router.replace('/dashboard');
     }
   }, [user, authLoading, router, redirecting]);
 

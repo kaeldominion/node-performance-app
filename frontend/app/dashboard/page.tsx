@@ -24,12 +24,19 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/auth/login');
+    // Don't redirect while still loading - wait for auth to fully resolve
+    if (authLoading) {
       return;
     }
 
-    if (user) {
+    // Only redirect if we're absolutely sure there's no user
+    if (!user) {
+      router.replace('/auth/login');
+      return;
+    }
+
+    // Load dashboard data once we have a user (only if not already loading)
+    if (user && loading && todaySession === null) {
       loadDashboardData();
     }
   }, [user, authLoading]);

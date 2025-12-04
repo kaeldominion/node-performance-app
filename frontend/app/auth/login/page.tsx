@@ -11,7 +11,8 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isSignedIn) {
-      router.push('/dashboard');
+      // Use replace to avoid adding to history stack
+      router.replace('/dashboard');
     }
   }, [isSignedIn, router]);
 

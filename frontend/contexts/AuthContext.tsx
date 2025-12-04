@@ -62,7 +62,7 @@ export function useAuth(): AuthContextType {
     const currentUserId = dbUser?.id;
     const clerkUserId = clerkUser.id;
     
-    if (currentUserId === clerkUserId) {
+    if (currentUserId === clerkUserId && dbUser) {
       // Already have this user's data, don't refetch
       setLoading(false);
       return;
@@ -92,7 +92,7 @@ export function useAuth(): AuthContextType {
     };
 
     fetchUserData();
-  }, [clerkUser, clerkLoaded, dbUser?.id]);
+  }, [clerkUser?.id, clerkLoaded]); // Only depend on clerkUser.id, not the whole object
 
   const login = async (email: string, password: string) => {
     // Clerk handles login through their UI components
