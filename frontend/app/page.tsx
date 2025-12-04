@@ -25,411 +25,358 @@ export default function LandingPage() {
 
   const hasToken = typeof window !== 'undefined' && localStorage.getItem('token');
   const shouldShowLoading = authLoading && hasToken && !maxLoadingReached && !user;
-  
+
   if (shouldShowLoading) {
     return (
       <div className="min-h-screen bg-deep-asphalt flex items-center justify-center">
-        <div className="text-muted-text">Loading...</div>
+        <div className="text-muted-text font-body">Loading...</div>
       </div>
     );
   }
 
-  if (user) {
-    return null;
-  }
+  if (user) return null;
 
   return (
-    <div className="min-h-screen bg-deep-asphalt text-text-white">
-      {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Background */}
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-deep-asphalt via-concrete-grey/20 to-deep-asphalt" />
-          <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-node-volt/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-3xl" />
+    <div className="min-h-screen bg-deep-asphalt text-text-white relative overflow-hidden">
+      {/* Parallax symbol */}
+      <div className="pointer-events-none fixed inset-0 flex items-center justify-center">
+        <div className="font-heading font-bold text-[55vh] text-text-white/5 leading-none select-none">
+          Ø
         </div>
+      </div>
 
-        {/* Content */}
-        <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-32 text-center">
-          <div className="mb-16 space-y-8">
-            <h1 className="text-7xl sm:text-8xl md:text-9xl lg:text-[12rem] font-black leading-[0.9] tracking-tight" style={{ 
-              fontFamily: 'var(--font-space-grotesk)',
-            }}>
-              <span className="block">Train with</span>
-              <span className="block text-node-volt drop-shadow-[0_0_60px_rgba(204,255,0,0.8)]">NØDE</span>
-            </h1>
-            <p className="text-2xl sm:text-3xl md:text-4xl text-muted-text max-w-3xl mx-auto font-light leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
-              The training OS for serious athletes
-            </p>
-            <p className="text-lg sm:text-xl text-muted-text/80 max-w-2xl mx-auto leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
-              Build strength, develop your engine, and track every rep with precision
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-5 justify-center items-center">
-            <Link
-              href="/auth/register"
-              className="group relative px-12 py-6 bg-node-volt text-deep-asphalt font-black rounded-2xl text-xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_60px_rgba(204,255,0,0.7)]"
-              style={{ fontFamily: 'var(--font-space-grotesk)' }}
-            >
-              Start Training
-              <span className="absolute inset-0 rounded-2xl bg-node-volt opacity-0 group-hover:opacity-30 blur-2xl transition-opacity" />
-            </Link>
-            <Link
-              href="#features"
-              className="px-12 py-6 bg-concrete-grey/80 backdrop-blur-sm border border-border-dark/50 text-text-white rounded-2xl font-bold text-xl transition-all duration-300 hover:bg-tech-grey/80 hover:border-node-volt/30"
-            >
-              Learn More
-            </Link>
-          </div>
-        </div>
-
-        {/* Scroll indicator */}
-        <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 animate-bounce">
-          <div className="w-6 h-10 border-2 border-node-volt/40 rounded-full flex items-start justify-center p-1.5">
-            <div className="w-1.5 h-3 bg-node-volt rounded-full mt-1" />
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="py-32 bg-gradient-to-b from-deep-asphalt to-concrete-grey/30">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
-          <div className="text-center mb-24">
-            <h2 className="text-6xl sm:text-7xl md:text-8xl font-black mb-8 tracking-tight" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-              Everything You Need
-            </h2>
-            <p className="text-2xl sm:text-3xl text-muted-text max-w-3xl mx-auto leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
-              A complete training platform built for performance
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center mb-32">
-            <div className="space-y-8">
-              <h3 className="text-5xl sm:text-6xl font-black" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                Full-Screen Workout Player
-              </h3>
-              <p className="text-xl sm:text-2xl text-muted-text leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
-                Immersive deck mode with built-in timers, audio cues, and smooth transitions. Train distraction-free with cinematic presentation.
-              </p>
-              <ul className="space-y-5 text-muted-text" style={{ fontFamily: 'var(--font-manrope)' }}>
-                <li className="flex items-start gap-4">
-                  <span className="text-node-volt text-2xl font-black mt-1">✓</span>
-                  <span className="text-lg leading-relaxed">EMOM, AMRAP, and countdown timers</span>
-                </li>
-                <li className="flex items-start gap-4">
-                  <span className="text-node-volt text-2xl font-black mt-1">✓</span>
-                  <span className="text-lg leading-relaxed">Audio cues and transitions</span>
-                </li>
-                <li className="flex items-start gap-4">
-                  <span className="text-node-volt text-2xl font-black mt-1">✓</span>
-                  <span className="text-lg leading-relaxed">Tier-based prescriptions (Silver/Gold/Black)</span>
-                </li>
-              </ul>
+      {/* Top nav */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-deep-asphalt/80 backdrop-blur-md border-b border-border-dark">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-node-volt text-deep-asphalt font-heading font-bold text-lg flex items-center justify-center rounded">
+              Ø
             </div>
-            <div className="relative">
-              <div className="bg-gradient-to-br from-tech-grey to-concrete-grey border border-border-dark/50 rounded-3xl p-20 aspect-video flex items-center justify-center shadow-2xl">
-                <div className="text-center">
-                  <div className="text-9xl mb-8">📱</div>
-                  <p className="text-muted-text text-xl">Workout Player</p>
-                </div>
-              </div>
-              <div className="absolute -inset-3 bg-node-volt/20 rounded-3xl blur-3xl opacity-60" />
-            </div>
+            <span className="font-heading font-bold tracking-tight text-xl">NØDE</span>
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center mb-32">
-            <div className="relative order-2 lg:order-1">
-              <div className="bg-gradient-to-br from-tech-grey to-concrete-grey border border-border-dark/50 rounded-3xl p-20 aspect-video flex items-center justify-center shadow-2xl">
-                <div className="text-center">
-                  <div className="text-9xl mb-8">📊</div>
-                  <p className="text-muted-text text-xl">Progress Dashboard</p>
-                </div>
-              </div>
-              <div className="absolute -inset-3 bg-blue-500/20 rounded-3xl blur-3xl opacity-60" />
-            </div>
-            <div className="space-y-8 order-1 lg:order-2">
-              <h3 className="text-5xl sm:text-6xl font-black" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                Advanced Progress Tracking
-              </h3>
-              <p className="text-xl sm:text-2xl text-muted-text leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
-                Track every metric that matters. Volume, RPE, strength PRs, and engine development—all visualized beautifully.
-              </p>
-              <ul className="space-y-5 text-muted-text" style={{ fontFamily: 'var(--font-manrope)' }}>
-                <li className="flex items-start gap-4">
-                  <span className="text-node-volt text-2xl font-black mt-1">✓</span>
-                  <span className="text-lg leading-relaxed">Strength progress graphs</span>
-                </li>
-                <li className="flex items-start gap-4">
-                  <span className="text-node-volt text-2xl font-black mt-1">✓</span>
-                  <span className="text-lg leading-relaxed">RPE distribution and trends</span>
-                </li>
-                <li className="flex items-start gap-4">
-                  <span className="text-node-volt text-2xl font-black mt-1">✓</span>
-                  <span className="text-lg leading-relaxed">Personal records tracking</span>
-                </li>
-              </ul>
-            </div>
+          <div className="hidden md:flex items-center gap-6 text-sm text-muted-text uppercase tracking-[0.2em]">
+            <a href="#platform" className="hover:text-node-volt transition-colors">Platform</a>
+            <a href="#player" className="hover:text-node-volt transition-colors">Player</a>
+            <a href="#analytics" className="hover:text-node-volt transition-colors">Analytics</a>
+            <a href="#ai" className="hover:text-node-volt transition-colors">AI</a>
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
-            <div className="space-y-8">
-              <h3 className="text-5xl sm:text-6xl font-black" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                AI Workout Generator
-              </h3>
-              <p className="text-xl sm:text-2xl text-muted-text leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
-                Generate custom workouts tailored to your goals, equipment, and available time. Powered by advanced AI that understands the NØDE framework.
-              </p>
-              <ul className="space-y-5 text-muted-text" style={{ fontFamily: 'var(--font-manrope)' }}>
-                <li className="flex items-start gap-4">
-                  <span className="text-node-volt text-2xl font-black mt-1">✓</span>
-                  <span className="text-lg leading-relaxed">Archetype-specific generation</span>
-                </li>
-                <li className="flex items-start gap-4">
-                  <span className="text-node-volt text-2xl font-black mt-1">✓</span>
-                  <span className="text-lg leading-relaxed">Equipment and space filtering</span>
-                </li>
-                <li className="flex items-start gap-4">
-                  <span className="text-node-volt text-2xl font-black mt-1">✓</span>
-                  <span className="text-lg leading-relaxed">Instant workout creation</span>
-                </li>
-              </ul>
-            </div>
-            <div className="relative">
-              <div className="bg-gradient-to-br from-tech-grey to-concrete-grey border border-border-dark/50 rounded-3xl p-20 aspect-video flex items-center justify-center shadow-2xl">
-                <div className="text-center">
-                  <div className="text-9xl mb-8">🤖</div>
-                  <p className="text-muted-text text-xl">AI Builder</p>
-                </div>
-              </div>
-              <div className="absolute -inset-3 bg-purple-500/20 rounded-3xl blur-3xl opacity-60" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Method Section */}
-      <section className="py-32 bg-concrete-grey/30">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
-          <div className="text-center mb-24">
-            <h2 className="text-6xl sm:text-7xl md:text-8xl font-black mb-8 tracking-tight" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-              The N<span className="text-node-volt">Ø</span>DE Method
-            </h2>
-            <p className="text-2xl sm:text-3xl text-muted-text max-w-3xl mx-auto leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
-              Six distinct workout archetypes, each designed for a specific training adaptation
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { name: 'PR1ME', desc: 'Strength-focused wave sets. Build maximal strength with progressive loading.', color: '#ccff00' },
-              { name: 'FORGE', desc: 'Hybrid strength. Push/pull supersets and compound movements.', color: '#ccff00' },
-              { name: 'ENGIN3', desc: 'EMOM conditioning. Build work capacity and engine.', color: '#4a9eff' },
-              { name: 'CIRCUIT_X', desc: 'High-intensity circuits. Multiple AMRAP blocks for maximum output.', color: '#ff6b6b' },
-              { name: 'CAPAC1TY', desc: 'Long engine blocks. 12-20 minute sustained efforts.', color: '#ff6b6b' },
-              { name: 'FLOWSTATE', desc: 'Tempo work and mobility. Deload, recovery, and movement quality.', color: '#9b59b6' },
-            ].map((archetype) => (
-              <div
-                key={archetype.name}
-                className="group relative bg-tech-grey/50 backdrop-blur-sm border border-border-dark/50 rounded-2xl p-8 hover:border-node-volt/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(204,255,0,0.15)]"
-              >
-                <h3 className="text-4xl font-black mb-4" style={{ 
-                  fontFamily: 'var(--font-space-grotesk)',
-                  color: archetype.color,
-                }}>
-                  {archetype.name}
-                </h3>
-                <p className="text-muted-text leading-relaxed text-base" style={{ fontFamily: 'var(--font-manrope)' }}>
-                  {archetype.desc}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Exercise Library */}
-      <section className="py-32 bg-gradient-to-b from-concrete-grey/30 to-deep-asphalt">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
-          <div className="text-center mb-20">
-            <h2 className="text-6xl sm:text-7xl md:text-8xl font-black mb-8 tracking-tight" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-              Exercise Library
-            </h2>
-            <p className="text-2xl sm:text-3xl text-muted-text max-w-3xl mx-auto leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
-              120+ exercises with detailed metadata, tier prescriptions, and movement patterns
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-            {['Dumbbell Bench Press', 'Kettlebell Clean', 'Sandbag Carry', 'Run 1km'].map((exercise) => (
-              <div
-                key={exercise}
-                className="group bg-tech-grey/50 backdrop-blur-sm border border-border-dark/50 rounded-xl p-6 text-center hover:border-node-volt/50 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(204,255,0,0.15)]"
-              >
-                <div className="text-text-white text-sm font-semibold mb-3">{exercise}</div>
-                <div className="text-node-volt text-xs font-bold tracking-wider">SILVER • GOLD • BLACK</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="text-center">
-            <Link
-              href="/auth/register"
-              className="inline-block px-12 py-5 bg-node-volt text-deep-asphalt font-black rounded-2xl text-lg hover:scale-105 transition-all duration-300 shadow-[0_0_30px_rgba(204,255,0,0.4)] hover:shadow-[0_0_50px_rgba(204,255,0,0.6)]"
-              style={{ fontFamily: 'var(--font-space-grotesk)' }}
-            >
-              Explore Exercises
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section className="py-32 bg-deep-asphalt">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
-          <div className="text-center mb-24">
-            <h2 className="text-6xl sm:text-7xl md:text-8xl font-black mb-8 tracking-tight" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-              Choose Your Plan
-            </h2>
-            <p className="text-2xl sm:text-3xl text-muted-text max-w-3xl mx-auto leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
-              Start free, upgrade when you're ready
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {[
-              {
-                name: 'Free',
-                price: '$0',
-                period: 'forever',
-                features: ['Access to workout library', 'Basic progress tracking', '3 AI workouts per month'],
-                cta: 'Get Started',
-                highlight: false,
-              },
-              {
-                name: 'Premium',
-                price: '$19',
-                period: 'month',
-                features: ['Unlimited AI workouts', 'Advanced analytics', 'Program access', 'Priority support'],
-                cta: 'Start Free Trial',
-                highlight: true,
-              },
-              {
-                name: 'Coach',
-                price: 'Custom',
-                period: '',
-                features: ['Everything in Premium', 'Client management', 'Program assignment', 'White-label options'],
-                cta: 'Contact Sales',
-                highlight: false,
-              },
-            ].map((plan) => (
-              <div
-                key={plan.name}
-                className={`relative bg-concrete-grey/50 backdrop-blur-sm border rounded-3xl p-10 transition-all duration-300 ${
-                  plan.highlight
-                    ? 'border-node-volt/50 scale-105 shadow-[0_0_50px_rgba(204,255,0,0.25)]'
-                    : 'border-border-dark/50 hover:border-node-volt/30 hover:scale-[1.02]'
-                }`}
-              >
-                {plan.highlight && (
-                  <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-node-volt text-deep-asphalt px-6 py-2 rounded-full text-sm font-black">
-                    POPULAR
-                  </div>
-                )}
-                <div className="text-center mb-10">
-                  <h3 className="text-3xl font-black mb-4" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                    {plan.name}
-                  </h3>
-                  <div>
-                    <span className="text-6xl font-black">{plan.price}</span>
-                    {plan.period && (
-                      <span className="text-muted-text text-lg ml-2">/{plan.period}</span>
-                    )}
-                  </div>
-                </div>
-
-                <ul className="space-y-4 mb-10" style={{ fontFamily: 'var(--font-manrope)' }}>
-                  {plan.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-3 text-muted-text">
-                      <span className="text-node-volt text-xl font-black mt-0.5">✓</span>
-                      <span className="text-base">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <Link
-                  href="/auth/register"
-                  className={`block w-full text-center font-black py-4 rounded-2xl transition-all duration-300 ${
-                    plan.highlight
-                      ? 'bg-node-volt text-deep-asphalt hover:scale-105 shadow-[0_0_30px_rgba(204,255,0,0.4)] hover:shadow-[0_0_50px_rgba(204,255,0,0.6)]'
-                      : 'bg-tech-grey/50 border border-border-dark/50 text-text-white hover:bg-concrete-grey/50 hover:border-node-volt/30'
-                  }`}
-                  style={{ fontFamily: 'var(--font-space-grotesk)' }}
-                >
-                  {plan.cta}
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-32 bg-gradient-to-b from-concrete-grey/30 to-deep-asphalt">
-        <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12 text-center">
-          <h2 className="text-6xl sm:text-7xl md:text-8xl font-black mb-10 tracking-tight" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-            Ready to Transform Your Training?
-          </h2>
-          <p className="text-2xl sm:text-3xl text-muted-text mb-12 leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
-            Join athletes who train with precision, track with purpose, and perform at their peak.
-          </p>
           <Link
             href="/auth/register"
-            className="inline-block px-16 py-6 bg-node-volt text-deep-asphalt font-black rounded-2xl text-xl hover:scale-105 transition-all duration-300 shadow-[0_0_40px_rgba(204,255,0,0.4)] hover:shadow-[0_0_60px_rgba(204,255,0,0.6)]"
-            style={{ fontFamily: 'var(--font-space-grotesk)' }}
+            className="hidden md:inline-block px-5 py-2 border border-node-volt text-node-volt font-heading font-bold text-xs uppercase tracking-[0.2em] hover:bg-node-volt hover:text-deep-asphalt transition-colors"
           >
-            Start Your Free Account
+            Join
           </Link>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <section className="relative min-h-screen flex items-center pt-24 pb-16 overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-deep-asphalt via-concrete-grey/20 to-deep-asphalt" />
+          <div className="absolute top-16 left-1/4 w-[600px] h-[600px] bg-node-volt/12 rounded-full blur-3xl" />
+          <div className="absolute bottom-10 right-1/4 w-[600px] h-[600px] bg-blue-500/12 rounded-full blur-3xl" />
+          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, #333 1px, transparent 1px), linear-gradient(to bottom, #333 1px, transparent 1px)', backgroundSize: '36px 36px' }} />
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-8 max-w-3xl">
+            <div className="inline-flex items-center gap-2 px-4 py-2 border border-node-volt/40 rounded-full bg-node-volt/10 backdrop-blur-sm">
+              <span className="w-2 h-2 rounded-full bg-node-volt animate-pulse" />
+              <span className="text-[11px] font-heading text-node-volt uppercase tracking-[0.3em]">Performance OS</span>
+            </div>
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-7xl font-heading font-bold leading-[0.95] tracking-tight drop-shadow-2xl">
+              BUILDING INFRASTRUCTURE FOR HUMAN <span className="text-node-volt">OPTIMIZATION.</span>
+            </h1>
+            <p className="text-text-white text-base sm:text-lg max-w-lg border-l-2 border-node-volt/60 pl-5 font-body leading-relaxed">
+              A brutalist training stack for strength, engine, and recovery. Cinematic player, deep analytics, and AI-built sessions.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 pt-2">
+              <Link
+                href="/auth/register"
+                className="px-8 py-4 bg-node-volt text-deep-asphalt font-heading font-bold text-sm uppercase tracking-[0.25em] hover:bg-text-white transition-colors shadow-[0_10px_40px_rgba(204,255,0,0.25)]"
+              >
+                Start Training
+              </Link>
+              <Link
+                href="#platform"
+                className="px-8 py-4 border border-text-white/30 text-text-white font-heading font-bold text-sm uppercase tracking-[0.25em] hover:border-node-volt hover:text-node-volt transition-colors backdrop-blur-sm bg-black/30"
+              >
+                Explore Platform
+              </Link>
+            </div>
+          </div>
+
+          <div className="hidden lg:block relative">
+            <div className="absolute -inset-6 bg-node-volt/15 blur-3xl rounded-full opacity-30" />
+            <div className="relative border border-border-dark/80 bg-concrete-grey/60 backdrop-blur-lg p-6 space-y-4 thin-shadow">
+              <div className="flex justify-between items-start border-b border-border-dark pb-4">
+                <div>
+                  <p className="text-[10px] text-muted-text uppercase tracking-[0.25em] mb-1">Location</p>
+                  <p className="font-heading text-base text-text-white">Digital / IRL</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] text-muted-text uppercase tracking-[0.25em] mb-1">Focus</p>
+                  <p className="font-heading text-base text-node-volt">Strength & Engine</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-deep-asphalt/70 border border-border-dark">
+                  <h3 className="text-xl font-heading font-bold text-text-white">Deck Mode</h3>
+                  <p className="text-[10px] text-muted-text uppercase mt-1">Immersive Player</p>
+                </div>
+                <div className="p-3 bg-deep-asphalt/70 border border-border-dark">
+                  <h3 className="text-xl font-heading font-bold text-node-volt">RPE</h3>
+                  <p className="text-[10px] text-muted-text uppercase mt-1">Precision Logging</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-deep-asphalt/70 border border-border-dark">
+                  <h3 className="text-xl font-heading font-bold text-text-white">AI</h3>
+                  <p className="text-[10px] text-muted-text uppercase mt-1">Session Builder</p>
+                </div>
+                <div className="p-3 bg-deep-asphalt/70 border border-border-dark">
+                  <h3 className="text-xl font-heading font-bold text-node-volt">Ø</h3>
+                  <p className="text-[10px] text-muted-text uppercase mt-1">Brutalist UI</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Platform Sections */}
+      <section id="platform" className="py-20 bg-deep-asphalt border-t border-border-dark">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="mb-12 max-w-2xl">
+            <h2 className="text-4xl sm:text-5xl font-heading font-bold mb-4">THE NØDE STACK</h2>
+            <p className="text-muted-text font-body">
+              Brutalist surfaces, volt highlights, and grid overlays. Every module is built for clarity and intent: train, track, iterate.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                title: 'Deck Mode',
+                desc: 'Full-screen timer, cues, and section progress. Zero distractions.',
+                icon: (
+                  <svg className="w-6 h-6 text-node-volt" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h10M4 18h7" />
+                  </svg>
+                ),
+              },
+              {
+                title: 'Analytics',
+                desc: 'RPE, tonnage, pace, and adherence across cycles with clean visuals.',
+                icon: (
+                  <svg className="w-6 h-6 text-node-volt" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 13l9 0" />
+                  </svg>
+                ),
+              },
+              {
+                title: 'AI Builder',
+                desc: 'Archetype-aware sessions with equipment filters and fast iterations.',
+                icon: (
+                  <svg className="w-6 h-6 text-node-volt" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12m-6-6h12" />
+                  </svg>
+                ),
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="group relative bg-concrete-grey/50 border border-border-dark rounded-2xl p-6 hover:border-node-volt transition-colors overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-node-volt/0 via-node-volt/5 to-node-volt/0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative flex items-center justify-between mb-6">
+                  <div className="w-12 h-12 rounded-full border border-border-dark flex items-center justify-center">
+                    {item.icon}
+                  </div>
+                  <span className="text-[10px] uppercase tracking-[0.3em] text-muted-text">01</span>
+                </div>
+                <h3 className="text-2xl font-heading font-bold mb-3">{item.title}</h3>
+                <p className="text-sm text-muted-text leading-relaxed font-body">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Player Section */}
+      <section id="player" className="py-20 bg-deep-asphalt border-t border-border-dark">
+        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+          <div className="relative order-2 lg:order-1">
+            <div className="absolute -inset-6 bg-node-volt/10 blur-3xl rounded-full opacity-30" />
+            <div className="relative thin-border bg-concrete-grey/70 backdrop-blur-md p-8 space-y-4">
+              <div className="flex justify-between text-xs text-muted-text uppercase tracking-[0.25em]">
+                <span>Deck Mode</span>
+                <span>Now Playing</span>
+              </div>
+              <div className="h-64 rounded-2xl bg-gradient-to-br from-tech-grey to-concrete-grey border border-border-dark flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full border-2 border-node-volt flex items-center justify-center text-node-volt font-heading font-bold">
+                  Ø
+                </div>
+              </div>
+              <div className="flex gap-3 text-sm text-muted-text font-body">
+                <span className="px-3 py-2 rounded-lg border border-border-dark">EMOM</span>
+                <span className="px-3 py-2 rounded-lg border border-border-dark">RPE 8</span>
+                <span className="px-3 py-2 rounded-lg border border-border-dark">Wave</span>
+              </div>
+            </div>
+          </div>
+          <div className="space-y-6 order-1 lg:order-2">
+            <span className="text-node-volt uppercase tracking-[0.25em] text-xs font-heading">Immersive Player</span>
+            <h2 className="text-4xl sm:text-5xl font-heading font-bold">Full-Screen Workout Player</h2>
+            <p className="text-muted-text font-body">
+              Built for IRL sessions: large typography, clean cues, and quick controls. Deck mode keeps you in flow while tracking every section.
+            </p>
+            <ul className="space-y-3 text-text-white font-body">
+              {['Timers & cues tuned for EMOM/AMRAP/Intervals', 'Keyboard shortcuts and quick-jump sections', 'Deck overlay for gym displays'].map((line) => (
+                <li key={line} className="flex items-start gap-3">
+                  <span className="text-node-volt font-heading font-bold">✓</span>
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/auth/register"
+              className="inline-block px-8 py-4 border border-node-volt text-node-volt font-heading font-bold uppercase tracking-[0.25em] hover:bg-node-volt hover:text-deep-asphalt transition-colors"
+            >
+              Try Deck Mode
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Analytics */}
+      <section id="analytics" className="py-20 bg-deep-asphalt border-t border-border-dark">
+        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-6">
+            <span className="text-node-volt uppercase tracking-[0.25em] text-xs font-heading">Analytics</span>
+            <h2 className="text-4xl sm:text-5xl font-heading font-bold">Measurable Progress</h2>
+            <p className="text-muted-text font-body">
+              Volume, RPE distribution, section pacing, and completion rates. Clean visuals with volt highlights for what matters.
+            </p>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {[
+                { label: 'Completion', value: '92%' },
+                { label: 'Avg RPE', value: '7.8' },
+                { label: 'Sessions/Wk', value: '4.2' },
+                { label: 'PRs This Cycle', value: '12' },
+              ].map((stat) => (
+                <div key={stat.label} className="p-4 border border-border-dark rounded-xl bg-concrete-grey/50">
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-text">{stat.label}</p>
+                  <p className="text-2xl font-heading font-bold text-text-white">{stat.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="relative">
+            <div className="absolute -inset-6 bg-blue-500/10 blur-3xl rounded-full opacity-30" />
+            <div className="relative border border-border-dark bg-concrete-grey/60 rounded-2xl p-6 space-y-4">
+              <div className="flex justify-between text-xs text-muted-text uppercase tracking-[0.25em]">
+                <span>Analytics</span>
+                <span>Cycle</span>
+              </div>
+              <div className="h-56 bg-gradient-to-b from-tech-grey to-deep-asphalt rounded-xl border border-border-dark flex items-end gap-2 p-4">
+                {[50, 70, 90, 60, 80, 65].map((h, idx) => (
+                  <div key={idx} className="flex-1 bg-node-volt/60 rounded-t" style={{ height: `${h}%` }} />
+                ))}
+              </div>
+              <p className="text-sm text-muted-text font-body">Visualize workload, intensity, and adherence over each block.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* AI */}
+      <section id="ai" className="py-20 bg-deep-asphalt border-t border-border-dark">
+        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+          <div className="relative order-2 lg:order-1">
+            <div className="absolute -inset-6 bg-node-volt/10 blur-3xl rounded-full opacity-30" />
+            <div className="relative border border-border-dark bg-concrete-grey/60 rounded-2xl p-6 space-y-4">
+              <div className="flex justify-between text-xs text-muted-text uppercase tracking-[0.25em]">
+                <span>AI Builder</span>
+                <span>Archetypes</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {['PR1ME', 'ENGIN3', 'FORGE', 'FLOWSTATE'].map((item) => (
+                  <div key={item} className="p-4 border border-border-dark rounded-lg bg-deep-asphalt/70 text-center">
+                    <p className="font-heading font-bold text-text-white">{item}</p>
+                    <p className="text-[11px] text-muted-text uppercase tracking-[0.2em]">Preset</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm text-muted-text font-body">Prompt-aware, equipment-aware, and archetype-aware. Generate clean sessions in seconds.</p>
+            </div>
+          </div>
+          <div className="space-y-6 order-1 lg:order-2">
+            <span className="text-node-volt uppercase tracking-[0.25em] text-xs font-heading">AI Builder</span>
+            <h2 className="text-4xl sm:text-5xl font-heading font-bold">Sessions in Seconds</h2>
+            <p className="text-muted-text font-body">
+              Choose an archetype, set equipment and time, and let the builder create balanced work with clear prescriptions.
+            </p>
+            <ul className="space-y-3 text-text-white font-body">
+              {['Archetype presets tuned to strength/engine blends', 'Equipment filters for gym / home / travel', 'Instant edit and regenerate flows'].map((line) => (
+                <li key={line} className="flex items-start gap-3">
+                  <span className="text-node-volt font-heading font-bold">✓</span>
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/auth/register"
+              className="inline-block px-8 py-4 border border-node-volt text-node-volt font-heading font-bold uppercase tracking-[0.25em] hover:bg-node-volt hover:text-deep-asphalt transition-colors"
+            >
+              Build with AI
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-20 bg-concrete-grey/10 border-t border-border-dark">
+        <div className="max-w-4xl mx-auto px-6 text-center space-y-6">
+          <h2 className="text-4xl sm:text-5xl font-heading font-bold">Access the NØDE</h2>
+          <p className="text-muted-text font-body">
+            Train with brutalist clarity. Volt highlights. Cinematic player. Analytics and AI built for lifters and coaches.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/auth/register"
+              className="px-10 py-4 bg-node-volt text-deep-asphalt font-heading font-bold uppercase tracking-[0.25em] hover:bg-text-white transition-colors"
+            >
+              Start Now
+            </Link>
+            <Link
+              href="/auth/login"
+              className="px-10 py-4 border border-text-white/30 text-text-white font-heading font-bold uppercase tracking-[0.25em] hover:border-node-volt hover:text-node-volt transition-colors"
+            >
+              Login
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-deep-asphalt border-t border-border-dark/50 py-16">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-            <div>
-              <h3 className="text-3xl font-black mb-4" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                N<span className="text-node-volt">Ø</span>DE
-              </h3>
-              <p className="text-muted-text text-sm leading-relaxed" style={{ fontFamily: 'var(--font-manrope)' }}>
-                The training OS for serious athletes.
-              </p>
+      <footer className="bg-deep-asphalt border-t border-border-dark py-12">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between gap-8">
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 bg-node-volt text-deep-asphalt font-heading font-bold text-sm flex items-center justify-center rounded">
+              Ø
             </div>
-            <div>
-              <h4 className="font-bold mb-4 text-text-white text-lg">Product</h4>
-              <ul className="space-y-3 text-sm text-muted-text" style={{ fontFamily: 'var(--font-manrope)' }}>
-                <li><Link href="#features" className="hover:text-node-volt transition-colors">Features</Link></li>
-                <li><Link href="/programs" className="hover:text-node-volt transition-colors">Programs</Link></li>
-                <li><Link href="/progress" className="hover:text-node-volt transition-colors">Progress</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold mb-4 text-text-white text-lg">Company</h4>
-              <ul className="space-y-3 text-sm text-muted-text" style={{ fontFamily: 'var(--font-manrope)' }}>
-                <li><Link href="#" className="hover:text-node-volt transition-colors">About</Link></li>
-                <li><Link href="#" className="hover:text-node-volt transition-colors">Blog</Link></li>
-                <li><Link href="#" className="hover:text-node-volt transition-colors">Contact</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold mb-4 text-text-white text-lg">Legal</h4>
-              <ul className="space-y-3 text-sm text-muted-text" style={{ fontFamily: 'var(--font-manrope)' }}>
-                <li><Link href="#" className="hover:text-node-volt transition-colors">Privacy</Link></li>
-                <li><Link href="#" className="hover:text-node-volt transition-colors">Terms</Link></li>
-              </ul>
-            </div>
+            <span className="font-heading font-bold text-lg">NØDE</span>
           </div>
-          <div className="border-t border-border-dark/50 pt-8 text-center text-muted-text text-sm" style={{ fontFamily: 'var(--font-manrope)' }}>
+          <div className="flex gap-6 text-sm text-muted-text font-body">
+            <Link href="/programs" className="hover:text-node-volt transition-colors">Programs</Link>
+            <Link href="/progress" className="hover:text-node-volt transition-colors">Progress</Link>
+            <Link href="/gym" className="hover:text-node-volt transition-colors">Gyms</Link>
+          </div>
+          <div className="text-sm text-muted-text font-body">
             © {new Date().getFullYear()} NØDE Performance. All rights reserved.
           </div>
         </div>

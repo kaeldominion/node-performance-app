@@ -40,10 +40,10 @@ export default function LoginPage() {
         <div className="bg-concrete-grey/80 backdrop-blur-xl border border-border-dark/50 rounded-3xl p-10 shadow-2xl">
           {/* Logo */}
           <div className="text-center mb-10">
-            <h1 className="text-5xl font-black mb-3" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+            <h1 className="text-5xl font-bold mb-3 font-heading">
               N<span className="text-node-volt">Ø</span>DE
             </h1>
-            <p className="text-muted-text text-lg">Performance Training Platform</p>
+            <p className="text-muted-text text-lg font-body">Performance Training Platform</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -86,8 +86,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-node-volt text-deep-asphalt font-bold py-4 rounded-xl hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 shadow-[0_0_20px_rgba(204,255,0,0.3)] hover:shadow-[0_0_30px_rgba(204,255,0,0.5)]"
-              style={{ fontFamily: 'var(--font-space-grotesk)' }}
+              className="w-full bg-node-volt text-deep-asphalt font-bold py-4 rounded-xl hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 shadow-[0_0_20px_rgba(204,255,0,0.3)] hover:shadow-[0_0_30px_rgba(204,255,0,0.5)] font-heading"
             >
               {loading ? 'Logging in...' : 'Login'}
             </button>

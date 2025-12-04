@@ -13,27 +13,27 @@ const archetypeConfig = {
   },
   FORGE: {
     label: 'FORGE',
-    color: 'bg-yellow-600 text-white',
+    color: 'bg-yellow-500 text-deep-asphalt',
     description: 'Strength Superset',
   },
   ENGIN3: {
     label: 'ENGIN3',
-    color: 'bg-blue-600 text-white',
+    color: 'bg-blue-500 text-text-white',
     description: 'Hybrid EMOM',
   },
   CIRCUIT_X: {
     label: 'CIRCUIT X',
-    color: 'bg-red-600 text-white',
+    color: 'bg-red-500 text-text-white',
     description: 'Anaerobic MetCon',
   },
   CAPAC1TY: {
     label: 'CAPAC1TY',
-    color: 'bg-purple-600 text-white',
+    color: 'bg-purple-500 text-text-white',
     description: 'Long Engine',
   },
   FLOWSTATE: {
     label: 'FLOWSTATE',
-    color: 'bg-green-600 text-white',
+    color: 'bg-green-500 text-text-white',
     description: 'Recovery Flow',
   },
 };

@@ -6,7 +6,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
+  weight: "variable",
   display: "swap",
 });
 

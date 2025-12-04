@@ -62,7 +62,7 @@ export default function ProgramsPage() {
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-4xl font-bold mb-8">Programs</h1>
+        <h1 className="text-4xl font-bold mb-8 font-heading">Programs</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {programs.map((program) => (
@@ -71,9 +71,9 @@ export default function ProgramsPage() {
               href={`/programs/${program.slug}`}
               className="bg-concrete-grey border border-border-dark rounded-lg p-6 hover:border-node-volt transition-colors"
             >
-              <h2 className="text-2xl font-bold mb-2">{program.name}</h2>
+              <h2 className="text-2xl font-bold mb-2 font-heading">{program.name}</h2>
               {program.description && (
-                <p className="text-muted-text mb-4">{program.description}</p>
+                <p className="text-muted-text mb-4 font-body">{program.description}</p>
               )}
               <div className="flex gap-4 text-sm">
                 {program.level && (
@@ -89,7 +89,7 @@ export default function ProgramsPage() {
 
         {programs.length === 0 && (
           <div className="bg-concrete-grey border border-border-dark rounded-lg p-8 text-center">
-            <p className="text-muted-text">No programs available yet.</p>
+            <p className="text-muted-text font-body">No programs available yet.</p>
           </div>
         )}
       </main>

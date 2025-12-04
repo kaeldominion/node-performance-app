@@ -96,9 +96,9 @@ export default function ProgramDetailPage() {
         </Link>
 
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-4">{program.name}</h1>
+          <h1 className="text-4xl font-bold mb-4 font-heading">{program.name}</h1>
           {program.description && (
-            <p className="text-muted-text text-lg mb-4">{program.description}</p>
+            <p className="text-muted-text text-lg mb-4 font-body">{program.description}</p>
           )}
           <div className="flex gap-4 text-sm">
             {program.level && (
@@ -114,7 +114,7 @@ export default function ProgramDetailPage() {
         </div>
 
         <div className="bg-concrete-grey border border-border-dark rounded-lg p-6 mb-8">
-          <h2 className="text-2xl font-bold mb-4">Workouts</h2>
+          <h2 className="text-2xl font-bold mb-4 font-heading">Workouts</h2>
           <div className="space-y-3">
             {program.workouts.map((workout) => (
               <Link
@@ -128,7 +128,7 @@ export default function ProgramDetailPage() {
                       {workout.displayCode && (
                         <span className="text-node-volt font-mono">{workout.displayCode}</span>
                       )}{' '}
-                      <span className="font-medium">{workout.name}</span>
+                      <span className="font-medium font-body">{workout.name}</span>
                       {workout.dayIndex !== null && workout.dayIndex !== undefined && (
                         <span className="text-muted-text ml-2">Day {workout.dayIndex + 1}</span>
                       )}
@@ -145,7 +145,7 @@ export default function ProgramDetailPage() {
         <button
           onClick={handleStartProgram}
           disabled={starting}
-          className="bg-node-volt text-deep-asphalt font-bold px-8 py-3 rounded hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+          className="bg-node-volt text-deep-asphalt font-bold px-8 py-3 rounded hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity font-heading"
         >
           {starting ? 'Starting...' : 'Start This Program'}
         </button>

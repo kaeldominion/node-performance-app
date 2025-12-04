@@ -72,29 +72,29 @@ export default function Dashboard() {
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+          <h1 className="text-4xl font-bold mb-2 font-heading">
             Welcome back, {user.name || 'Athlete'}
           </h1>
-          <p className="text-muted-text">Ready to train?</p>
+          <p className="text-muted-text font-body">Ready to train?</p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
-            <div className="text-muted-text text-sm mb-2">Streak</div>
-            <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+            <div className="text-muted-text text-sm mb-2 font-body">Streak</div>
+            <div className="text-3xl font-bold text-node-volt font-heading">
               {stats.streak} days
             </div>
           </div>
           <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
-            <div className="text-muted-text text-sm mb-2">Completed</div>
-            <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+            <div className="text-muted-text text-sm mb-2 font-body">Completed</div>
+            <div className="text-3xl font-bold text-node-volt font-heading">
               {stats.completed} workouts
             </div>
           </div>
           <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
-            <div className="text-muted-text text-sm mb-2">This Week</div>
-            <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+            <div className="text-muted-text text-sm mb-2 font-body">This Week</div>
+            <div className="text-3xl font-bold text-node-volt font-heading">
               {recentSessions.length}
             </div>
           </div>
@@ -103,18 +103,17 @@ export default function Dashboard() {
         {/* Today's Session */}
         {todaySession && (
           <div className="bg-concrete-grey border border-border-dark rounded-lg p-6 mb-8">
-            <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+            <h2 className="text-2xl font-bold mb-4 font-heading">
               Today's Workout
             </h2>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-semibold mb-2">{todaySession.workoutName}</h3>
-                <p className="text-muted-text">Day {todaySession.dayIndex}</p>
+                <h3 className="text-xl font-semibold mb-2 font-heading">{todaySession.workoutName}</h3>
+                <p className="text-muted-text font-body">Day {todaySession.dayIndex}</p>
               </div>
               <Link
                 href={`/workouts/${todaySession.workoutId}`}
-                className="bg-node-volt text-deep-asphalt font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
-                style={{ fontFamily: 'var(--font-space-grotesk)' }}
+                className="bg-node-volt text-deep-asphalt font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity font-heading"
               >
                 Start Workout
               </Link>
@@ -128,26 +127,26 @@ export default function Dashboard() {
             href="/programs"
             className="bg-concrete-grey border border-border-dark rounded-lg p-6 hover:border-node-volt transition-colors"
           >
-            <h3 className="text-xl font-bold mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+            <h3 className="text-xl font-bold mb-2 font-heading">
               Browse Programs
             </h3>
-            <p className="text-muted-text">Explore training programs</p>
+            <p className="text-muted-text font-body">Explore training programs</p>
           </Link>
           <Link
             href="/ai/workout-builder"
             className="bg-concrete-grey border border-border-dark rounded-lg p-6 hover:border-node-volt transition-colors"
           >
-            <h3 className="text-xl font-bold mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+            <h3 className="text-xl font-bold mb-2 font-heading">
               AI Workout Builder
             </h3>
-            <p className="text-muted-text">Generate custom workouts</p>
+            <p className="text-muted-text font-body">Generate custom workouts</p>
           </Link>
         </div>
 
         {/* Recent Sessions */}
         {recentSessions.length > 0 && (
           <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
-            <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+            <h2 className="text-2xl font-bold mb-4 font-heading">
               Recent Sessions
             </h2>
             <div className="space-y-3">
@@ -157,13 +156,13 @@ export default function Dashboard() {
                   className="bg-tech-grey border border-border-dark rounded-lg p-4 flex items-center justify-between"
                 >
                   <div>
-                    <div className="font-medium">{session.workout?.name || 'Workout'}</div>
-                    <div className="text-sm text-muted-text">
+                    <div className="font-medium font-body">{session.workout?.name || 'Workout'}</div>
+                    <div className="text-sm text-muted-text font-body">
                       {new Date(session.startedAt).toLocaleDateString()}
                     </div>
                   </div>
                   {session.rpe && (
-                    <div className="text-node-volt font-bold">RPE: {session.rpe}</div>
+                    <div className="text-node-volt font-bold font-heading">RPE: {session.rpe}</div>
                   )}
                 </div>
               ))}
