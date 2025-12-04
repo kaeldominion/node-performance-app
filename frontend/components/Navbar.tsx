@@ -33,6 +33,11 @@ export default function Navbar() {
                 <Link href="/progress" className="text-muted-text hover:text-text-white transition-colors">
                   Progress
                 </Link>
+                {(user.role === 'COACH' || user.isAdmin) && (
+                  <Link href="/coach" className="text-muted-text hover:text-text-white transition-colors">
+                    Coach
+                  </Link>
+                )}
                 {user.isAdmin && (
                   <Link href="/admin" className="text-node-volt hover:text-node-volt/80 transition-colors font-semibold">
                     Admin
