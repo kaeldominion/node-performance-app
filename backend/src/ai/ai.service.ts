@@ -134,7 +134,7 @@ Ensure each workout time fits within ${params.availableMinutes} minutes.`;
         : { type: 'json_object' as const }; // Still JSON object, but will contain workouts array
 
       const completion = await this.openai.chat.completions.create({
-        model: 'gpt-4-turbo-preview',
+        model: 'gpt-4o', // Updated to use gpt-4o model
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },

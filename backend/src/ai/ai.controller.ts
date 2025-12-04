@@ -1,10 +1,10 @@
 import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { AiService } from './ai.service';
-import { ClerkAuthGuard } from '../auth/clerk.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GenerateWorkoutDto } from './dto/generate-workout.dto';
 
 @Controller('ai')
-@UseGuards(ClerkAuthGuard)
+@UseGuards(JwtAuthGuard)
 export class AiController {
   constructor(private aiService: AiService) {}
 
