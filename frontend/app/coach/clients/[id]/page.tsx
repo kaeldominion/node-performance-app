@@ -51,8 +51,8 @@ export default function ClientDetailPage() {
       const [assignmentsData, programsData, statsData, trendsData] = await Promise.all([
         coachApi.getClientAssignments(clientId).catch(() => []),
         programsApi.getAll().catch(() => []),
-        analyticsApi.getStats().catch(() => null),
-        analyticsApi.getTrends(30).catch(() => null),
+        analyticsApi.getClientStats(clientId).catch(() => null),
+        analyticsApi.getClientTrends(clientId, 30).catch(() => null),
       ]);
 
       setAssignments(assignmentsData);
@@ -60,9 +60,15 @@ export default function ClientDetailPage() {
       setStats(statsData);
       setTrends(trendsData);
 
-      // Get client info from assignments
-      if (assignmentsData.length > 0) {
-        setClient(assignmentsData[0].program?.userPrograms?.[0]?.user || null);
+      // Get client info - try to get from coach clients list
+      try {
+        const clients = await coachApi.getClients();
+        const clientData = clients.find((c: any) => c.clientId === clientId);
+        if (clientData) {
+          setClient(clientData.client);
+        }
+      } catch (error) {
+        console.error('Failed to load client info:', error);
       }
     } catch (error) {
       console.error('Failed to load client data:', error);
@@ -96,8 +102,8 @@ export default function ClientDetailPage() {
     return null;
   }
 
-  const trendsChartData = trends?.dailyStats
-    ? trends.dailyStats.map((day: any) => ({
+  const trendsChartData = Array.isArray(trends)
+    ? trends.map((day: any) => ({
         date: new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         sessions: day.sessions,
         avgRPE: Math.round(day.avgRPE * 10) / 10,
@@ -149,7 +155,7 @@ export default function ClientDetailPage() {
             <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
               <div className="text-muted-text text-sm mb-2">Total Hours</div>
               <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                {stats.totalDurationHours ? Math.round(stats.totalDurationHours * 10) / 10 : 0}
+                {stats.totalDurationSec ? Math.round((stats.totalDurationSec / 3600) * 10) / 10 : 0}
               </div>
             </div>
             <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">

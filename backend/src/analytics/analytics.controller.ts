@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Request, Param } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -63,5 +63,29 @@ export class AnalyticsController {
     @Query('days') days?: string,
   ) {
     return this.analyticsService.getTrends(req.user.id, days ? parseInt(days) : 30);
+  }
+
+  // Coach endpoints to view client analytics
+  @Get('clients/:clientId/stats')
+  async getClientStats(
+    @Request() req,
+    @Param('clientId') clientId: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.analyticsService.getUserStats(
+      clientId,
+      startDate ? new Date(startDate) : undefined,
+      endDate ? new Date(endDate) : undefined,
+    );
+  }
+
+  @Get('clients/:clientId/trends')
+  async getClientTrends(
+    @Request() req,
+    @Param('clientId') clientId: string,
+    @Query('days') days?: string,
+  ) {
+    return this.analyticsService.getTrends(clientId, days ? parseInt(days) : 30);
   }
 }

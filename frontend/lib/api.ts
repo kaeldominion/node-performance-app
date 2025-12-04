@@ -177,6 +177,18 @@ export const analyticsApi = {
     const response = await api.get(`/analytics/trends?days=${days}`);
     return response.data;
   },
+  // Coach endpoints for client analytics
+  getClientStats: async (clientId: string, startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    const response = await api.get(`/analytics/clients/${clientId}/stats?${params.toString()}`);
+    return response.data;
+  },
+  getClientTrends: async (clientId: string, days: number = 30) => {
+    const response = await api.get(`/analytics/clients/${clientId}/trends?days=${days}`);
+    return response.data;
+  },
 };
 
 // Coach API
