@@ -7,6 +7,7 @@ import {
   Request,
   Param,
   Patch,
+  Post,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -50,5 +51,26 @@ export class AdminUsersController {
   @Patch(':id/admin')
   async setAdmin(@Param('id') id: string, @Body() body: { isAdmin: boolean }) {
     return this.usersService.setAdmin(id, body.isAdmin);
+  }
+}
+
+// One-time endpoint to set initial admin - remove after use
+@Controller('setup')
+export class SetupController {
+  constructor(private usersService: UsersService) {}
+
+  @Post('make-admin')
+  async makeAdmin(@Body() body: { email: string; secret: string }) {
+    // Simple secret check - remove this endpoint after use
+    if (body.secret !== process.env.ADMIN_SETUP_SECRET || !body.secret) {
+      return { error: 'Unauthorized' };
+    }
+
+    const user = await this.usersService.findByEmail(body.email);
+    if (!user) {
+      return { error: 'User not found' };
+    }
+
+    return this.usersService.setAdmin(user.id, true);
   }
 }
