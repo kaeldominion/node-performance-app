@@ -83,9 +83,20 @@ export default function WorkoutBuilderPage() {
 
     try {
       setLoading(true);
-      const savedWorkout = await workoutsApi.create(generatedWorkout);
-      // Navigate to the workout page
-      router.push(`/workouts/${savedWorkout.id}`);
+      
+      // Handle arrays (week/month programs) vs single workout
+      if (Array.isArray(generatedWorkout)) {
+        // Save each workout in the program
+        const savedWorkouts = await Promise.all(
+          generatedWorkout.map((workout) => workoutsApi.create(workout))
+        );
+        // Navigate to first workout or programs page
+        router.push(`/workouts/${savedWorkouts[0].id}`);
+      } else {
+        // Single workout
+        const savedWorkout = await workoutsApi.create(generatedWorkout);
+        router.push(`/workouts/${savedWorkout.id}`);
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to save workout. Please try again.');
       console.error('Failed to save workout:', err);
