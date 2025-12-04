@@ -168,28 +168,22 @@ model ExerciseBlock {
   distance      Int?
   distanceUnit  String?
 
-  tierSilverId  String?  @unique
-  tierSilver    TierPrescription? @relation("SilverTier", fields: [tierSilverId], references: [id])
-  tierGoldId    String?  @unique
-  tierGold      TierPrescription? @relation("GoldTier", fields: [tierGoldId], references: [id])
-  tierBlackId   String?  @unique
-  tierBlack     TierPrescription? @relation("BlackTier", fields: [tierBlackId], references: [id])
+  tierPrescriptions TierPrescription[]
 
   @@map("exercise_blocks")
 }
 
 model TierPrescription {
   id         String        @id @default(cuid())
+  blockId    String
+  block      ExerciseBlock @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
   tier       Tier
   load       String?
   targetReps Int?
   notes      String?
 
-  // Back-relations (only one will be set per prescription)
-  blockAsSilver ExerciseBlock? @relation("SilverTier")
-  blockAsGold   ExerciseBlock? @relation("GoldTier")
-  blockAsBlack  ExerciseBlock? @relation("BlackTier")
-
+  @@unique([blockId, tier])
   @@map("tier_prescriptions")
 }
 

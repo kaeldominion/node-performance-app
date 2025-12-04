@@ -18,7 +18,7 @@ export class ProgramsService {
   }
 
   async findBySlug(slug: string) {
-    return this.prisma.program.findUnique({
+    const program = await this.prisma.program.findUnique({
       where: { slug },
       include: {
         workouts: {
@@ -30,9 +30,7 @@ export class ProgramsService {
                 blocks: {
                   orderBy: { order: 'asc' },
                   include: {
-                    tierSilver: true,
-                    tierGold: true,
-                    tierBlack: true,
+                    tierPrescriptions: true,
                   },
                 },
               },
@@ -41,6 +39,26 @@ export class ProgramsService {
         },
       },
     });
+
+    if (!program) return null;
+
+    // Transform tierPrescriptions to tierSilver, tierGold, tierBlack
+    return {
+      ...program,
+      workouts: program.workouts.map((workout) => ({
+        ...workout,
+        sections: workout.sections.map((section) => ({
+          ...section,
+          blocks: section.blocks.map((block) => ({
+            ...block,
+            tierSilver: block.tierPrescriptions.find((t) => t.tier === 'SILVER') || null,
+            tierGold: block.tierPrescriptions.find((t) => t.tier === 'GOLD') || null,
+            tierBlack: block.tierPrescriptions.find((t) => t.tier === 'BLACK') || null,
+            tierPrescriptions: undefined,
+          })),
+        })),
+      })),
+    };
   }
 
   async create(createProgramDto: any) {

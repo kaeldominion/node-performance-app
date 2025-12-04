@@ -6,7 +6,7 @@ export class WorkoutsService {
   constructor(private prisma: PrismaService) {}
 
   async findOne(id: string) {
-    return this.prisma.workout.findUnique({
+    const workout = await this.prisma.workout.findUnique({
       where: { id },
       include: {
         sections: {
@@ -15,21 +15,36 @@ export class WorkoutsService {
             blocks: {
               orderBy: { order: 'asc' },
               include: {
-                tierSilver: true,
-                tierGold: true,
-                tierBlack: true,
+                tierPrescriptions: true,
               },
             },
           },
         },
       },
     });
+
+    if (!workout) return null;
+
+    // Transform tierPrescriptions array to tierSilver, tierGold, tierBlack
+    return {
+      ...workout,
+      sections: workout.sections.map((section) => ({
+        ...section,
+        blocks: section.blocks.map((block) => ({
+          ...block,
+          tierSilver: block.tierPrescriptions.find((t) => t.tier === 'SILVER') || null,
+          tierGold: block.tierPrescriptions.find((t) => t.tier === 'GOLD') || null,
+          tierBlack: block.tierPrescriptions.find((t) => t.tier === 'BLACK') || null,
+          tierPrescriptions: undefined, // Remove from response
+        })),
+      })),
+    };
   }
 
   async create(createWorkoutDto: any) {
     const { sections, ...workoutData } = createWorkoutDto;
 
-    return this.prisma.workout.create({
+    const workout = await this.prisma.workout.create({
       data: {
         ...workoutData,
         sections: {
@@ -38,17 +53,14 @@ export class WorkoutsService {
             blocks: {
               create: section.blocks?.map((block: any) => {
                 const { tierSilver, tierGold, tierBlack, ...blockData } = block;
+                const tierPrescriptions = [];
+                if (tierSilver) tierPrescriptions.push({ ...tierSilver, tier: 'SILVER' });
+                if (tierGold) tierPrescriptions.push({ ...tierGold, tier: 'GOLD' });
+                if (tierBlack) tierPrescriptions.push({ ...tierBlack, tier: 'BLACK' });
+                
                 return {
                   ...blockData,
-                  tierSilver: tierSilver
-                    ? { create: { ...tierSilver, tier: 'SILVER' } }
-                    : undefined,
-                  tierGold: tierGold
-                    ? { create: { ...tierGold, tier: 'GOLD' } }
-                    : undefined,
-                  tierBlack: tierBlack
-                    ? { create: { ...tierBlack, tier: 'BLACK' } }
-                    : undefined,
+                  tierPrescriptions: tierPrescriptions.length > 0 ? { create: tierPrescriptions } : undefined,
                 };
               }),
             },
@@ -60,15 +72,28 @@ export class WorkoutsService {
           include: {
             blocks: {
               include: {
-                tierSilver: true,
-                tierGold: true,
-                tierBlack: true,
+                tierPrescriptions: true,
               },
             },
           },
         },
       },
     });
+
+    // Transform response to match expected format
+    return {
+      ...workout,
+      sections: workout.sections.map((section) => ({
+        ...section,
+        blocks: section.blocks.map((block) => ({
+          ...block,
+          tierSilver: block.tierPrescriptions.find((t) => t.tier === 'SILVER') || null,
+          tierGold: block.tierPrescriptions.find((t) => t.tier === 'GOLD') || null,
+          tierBlack: block.tierPrescriptions.find((t) => t.tier === 'BLACK') || null,
+          tierPrescriptions: undefined,
+        })),
+      })),
+    };
   }
 }
 
