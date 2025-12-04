@@ -113,18 +113,42 @@ enum TypicalUse {
   FLOWSTATE
 }
 
-model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  name         String?
-  isAdmin      Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+enum UserRole {
+  SUPERADMIN
+  HOME_USER
+  COACH
+  GYM_OWNER
+}
 
-  profile  UserProfile?
-  programs UserProgram[]
-  sessions SessionLog[]
+enum SubscriptionTier {
+  FREE
+  BASIC
+  PREMIUM
+  COACH
+  GYM
+}
+
+model User {
+  id               String           @id @default(cuid())
+  email            String           @unique
+  passwordHash     String
+  name             String?
+  role             UserRole         @default(HOME_USER)
+  isAdmin          Boolean          @default(false) // Legacy - use role instead
+  subscriptionTier SubscriptionTier @default(FREE)
+  subscriptionEnds DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  profile         UserProfile?
+  programs        UserProgram[]
+  sessions        SessionLog[]
+  coachProfile    CoachProfile?
+  gymProfile      GymProfile?
+  clients         CoachClient[]        @relation("CoachClients")
+  assignedBy      CoachClient[]        @relation("AssignedBy")
+  gymMemberships  GymMember[]
+  classAttendance GymClassAttendance[]
 
   @@map("users")
 }
@@ -134,11 +158,14 @@ model UserProfile {
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  trainingLevel TrainingLevel
-  primaryGoal   TrainingGoal?
-  equipment     String[]
-  daysPerWeek   Int?
-  notes         String?
+  trainingLevel  TrainingLevel
+  primaryGoal    TrainingGoal?
+  equipment      String[]
+  daysPerWeek    Int?
+  availableSpace String[] // SPOT, OPEN_AREA, LANE_5M, LANE_10M, RUN_ROUTE
+  injuries       String[] // List of injuries/limitations
+  limitations    String[] // Movement restrictions
+  notes          String?
 
   @@map("user_profiles")
 }
@@ -153,9 +180,14 @@ model Program {
   durationWeeks Int?
   isPublic      Boolean        @default(true)
   currentCycle  ProgramCycle?
+  createdBy     String? // userId or null for system programs
+  coachId       String? // If created by a coach
+  coach         CoachProfile?  @relation("CoachPrograms", fields: [coachId], references: [id], onDelete: SetNull)
 
   workouts     Workout[]
   userPrograms UserProgram[]
+  assignments  ProgramAssignment[]
+  sessions     SessionLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -164,9 +196,11 @@ model Program {
 }
 
 model Workout {
-  id        String   @id @default(cuid())
-  programId String?
-  program   Program? @relation(fields: [programId], references: [id], onDelete: SetNull)
+  id         String           @id @default(cuid())
+  programId  String?
+  program    Program?         @relation(fields: [programId], references: [id], onDelete: SetNull)
+  templateId String?
+  template   WorkoutTemplate? @relation("TemplateWorkouts", fields: [templateId], references: [id], onDelete: SetNull)
 
   name        String
   displayCode String?
@@ -174,8 +208,9 @@ model Workout {
   archetype   WorkoutArchetype?
   description String? // Archetype-specific description
 
-  sections WorkoutSection[]
-  sessions SessionLog[]
+  sections   WorkoutSection[]
+  sessions   SessionLog[]
+  gymClasses GymClass[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -259,12 +294,32 @@ model SessionLog {
   workoutId String
   workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
 
-  performedAt DateTime @default(now())
-  durationSec Int?
-  completed   Boolean  @default(false)
-  rpe         Int?
-  notes       String?
-  metrics     Json?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  durationSec Int? // Total duration in seconds
+  completed   Boolean   @default(false)
+
+  rpe   Int? // Rate of Perceived Exertion (1-10)
+  notes String?
+
+  // Detailed metrics (JSON for flexibility)
+  metrics Json? // { weights: {...}, reps: {...}, times: {...}, volume: {...} }
+
+  // Heart rate data (future)
+  avgHeartRate Int?
+  maxHeartRate Int?
+
+  // Program tracking
+  programId String?
+  program   Program? @relation(fields: [programId], references: [id], onDelete: SetNull)
+  weekIndex Int?
+  dayIndex  Int?
+
+  // Gym class tracking
+  gymClassAttendance GymClassAttendance?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("session_logs")
 }
@@ -304,4 +359,152 @@ model ExerciseTier {
 
   @@unique([exerciseId, tier])
   @@map("exercise_tiers")
+}
+
+// Coach System
+model CoachProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  bio            String?
+  specialties    String[]
+  certifications String[]
+  website        String?
+  instagram      String?
+
+  clients  CoachClient[]
+  programs Program[]     @relation("CoachPrograms")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("coach_profiles")
+}
+
+model CoachClient {
+  id       String @id @default(cuid())
+  coachId  String
+  coach    User   @relation("CoachClients", fields: [coachId], references: [id], onDelete: Cascade)
+  clientId String
+  client   User   @relation("AssignedBy", fields: [clientId], references: [id], onDelete: Cascade)
+
+  status    String    @default("ACTIVE") // ACTIVE, PAUSED, COMPLETED
+  notes     String?
+  startDate DateTime  @default(now())
+  endDate   DateTime?
+
+  assignments    ProgramAssignment[]
+  CoachProfile   CoachProfile?       @relation(fields: [coachProfileId], references: [id])
+  coachProfileId String?
+
+  @@unique([coachId, clientId])
+  @@map("coach_clients")
+}
+
+model ProgramAssignment {
+  id            String      @id @default(cuid())
+  coachClientId String
+  coachClient   CoachClient @relation(fields: [coachClientId], references: [id], onDelete: Cascade)
+  programId     String
+  program       Program     @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  assignedAt DateTime @default(now())
+  startDate  DateTime
+  status     String   @default("ACTIVE") // ACTIVE, COMPLETED, PAUSED
+
+  @@unique([coachClientId, programId])
+  @@map("program_assignments")
+}
+
+// Gym System
+model GymProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name      String
+  address   String?
+  website   String?
+  instagram String?
+  logo      String?
+
+  members GymMember[]
+  classes GymClass[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("gym_profiles")
+}
+
+model GymMember {
+  id     String     @id @default(cuid())
+  gymId  String
+  gym    GymProfile @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  userId String
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  status   String   @default("ACTIVE") // ACTIVE, INACTIVE
+  joinedAt DateTime @default(now())
+
+  @@unique([gymId, userId])
+  @@map("gym_members")
+}
+
+model GymClass {
+  id    String     @id @default(cuid())
+  gymId String
+  gym   GymProfile @relation(fields: [gymId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  workoutId   String?
+  workout     Workout? @relation(fields: [workoutId], references: [id], onDelete: SetNull)
+
+  scheduledAt DateTime
+  duration    Int? // minutes
+  capacity    Int?
+  attendees   GymClassAttendance[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("gym_classes")
+}
+
+model GymClassAttendance {
+  id      String   @id @default(cuid())
+  classId String
+  class   GymClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  attended     Boolean     @default(false)
+  sessionLogId String?     @unique
+  sessionLog   SessionLog? @relation(fields: [sessionLogId], references: [id], onDelete: SetNull)
+
+  @@unique([classId, userId])
+  @@map("gym_class_attendance")
+}
+
+// Template System for NØDE Archetypes
+model WorkoutTemplate {
+  id          String           @id @default(cuid())
+  name        String
+  archetype   WorkoutArchetype
+  description String?
+
+  // Template structure definition (JSON)
+  structure Json // Defines sections, timing, rules for this archetype
+
+  isPublic  Boolean @default(false)
+  createdBy String? // userId or null for system templates
+
+  workouts Workout[] @relation("TemplateWorkouts")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("workout_templates")
 }
