@@ -67,7 +67,7 @@ export default function ProgressPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-deep-asphalt flex items-center justify-center">
+      <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-muted-text">Loading progress...</div>
       </div>
     );
@@ -102,7 +102,7 @@ export default function ProgressPage() {
     : [];
 
   return (
-    <div className="min-h-screen bg-deep-asphalt">
+    <div className="min-h-screen bg-dark">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
@@ -114,25 +114,25 @@ export default function ProgressPage() {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+          <div className="bg-panel thin-border rounded-lg p-6">
             <div className="text-muted-text text-sm mb-2">Total Sessions</div>
             <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               {stats?.totalSessions || 0}
             </div>
           </div>
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+          <div className="bg-panel thin-border rounded-lg p-6">
             <div className="text-muted-text text-sm mb-2">Total Hours</div>
             <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               {stats?.totalDurationHours ? Math.round(stats.totalDurationHours * 10) / 10 : 0}
             </div>
           </div>
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+          <div className="bg-panel thin-border rounded-lg p-6">
             <div className="text-muted-text text-sm mb-2">Average RPE</div>
             <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               {stats?.avgRPE || 0}
             </div>
           </div>
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+          <div className="bg-panel thin-border rounded-lg p-6">
             <div className="text-muted-text text-sm mb-2">Completion Rate</div>
             <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               {stats?.completionRate || 0}%
@@ -143,7 +143,7 @@ export default function ProgressPage() {
         {/* Charts Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* RPE Distribution */}
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+          <div className="bg-panel thin-border rounded-lg p-6">
             <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               RPE Distribution
             </h2>
@@ -166,7 +166,7 @@ export default function ProgressPage() {
           </div>
 
           {/* Archetype Breakdown */}
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+          <div className="bg-panel thin-border rounded-lg p-6">
             <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               Workout Archetypes
             </h2>
@@ -200,7 +200,7 @@ export default function ProgressPage() {
         </div>
 
         {/* Trends Chart */}
-        <div className="bg-concrete-grey border border-border-dark rounded-lg p-6 mb-8">
+        <div className="bg-panel thin-border rounded-lg p-6 mb-8">
           <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
             30-Day Trends
           </h2>
@@ -249,7 +249,7 @@ export default function ProgressPage() {
 
         {/* Strength PRs */}
         {strengthData?.prs && Object.keys(strengthData.prs).length > 0 && (
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-6 mb-8">
+          <div className="bg-panel thin-border rounded-lg p-6 mb-8">
             <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               Personal Records (PRs)
             </h2>
@@ -257,7 +257,7 @@ export default function ProgressPage() {
               {Object.entries(strengthData.prs).map(([exercise, pr]: [string, any]) => (
                 <div
                   key={exercise}
-                  className="bg-tech-grey border border-border-dark rounded-lg p-4"
+                  className="bg-panel thin-border rounded-lg p-4"
                 >
                   <div className="text-node-volt font-bold text-lg mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                     {exercise}
@@ -276,7 +276,7 @@ export default function ProgressPage() {
 
         {/* Recent Sessions */}
         {stats?.sessions && stats.sessions.length > 0 && (
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+          <div className="bg-panel thin-border rounded-lg p-6">
             <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               Recent Sessions
             </h2>
@@ -284,7 +284,7 @@ export default function ProgressPage() {
               {stats.sessions.map((session: any) => (
                 <div
                   key={session.id}
-                  className="bg-tech-grey border border-border-dark rounded-lg p-4 flex items-center justify-between"
+                  className="bg-panel thin-border rounded-lg p-4 flex items-center justify-between"
                 >
                   <div>
                     <div className="text-text-white font-medium text-lg">

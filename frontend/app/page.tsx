@@ -28,7 +28,7 @@ export default function LandingPage() {
 
   if (shouldShowLoading) {
     return (
-      <div className="min-h-screen bg-deep-asphalt flex items-center justify-center">
+      <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-muted-text font-body">Loading...</div>
       </div>
     );
@@ -37,7 +37,7 @@ export default function LandingPage() {
   if (user) return null;
 
   return (
-    <div className="min-h-screen bg-deep-asphalt text-text-white relative overflow-hidden">
+    <div className="min-h-screen bg-dark text-text-white relative overflow-hidden">
       {/* Parallax symbol */}
       <div className="pointer-events-none fixed inset-0 flex items-center justify-center">
         <div className="font-heading font-bold text-[55vh] text-text-white/5 leading-none select-none">
@@ -46,10 +46,10 @@ export default function LandingPage() {
       </div>
 
       {/* Top nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-deep-asphalt/90 backdrop-blur-md border-b thin-border">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-dark/90 backdrop-blur-md border-b thin-border">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-node-volt text-deep-asphalt font-heading font-bold text-lg flex items-center justify-center rounded">
+            <div className="w-8 h-8 bg-node-volt text-dark font-heading font-bold text-lg flex items-center justify-center">
               Ø
             </div>
             <span className="font-heading font-bold tracking-tight text-xl">NØDE</span>
@@ -62,7 +62,7 @@ export default function LandingPage() {
           </div>
           <Link
             href="/auth/register"
-            className="hidden md:inline-block px-5 py-2 border border-node-volt text-node-volt font-heading font-bold text-xs uppercase tracking-[0.2em] hover:bg-node-volt hover:text-deep-asphalt transition-colors"
+            className="hidden md:inline-block px-5 py-2 thin-border-node-volt text-node-volt font-heading font-bold text-xs uppercase tracking-[0.2em] hover:bg-node-volt hover:text-dark transition-colors"
           >
             Join
           </Link>
@@ -72,43 +72,43 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
         <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-deep-asphalt via-concrete-grey/20 to-deep-asphalt" />
-          <div className="absolute top-16 left-1/4 w-[600px] h-[600px] bg-node-volt/12 rounded-full blur-3xl" />
-          <div className="absolute bottom-10 right-1/4 w-[600px] h-[600px] bg-blue-500/12 rounded-full blur-3xl" />
-          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, #333 1px, transparent 1px), linear-gradient(to bottom, #333 1px, transparent 1px)', backgroundSize: '36px 36px' }} />
+          <div className="absolute inset-0 bg-gradient-to-br from-dark via-panel/20 to-dark" />
+          <div className="absolute top-16 left-1/4 w-[600px] h-[600px] bg-node-volt/12 blur-3xl" />
+          <div className="absolute bottom-10 right-1/4 w-[600px] h-[600px] bg-blue-500/12 blur-3xl" />
+          <div className="grid-overlay" />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
           <div className="space-y-8 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-4 py-2 border border-node-volt/40 rounded-full bg-node-volt/10 backdrop-blur-sm">
-              <span className="w-2 h-2 rounded-full bg-node-volt animate-pulse" />
+            <div className="inline-flex items-center gap-2 px-4 py-2 thin-border-node-volt/40 bg-node-volt/10 backdrop-blur-sm">
+              <span className="w-2 h-2 bg-node-volt animate-pulse" />
               <span className="text-[11px] font-heading text-node-volt uppercase tracking-[0.3em]">Performance OS</span>
             </div>
             <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-7xl font-heading font-bold leading-[0.95] tracking-tight drop-shadow-2xl">
               BUILDING INFRASTRUCTURE FOR HUMAN <span className="text-node-volt">OPTIMIZATION.</span>
             </h1>
-            <p className="text-text-white text-base sm:text-lg max-w-lg border-l-2 border-node-volt/60 pl-5 font-body leading-relaxed">
+            <p className="text-text-white text-base sm:text-lg max-w-lg border-l thin-border-node-volt/60 pl-5 font-body leading-relaxed">
               A brutalist training stack for strength, engine, and recovery. Cinematic player, deep analytics, and AI-built sessions.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 pt-2">
-              <Link
-                href="/auth/register"
-                className="px-8 py-4 bg-node-volt text-deep-asphalt font-heading font-bold text-sm uppercase tracking-[0.25em] hover:bg-text-white transition-colors shadow-[0_10px_40px_rgba(204,255,0,0.25)]"
-              >
-                Start Training
-              </Link>
-              <Link
+            <Link
+              href="/auth/register"
+                className="px-8 py-4 bg-node-volt text-dark font-heading font-bold text-sm uppercase tracking-[0.25em] hover:bg-text-white transition-colors shadow-[0_10px_40px_rgba(204,255,0,0.25)]"
+            >
+              Start Training
+            </Link>
+            <Link
                 href="#platform"
-                className="px-8 py-4 border border-text-white/30 text-text-white font-heading font-bold text-sm uppercase tracking-[0.25em] hover:border-node-volt hover:text-node-volt transition-colors backdrop-blur-sm bg-black/30"
-              >
+                className="px-8 py-4 thin-border-text-white/30 text-text-white font-heading font-bold text-sm uppercase tracking-[0.25em] hover:border-node-volt hover:text-node-volt transition-colors backdrop-blur-sm bg-panel/30"
+            >
                 Explore Platform
-              </Link>
-            </div>
+            </Link>
           </div>
+        </div>
 
           <div className="hidden lg:block relative">
-            <div className="absolute -inset-6 bg-node-volt/15 blur-3xl rounded-full opacity-30" />
-            <div className="relative thin-border bg-concrete-grey/80 backdrop-blur-md p-6 space-y-4">
+            <div className="absolute -inset-6 bg-node-volt/15 blur-3xl opacity-30" />
+            <div className="relative thin-border bg-panel/80 backdrop-blur-md p-6 space-y-4">
               <div className="flex justify-between items-start border-b thin-border pb-4">
                 <div>
                   <p className="text-[10px] text-muted-text uppercase tracking-[0.25em] mb-1">Location</p>
@@ -121,22 +121,22 @@ export default function LandingPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-deep-asphalt/80 thin-border">
+                <div className="p-4 bg-dark/80 thin-border">
                   <h3 className="text-xl font-heading font-bold text-text-white">Deck Mode</h3>
                   <p className="text-[10px] text-muted-text uppercase mt-1">Immersive Player</p>
                 </div>
-                <div className="p-3 bg-deep-asphalt/80 thin-border">
+                <div className="p-4 bg-dark/80 thin-border">
                   <h3 className="text-xl font-heading font-bold text-node-volt">RPE</h3>
                   <p className="text-[10px] text-muted-text uppercase mt-1">Precision Logging</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-deep-asphalt/80 thin-border">
+                <div className="p-4 bg-dark/80 thin-border">
                   <h3 className="text-xl font-heading font-bold text-text-white">AI</h3>
                   <p className="text-[10px] text-muted-text uppercase mt-1">Session Builder</p>
                 </div>
-                <div className="p-3 bg-deep-asphalt/80 thin-border">
+                <div className="p-4 bg-dark/80 thin-border">
                   <h3 className="text-xl font-heading font-bold text-node-volt">Ø</h3>
                   <p className="text-[10px] text-muted-text uppercase mt-1">Brutalist UI</p>
                 </div>
@@ -147,7 +147,7 @@ export default function LandingPage() {
       </section>
 
       {/* Platform Sections */}
-      <section id="platform" className="py-24 bg-deep-asphalt border-t thin-border">
+      <section id="platform" className="py-24 bg-dark border-t thin-border">
         <div className="max-w-7xl mx-auto px-6">
           <div className="mb-16 max-w-2xl">
             <h2 className="text-4xl sm:text-5xl font-heading font-bold mb-4">THE NØDE STACK</h2>
@@ -189,11 +189,11 @@ export default function LandingPage() {
             ].map((item) => (
               <div
                 key={item.title}
-                className="group relative bg-concrete-grey thin-border p-8 hover:border-node-volt transition-colors"
+                className="group relative bg-panel thin-border p-8 hover:border-node-volt transition-colors"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-node-volt/0 via-node-volt/5 to-node-volt/0 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="relative flex items-center justify-between mb-6">
-                  <div className="w-12 h-12 rounded-full thin-border flex items-center justify-center">
+                  <div className="w-12 h-12 thin-border flex items-center justify-center">
                     {item.icon}
                   </div>
                   <span className="text-[10px] uppercase tracking-[0.3em] text-muted-text font-heading">01</span>
@@ -207,20 +207,20 @@ export default function LandingPage() {
       </section>
 
       {/* Player Section */}
-      <section id="player" className="py-24 bg-deep-asphalt border-t thin-border">
+      <section id="player" className="py-24 bg-dark border-t thin-border">
         <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
           <div className="relative order-2 lg:order-1">
-            <div className="absolute -inset-6 bg-node-volt/10 blur-3xl rounded-full opacity-30" />
-            <div className="relative thin-border bg-concrete-grey/80 backdrop-blur-md p-6 space-y-4">
+            <div className="absolute -inset-6 bg-node-volt/10 blur-3xl opacity-30" />
+            <div className="relative thin-border bg-panel/80 backdrop-blur-md p-6 space-y-4">
               <div className="flex justify-between text-xs text-muted-text uppercase tracking-[0.25em] font-heading">
                 <span>Deck Mode</span>
                 <span>Now Playing</span>
               </div>
-              <div className="h-64 bg-gradient-to-br from-tech-grey to-concrete-grey thin-border flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full thin-border border-node-volt flex items-center justify-center text-node-volt font-heading font-bold">
+              <div className="h-64 bg-gradient-to-br from-panel to-panel/60 thin-border flex items-center justify-center">
+                <div className="w-16 h-16 thin-border-node-volt flex items-center justify-center text-node-volt font-heading font-bold">
                   Ø
-                </div>
-              </div>
+          </div>
+            </div>
               <div className="flex gap-3 text-sm text-muted-text font-body">
                 <span className="px-3 py-2 thin-border">EMOM</span>
                 <span className="px-3 py-2 thin-border">RPE 8</span>
@@ -241,10 +241,10 @@ export default function LandingPage() {
                   <span>{line}</span>
                 </li>
               ))}
-            </ul>
+              </ul>
             <Link
               href="/auth/register"
-              className="inline-block px-8 py-4 border border-node-volt text-node-volt font-heading font-bold uppercase tracking-[0.25em] hover:bg-node-volt hover:text-deep-asphalt transition-colors"
+              className="inline-block px-8 py-4 thin-border-node-volt text-node-volt font-heading font-bold uppercase tracking-[0.25em] hover:bg-node-volt hover:text-dark transition-colors"
             >
               Try Deck Mode
             </Link>
@@ -253,7 +253,7 @@ export default function LandingPage() {
       </section>
 
       {/* Analytics */}
-      <section id="analytics" className="py-24 bg-deep-asphalt border-t thin-border">
+      <section id="analytics" className="py-24 bg-dark border-t thin-border">
         <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
           <div className="space-y-6">
             <span className="text-node-volt uppercase tracking-[0.25em] text-xs font-heading">Analytics</span>
@@ -268,7 +268,7 @@ export default function LandingPage() {
                 { label: 'Sessions/Wk', value: '4.2' },
                 { label: 'PRs This Cycle', value: '12' },
               ].map((stat) => (
-                <div key={stat.label} className="p-4 thin-border bg-concrete-grey/80">
+                <div key={stat.label} className="p-4 thin-border bg-panel/80">
                   <p className="text-xs uppercase tracking-[0.2em] text-muted-text font-heading">{stat.label}</p>
                   <p className="text-2xl font-heading font-bold text-text-white">{stat.value}</p>
                 </div>
@@ -276,15 +276,15 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="relative">
-            <div className="absolute -inset-6 bg-blue-500/10 blur-3xl rounded-full opacity-30" />
-            <div className="relative thin-border bg-concrete-grey/80 p-6 space-y-4">
+            <div className="absolute -inset-6 bg-blue-500/10 blur-3xl opacity-30" />
+            <div className="relative thin-border bg-panel/80 p-6 space-y-4">
               <div className="flex justify-between text-xs text-muted-text uppercase tracking-[0.25em] font-heading">
                 <span>Analytics</span>
                 <span>Cycle</span>
-              </div>
-              <div className="h-56 bg-gradient-to-b from-tech-grey to-deep-asphalt thin-border flex items-end gap-2 p-4">
+            </div>
+              <div className="h-56 bg-gradient-to-b from-panel to-dark thin-border flex items-end gap-2 p-4">
                 {[50, 70, 90, 60, 80, 65].map((h, idx) => (
-                  <div key={idx} className="flex-1 bg-node-volt/60 rounded-t" style={{ height: `${h}%` }} />
+                  <div key={idx} className="flex-1 bg-node-volt/60" style={{ height: `${h}%` }} />
                 ))}
               </div>
               <p className="text-sm text-muted-text font-body">Visualize workload, intensity, and adherence over each block.</p>
@@ -294,21 +294,21 @@ export default function LandingPage() {
       </section>
 
       {/* AI */}
-      <section id="ai" className="py-24 bg-deep-asphalt border-t thin-border">
+      <section id="ai" className="py-24 bg-dark border-t thin-border">
         <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
           <div className="relative order-2 lg:order-1">
-            <div className="absolute -inset-6 bg-node-volt/10 blur-3xl rounded-full opacity-30" />
-            <div className="relative thin-border bg-concrete-grey/80 p-6 space-y-4">
+            <div className="absolute -inset-6 bg-node-volt/10 blur-3xl opacity-30" />
+            <div className="relative thin-border bg-panel/80 p-6 space-y-4">
               <div className="flex justify-between text-xs text-muted-text uppercase tracking-[0.25em] font-heading">
                 <span>AI Builder</span>
                 <span>Archetypes</span>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {['PR1ME', 'ENGIN3', 'FORGE', 'FLOWSTATE'].map((item) => (
-                  <div key={item} className="p-4 thin-border bg-deep-asphalt/80 text-center">
+                  <div key={item} className="p-4 thin-border bg-dark/80 text-center">
                     <p className="font-heading font-bold text-text-white">{item}</p>
                     <p className="text-[11px] text-muted-text uppercase tracking-[0.2em] font-heading">Preset</p>
-                  </div>
+          </div>
                 ))}
               </div>
               <p className="text-sm text-muted-text font-body">Prompt-aware, equipment-aware, and archetype-aware. Generate clean sessions in seconds.</p>
@@ -330,7 +330,7 @@ export default function LandingPage() {
             </ul>
             <Link
               href="/auth/register"
-              className="inline-block px-8 py-4 border border-node-volt text-node-volt font-heading font-bold uppercase tracking-[0.25em] hover:bg-node-volt hover:text-deep-asphalt transition-colors"
+              className="inline-block px-8 py-4 thin-border-node-volt text-node-volt font-heading font-bold uppercase tracking-[0.25em] hover:bg-node-volt hover:text-dark transition-colors"
             >
               Build with AI
             </Link>
@@ -339,38 +339,38 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 bg-concrete-grey/10 border-t thin-border">
+      <section className="py-24 bg-panel/10 border-t thin-border">
         <div className="max-w-4xl mx-auto px-6 text-center space-y-8">
           <h2 className="text-4xl sm:text-5xl font-heading font-bold">Access the NØDE</h2>
           <p className="text-muted-text font-body">
             Train with brutalist clarity. Volt highlights. Cinematic player. Analytics and AI built for lifters and coaches.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/auth/register"
-              className="px-10 py-4 bg-node-volt text-deep-asphalt font-heading font-bold uppercase tracking-[0.25em] hover:bg-text-white transition-colors"
+                <Link
+                  href="/auth/register"
+              className="px-10 py-4 bg-node-volt text-dark font-heading font-bold uppercase tracking-[0.25em] hover:bg-text-white transition-colors"
             >
               Start Now
             </Link>
             <Link
               href="/auth/login"
-              className="px-10 py-4 border border-text-white/30 text-text-white font-heading font-bold uppercase tracking-[0.25em] hover:border-node-volt hover:text-node-volt transition-colors"
+              className="px-10 py-4 thin-border-text-white/30 text-text-white font-heading font-bold uppercase tracking-[0.25em] hover:border-node-volt hover:text-node-volt transition-colors"
             >
               Login
-            </Link>
+                </Link>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-deep-asphalt border-t thin-border py-16">
+      <footer className="bg-dark border-t thin-border py-16">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between gap-12">
           <div className="flex items-center gap-3">
-            <div className="w-7 h-7 bg-node-volt text-deep-asphalt font-heading font-bold text-sm flex items-center justify-center rounded">
+            <div className="w-7 h-7 bg-node-volt text-dark font-heading font-bold text-sm flex items-center justify-center">
               Ø
             </div>
             <span className="font-heading font-bold text-lg">NØDE</span>
-          </div>
+            </div>
           <div className="flex gap-6 text-sm text-muted-text font-body">
             <Link href="/programs" className="hover:text-node-volt transition-colors">Programs</Link>
             <Link href="/progress" className="hover:text-node-volt transition-colors">Progress</Link>

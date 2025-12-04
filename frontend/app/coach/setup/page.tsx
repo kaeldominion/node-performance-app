@@ -80,7 +80,7 @@ export default function CoachSetupPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-deep-asphalt flex items-center justify-center">
+      <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-muted-text">Loading...</div>
       </div>
     );
@@ -91,7 +91,7 @@ export default function CoachSetupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-deep-asphalt">
+    <div className="min-h-screen bg-dark">
       <Navbar />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
@@ -107,14 +107,14 @@ export default function CoachSetupPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-concrete-grey border border-border-dark rounded-lg p-8 space-y-6">
+        <form onSubmit={handleSubmit} className="bg-panel thin-border rounded-lg p-8 space-y-6">
           <div>
             <label className="block text-sm font-medium mb-2 text-muted-text">Bio</label>
             <textarea
               value={formData.bio}
               onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
               placeholder="Tell clients about your coaching philosophy and experience..."
-              className="w-full bg-tech-grey border border-border-dark rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt resize-none"
+              className="w-full bg-panel thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt resize-none"
               rows={5}
             />
           </div>
@@ -133,12 +133,12 @@ export default function CoachSetupPage() {
                   }
                 }}
                 placeholder="e.g., Strength Training, Hyrox Prep"
-                className="flex-1 bg-tech-grey border border-border-dark rounded-lg px-4 py-2 text-text-white focus:outline-none focus:border-node-volt"
+                className="flex-1 bg-panel thin-border rounded-lg px-4 py-2 text-text-white focus:outline-none focus:border-node-volt"
               />
               <button
                 type="button"
                 onClick={addSpecialty}
-                className="bg-node-volt text-deep-asphalt font-bold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+                className="bg-node-volt text-dark font-bold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
               >
                 Add
               </button>
@@ -147,7 +147,7 @@ export default function CoachSetupPage() {
               {formData.specialties.map((spec) => (
                 <span
                   key={spec}
-                  className="bg-tech-grey border border-border-dark px-3 py-1 rounded flex items-center gap-2"
+                  className="bg-panel thin-border px-3 py-1 rounded flex items-center gap-2"
                 >
                   {spec}
                   <button
@@ -176,12 +176,12 @@ export default function CoachSetupPage() {
                   }
                 }}
                 placeholder="e.g., NASM-CPT, CrossFit L1"
-                className="flex-1 bg-tech-grey border border-border-dark rounded-lg px-4 py-2 text-text-white focus:outline-none focus:border-node-volt"
+                className="flex-1 bg-panel thin-border rounded-lg px-4 py-2 text-text-white focus:outline-none focus:border-node-volt"
               />
               <button
                 type="button"
                 onClick={addCertification}
-                className="bg-node-volt text-deep-asphalt font-bold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+                className="bg-node-volt text-dark font-bold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
               >
                 Add
               </button>
@@ -190,7 +190,7 @@ export default function CoachSetupPage() {
               {formData.certifications.map((cert) => (
                 <span
                   key={cert}
-                  className="bg-tech-grey border border-border-dark px-3 py-1 rounded flex items-center gap-2"
+                  className="bg-panel thin-border px-3 py-1 rounded flex items-center gap-2"
                 >
                   {cert}
                   <button
@@ -213,7 +213,7 @@ export default function CoachSetupPage() {
                 value={formData.website}
                 onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                 placeholder="https://yourwebsite.com"
-                className="w-full bg-tech-grey border border-border-dark rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
+                className="w-full bg-panel thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
               />
             </div>
             <div>
@@ -223,7 +223,7 @@ export default function CoachSetupPage() {
                 value={formData.instagram}
                 onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
                 placeholder="@yourhandle"
-                className="w-full bg-tech-grey border border-border-dark rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
+                className="w-full bg-panel thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
               />
             </div>
           </div>
@@ -231,14 +231,14 @@ export default function CoachSetupPage() {
           <div className="flex gap-4">
             <Link
               href="/coach"
-              className="flex-1 bg-tech-grey border border-border-dark text-text-white px-6 py-3 rounded-lg hover:bg-concrete-grey transition-colors font-medium text-center"
+              className="flex-1 bg-panel thin-border text-text-white px-6 py-3 rounded-lg hover:bg-panel transition-colors font-medium text-center"
             >
               Cancel
             </Link>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-node-volt text-deep-asphalt font-bold px-6 py-3 rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+              className="flex-1 bg-node-volt text-dark font-bold px-6 py-3 rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
               style={{ fontFamily: 'var(--font-space-grotesk)' }}
             >
               {loading ? 'Creating...' : 'Create Profile'}

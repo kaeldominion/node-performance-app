@@ -30,7 +30,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-deep-asphalt p-6">
+    <div className="min-h-screen flex items-center justify-center bg-dark p-6">
       {/* Background effects */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-0 w-96 h-96 bg-node-volt/5 rounded-full blur-3xl" />
@@ -38,7 +38,7 @@ export default function RegisterPage() {
       </div>
 
       <div className="relative w-full max-w-md">
-        <div className="bg-concrete-grey/80 backdrop-blur-xl border border-border-dark/50 rounded-3xl p-10 shadow-2xl">
+        <div className="bg-panel/80 backdrop-blur-xl thin-border rounded-3xl p-10 shadow-2xl">
           {/* Logo */}
           <div className="text-center mb-10">
             <h1 className="text-5xl font-bold mb-3 font-heading">
@@ -63,7 +63,7 @@ export default function RegisterPage() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-tech-grey/50 border border-border-dark/50 rounded-xl px-4 py-3.5 text-text-white placeholder:text-muted-text/50 focus:outline-none focus:border-node-volt/50 focus:ring-2 focus:ring-node-volt/20 transition-all"
+                className="w-full bg-panel/50 thin-border rounded-xl px-4 py-3.5 text-text-white placeholder:text-muted-text/50 focus:outline-none focus:border-node-volt/50 focus:ring-2 focus:ring-node-volt/20 transition-all"
                 placeholder="John Doe"
               />
             </div>
@@ -78,7 +78,7 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full bg-tech-grey/50 border border-border-dark/50 rounded-xl px-4 py-3.5 text-text-white placeholder:text-muted-text/50 focus:outline-none focus:border-node-volt/50 focus:ring-2 focus:ring-node-volt/20 transition-all"
+                className="w-full bg-panel/50 thin-border rounded-xl px-4 py-3.5 text-text-white placeholder:text-muted-text/50 focus:outline-none focus:border-node-volt/50 focus:ring-2 focus:ring-node-volt/20 transition-all"
                 placeholder="you@example.com"
               />
             </div>
@@ -94,7 +94,7 @@ export default function RegisterPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full bg-tech-grey/50 border border-border-dark/50 rounded-xl px-4 py-3.5 text-text-white placeholder:text-muted-text/50 focus:outline-none focus:border-node-volt/50 focus:ring-2 focus:ring-node-volt/20 transition-all"
+                className="w-full bg-panel/50 thin-border rounded-xl px-4 py-3.5 text-text-white placeholder:text-muted-text/50 focus:outline-none focus:border-node-volt/50 focus:ring-2 focus:ring-node-volt/20 transition-all"
                 placeholder="••••••••"
               />
               <p className="text-xs text-muted-text">Minimum 6 characters</p>
@@ -103,7 +103,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-node-volt text-deep-asphalt font-bold py-4 rounded-xl hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 shadow-[0_0_20px_rgba(204,255,0,0.3)] hover:shadow-[0_0_30px_rgba(204,255,0,0.5)] font-heading"
+              className="w-full bg-node-volt text-dark font-bold py-4 rounded-xl hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 shadow-[0_0_20px_rgba(204,255,0,0.3)] hover:shadow-[0_0_30px_rgba(204,255,0,0.5)] font-heading"
             >
               {loading ? 'Creating account...' : 'Create Account'}
             </button>

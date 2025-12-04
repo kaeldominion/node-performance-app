@@ -31,10 +31,10 @@ export default function SectionSuperset({ title, note, blocks }: SectionSuperset
 
       <div className="w-full max-w-5xl space-y-8">
         {pairs.map((pair, pairIdx) => (
-          <div key={pairIdx} className="bg-concrete-grey border-2 border-node-volt rounded-lg p-6">
+          <div key={pairIdx} className="bg-panel border-2 border-node-volt rounded-lg p-6">
             <div className="grid grid-cols-2 gap-6">
               {pair.map((block, idx) => (
-                <div key={block.id || idx} className="bg-tech-grey border border-border-dark rounded-lg p-4">
+                <div key={block.id || idx} className="bg-panel thin-border rounded-lg p-4">
                   <div className="text-center mb-4">
                     <span className="text-node-volt font-mono text-2xl font-bold">
                       {block.label || (idx === 0 ? 'A' : 'B')}
@@ -51,17 +51,17 @@ export default function SectionSuperset({ title, note, blocks }: SectionSuperset
                   {(block.tierSilver || block.tierGold || block.tierBlack) && (
                     <div className="space-y-2 mt-4">
                       {block.tierSilver && (
-                        <div className="bg-concrete-grey rounded p-2 text-sm">
+                        <div className="bg-panel rounded p-2 text-sm">
                           <div className="text-muted-text">SILVER: {block.tierSilver.load || block.tierSilver.targetReps}</div>
                         </div>
                       )}
                       {block.tierGold && (
-                        <div className="bg-concrete-grey rounded p-2 text-sm">
+                        <div className="bg-panel rounded p-2 text-sm">
                           <div className="text-muted-text">GOLD: {block.tierGold.load || block.tierGold.targetReps}</div>
                         </div>
                       )}
                       {block.tierBlack && (
-                        <div className="bg-concrete-grey border border-node-volt rounded p-2 text-sm">
+                        <div className="bg-panel border border-node-volt rounded p-2 text-sm">
                           <div className="text-node-volt">BLACK: {block.tierBlack.load || block.tierBlack.targetReps}</div>
                         </div>
                       )}

@@ -116,7 +116,7 @@ export default function WorkoutPlayerPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-deep-asphalt flex items-center justify-center">
+      <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-muted-text">Loading workout...</div>
       </div>
     );
@@ -192,9 +192,9 @@ export default function WorkoutPlayerPage() {
   };
 
   return (
-    <div className="h-screen bg-deep-asphalt overflow-hidden flex flex-col">
+    <div className="h-screen bg-dark overflow-hidden flex flex-col">
       {/* Header */}
-      <div className="bg-concrete-grey border-b border-border-dark px-8 py-4">
+      <div className="bg-panel border-b thin-border px-8 py-4">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold">
@@ -219,7 +219,7 @@ export default function WorkoutPlayerPage() {
       </div>
 
       {/* Section Navigation */}
-      <div className="bg-tech-grey border-b border-border-dark px-8 py-2 flex items-center justify-between">
+      <div className="bg-panel border-b thin-border px-8 py-2 flex items-center justify-between">
         <div className="flex gap-2">
           {workout.sections.map((s, idx) => (
             <button
@@ -227,8 +227,8 @@ export default function WorkoutPlayerPage() {
               onClick={() => setCurrentSection(idx)}
               className={`px-4 py-1 rounded text-sm font-medium transition-colors ${
                 idx === currentSection
-                  ? 'bg-node-volt text-deep-asphalt'
-                  : 'bg-concrete-grey text-muted-text hover:text-text-white'
+                  ? 'bg-node-volt text-dark'
+                  : 'bg-panel text-muted-text hover:text-text-white'
               }`}
             >
               {s.title}
@@ -239,14 +239,14 @@ export default function WorkoutPlayerPage() {
           {!isFirstSection && (
             <button
               onClick={handlePreviousSection}
-              className="bg-concrete-grey border border-border-dark text-text-white px-4 py-1 rounded hover:opacity-90"
+              className="bg-panel thin-border text-text-white px-4 py-1 rounded hover:opacity-90"
             >
               ← Previous
             </button>
           )}
           <button
             onClick={handleNextSection}
-            className="bg-node-volt text-deep-asphalt font-bold px-6 py-1 rounded hover:opacity-90"
+            className="bg-node-volt text-dark font-bold px-6 py-1 rounded hover:opacity-90"
           >
             {isLastSection ? 'Complete' : 'Next →'}
           </button>
@@ -261,7 +261,7 @@ export default function WorkoutPlayerPage() {
       {/* Complete Modal */}
       {showCompleteModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-8 max-w-md w-full">
+          <div className="bg-panel thin-border rounded-lg p-8 max-w-md w-full">
             <h2 className="text-2xl font-bold mb-6">Complete Workout</h2>
 
             <div className="space-y-4">
@@ -283,7 +283,7 @@ export default function WorkoutPlayerPage() {
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full bg-tech-grey border border-border-dark rounded px-4 py-2 text-text-white focus:outline-none focus:border-node-volt"
+                  className="w-full bg-panel thin-border rounded px-4 py-2 text-text-white focus:outline-none focus:border-node-volt"
                   rows={4}
                 />
               </div>
@@ -292,13 +292,13 @@ export default function WorkoutPlayerPage() {
             <div className="flex gap-4 mt-6">
               <button
                 onClick={() => setShowCompleteModal(false)}
-                className="flex-1 bg-tech-grey border border-border-dark text-text-white px-4 py-2 rounded hover:opacity-90"
+                className="flex-1 bg-panel thin-border text-text-white px-4 py-2 rounded hover:opacity-90"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleCompleteWorkout(rpe, notes)}
-                className="flex-1 bg-node-volt text-deep-asphalt font-bold px-4 py-2 rounded hover:opacity-90"
+                className="flex-1 bg-node-volt text-dark font-bold px-4 py-2 rounded hover:opacity-90"
               >
                 Save & Complete
               </button>

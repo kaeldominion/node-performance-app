@@ -68,7 +68,7 @@ export default function CountdownTimer({
         {!isRunning && seconds > 0 && (
           <button
             onClick={start}
-            className="bg-node-volt text-deep-asphalt font-bold px-6 py-2 rounded hover:opacity-90"
+            className="bg-node-volt text-dark font-bold px-6 py-2 rounded hover:opacity-90"
           >
             Start
           </button>
@@ -76,14 +76,14 @@ export default function CountdownTimer({
         {isRunning && (
           <button
             onClick={pause}
-            className="bg-tech-grey border border-border-dark text-text-white font-bold px-6 py-2 rounded hover:opacity-90"
+            className="bg-panel thin-border text-text-white font-bold px-6 py-2 rounded hover:opacity-90"
           >
             Pause
           </button>
         )}
         <button
           onClick={reset}
-          className="bg-tech-grey border border-border-dark text-text-white font-bold px-6 py-2 rounded hover:opacity-90"
+          className="bg-panel thin-border text-text-white font-bold px-6 py-2 rounded hover:opacity-90"
         >
           Reset
         </button>

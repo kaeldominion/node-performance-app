@@ -30,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${spaceGrotesk.variable} ${manrope.variable} antialiased bg-deep-asphalt text-text-white`}
+        className={`${spaceGrotesk.variable} ${manrope.variable} antialiased bg-dark text-text-white`}
       >
         <AuthProvider>{children}</AuthProvider>
       </body>

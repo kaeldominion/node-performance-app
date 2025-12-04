@@ -45,7 +45,7 @@ export default function GymSetupPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-deep-asphalt flex items-center justify-center">
+      <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-muted-text">Loading...</div>
       </div>
     );
@@ -56,7 +56,7 @@ export default function GymSetupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-deep-asphalt">
+    <div className="min-h-screen bg-dark">
       <Navbar />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
@@ -72,7 +72,7 @@ export default function GymSetupPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-concrete-grey border border-border-dark rounded-lg p-8 space-y-6">
+        <form onSubmit={handleSubmit} className="bg-panel thin-border rounded-lg p-8 space-y-6">
           <div>
             <label className="block text-sm font-medium mb-2 text-muted-text">Gym Name *</label>
             <input
@@ -81,7 +81,7 @@ export default function GymSetupPage() {
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
               placeholder="NØDE Performance Gym"
-              className="w-full bg-tech-grey border border-border-dark rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
+              className="w-full bg-panel thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
             />
           </div>
 
@@ -92,7 +92,7 @@ export default function GymSetupPage() {
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               placeholder="123 Main St, City, State 12345"
-              className="w-full bg-tech-grey border border-border-dark rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
+              className="w-full bg-panel thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
             />
           </div>
 
@@ -104,7 +104,7 @@ export default function GymSetupPage() {
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="(555) 123-4567"
-                className="w-full bg-tech-grey border border-border-dark rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
+                className="w-full bg-panel thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
               />
             </div>
             <div>
@@ -114,7 +114,7 @@ export default function GymSetupPage() {
                 value={formData.website}
                 onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                 placeholder="https://yourgym.com"
-                className="w-full bg-tech-grey border border-border-dark rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
+                className="w-full bg-panel thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
               />
             </div>
           </div>
@@ -126,7 +126,7 @@ export default function GymSetupPage() {
               value={formData.capacity}
               onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) })}
               min="1"
-              className="w-full bg-tech-grey border border-border-dark rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
+              className="w-full bg-panel thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
             />
           </div>
 
@@ -136,7 +136,7 @@ export default function GymSetupPage() {
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Tell members about your gym..."
-              className="w-full bg-tech-grey border border-border-dark rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt resize-none"
+              className="w-full bg-panel thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt resize-none"
               rows={5}
             />
           </div>
@@ -144,14 +144,14 @@ export default function GymSetupPage() {
           <div className="flex gap-4">
             <Link
               href="/gym"
-              className="flex-1 bg-tech-grey border border-border-dark text-text-white px-6 py-3 rounded-lg hover:bg-concrete-grey transition-colors font-medium text-center"
+              className="flex-1 bg-panel thin-border text-text-white px-6 py-3 rounded-lg hover:bg-panel transition-colors font-medium text-center"
             >
               Cancel
             </Link>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-node-volt text-deep-asphalt font-bold px-6 py-3 rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+              className="flex-1 bg-node-volt text-dark font-bold px-6 py-3 rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
               style={{ fontFamily: 'var(--font-space-grotesk)' }}
             >
               {loading ? 'Creating...' : 'Create Profile'}

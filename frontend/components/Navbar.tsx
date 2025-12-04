@@ -14,7 +14,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="border-b border-border-dark bg-concrete-grey">
+    <nav className="border-b thin-border bg-panel">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="text-2xl font-bold font-heading">

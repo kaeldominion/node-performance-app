@@ -66,7 +66,7 @@ export default function GymClassDetailPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-deep-asphalt flex items-center justify-center">
+      <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-muted-text">Loading...</div>
       </div>
     );
@@ -78,7 +78,7 @@ export default function GymClassDetailPage() {
 
   if (!gymClass) {
     return (
-      <div className="min-h-screen bg-deep-asphalt">
+      <div className="min-h-screen bg-dark">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center text-muted-text">
@@ -93,7 +93,7 @@ export default function GymClassDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-deep-asphalt">
+    <div className="min-h-screen bg-dark">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
@@ -117,7 +117,7 @@ export default function GymClassDetailPage() {
               <Link
                 href={`/gym/classes/${classId}/display`}
                 target="_blank"
-                className="bg-node-volt text-deep-asphalt font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
+                className="bg-node-volt text-dark font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
                 style={{ fontFamily: 'var(--font-space-grotesk)' }}
               >
                 Display Mode
@@ -128,7 +128,7 @@ export default function GymClassDetailPage() {
 
         {/* Class Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+          <div className="bg-panel thin-border rounded-lg p-6">
             <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               Class Details
             </h2>
@@ -160,7 +160,7 @@ export default function GymClassDetailPage() {
           </div>
 
           {workout && (
-            <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+            <div className="bg-panel thin-border rounded-lg p-6">
               <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                 Workout Preview
               </h2>
@@ -187,14 +187,14 @@ export default function GymClassDetailPage() {
         </div>
 
         {/* Attendance */}
-        <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+        <div className="bg-panel thin-border rounded-lg p-6">
           <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
             Attendance
           </h2>
           {attendance.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-tech-grey border-b border-border-dark">
+                <thead className="bg-panel border-b thin-border">
                   <tr>
                     <th className="px-6 py-3 text-left text-sm font-semibold">Member</th>
                     <th className="px-6 py-3 text-left text-sm font-semibold">Status</th>
@@ -203,7 +203,7 @@ export default function GymClassDetailPage() {
                 </thead>
                 <tbody>
                   {attendance.map((record) => (
-                    <tr key={record.id} className="border-b border-border-dark">
+                    <tr key={record.id} className="border-b thin-border">
                       <td className="px-6 py-4">
                         {record.member?.name || record.member?.email || 'Unknown'}
                       </td>
@@ -212,7 +212,7 @@ export default function GymClassDetailPage() {
                           className={`px-3 py-1 rounded text-sm ${
                             record.attended
                               ? 'bg-node-volt/20 text-node-volt'
-                              : 'bg-tech-grey text-muted-text'
+                              : 'bg-panel text-muted-text'
                           }`}
                         >
                           {record.attended ? 'Attended' : 'Absent'}

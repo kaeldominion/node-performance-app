@@ -144,7 +144,7 @@ export default function ExerciseEditPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-deep-asphalt flex items-center justify-center">
+      <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-muted-text">Loading...</div>
       </div>
     );
@@ -155,7 +155,7 @@ export default function ExerciseEditPage() {
   }
 
   return (
-    <div className="min-h-screen bg-deep-asphalt">
+    <div className="min-h-screen bg-dark">
       <Navbar />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
@@ -173,7 +173,7 @@ export default function ExerciseEditPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-concrete-grey border border-border-dark rounded-lg p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="bg-panel thin-border rounded-lg p-6 space-y-6">
           {/* Basic Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -183,7 +183,7 @@ export default function ExerciseEditPage() {
                 required
                 value={formData.exerciseId}
                 onChange={(e) => setFormData({ ...formData, exerciseId: e.target.value })}
-                className="w-full bg-tech-grey border border-border-dark rounded px-4 py-2 text-text-white"
+                className="w-full bg-panel thin-border rounded px-4 py-2 text-text-white"
                 disabled={!isNew}
               />
             </div>
@@ -194,7 +194,7 @@ export default function ExerciseEditPage() {
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full bg-tech-grey border border-border-dark rounded px-4 py-2 text-text-white"
+                className="w-full bg-panel thin-border rounded px-4 py-2 text-text-white"
               />
             </div>
           </div>
@@ -207,7 +207,7 @@ export default function ExerciseEditPage() {
                 required
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full bg-tech-grey border border-border-dark rounded px-4 py-2 text-text-white"
+                className="w-full bg-panel thin-border rounded px-4 py-2 text-text-white"
               >
                 {EXERCISE_CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>{cat}</option>
@@ -220,7 +220,7 @@ export default function ExerciseEditPage() {
                 required
                 value={formData.movementPattern}
                 onChange={(e) => setFormData({ ...formData, movementPattern: e.target.value })}
-                className="w-full bg-tech-grey border border-border-dark rounded px-4 py-2 text-text-white"
+                className="w-full bg-panel thin-border rounded px-4 py-2 text-text-white"
               >
                 {MOVEMENT_PATTERNS.map((mp) => (
                   <option key={mp} value={mp}>{mp}</option>
@@ -237,7 +237,7 @@ export default function ExerciseEditPage() {
                 required
                 value={formData.space}
                 onChange={(e) => setFormData({ ...formData, space: e.target.value })}
-                className="w-full bg-tech-grey border border-border-dark rounded px-4 py-2 text-text-white"
+                className="w-full bg-panel thin-border rounded px-4 py-2 text-text-white"
               >
                 {SPACE_REQUIREMENTS.map((s) => (
                   <option key={s} value={s}>{s}</option>
@@ -250,7 +250,7 @@ export default function ExerciseEditPage() {
                 required
                 value={formData.impactLevel}
                 onChange={(e) => setFormData({ ...formData, impactLevel: e.target.value })}
-                className="w-full bg-tech-grey border border-border-dark rounded px-4 py-2 text-text-white"
+                className="w-full bg-panel thin-border rounded px-4 py-2 text-text-white"
               >
                 {IMPACT_LEVELS.map((il) => (
                   <option key={il} value={il}>{il}</option>
@@ -286,7 +286,7 @@ export default function ExerciseEditPage() {
                   e.currentTarget.value = '';
                 }
               }}
-              className="w-full bg-tech-grey border border-border-dark rounded px-4 py-2 text-text-white"
+              className="w-full bg-panel thin-border rounded px-4 py-2 text-text-white"
             />
           </div>
 
@@ -316,7 +316,7 @@ export default function ExerciseEditPage() {
                   e.currentTarget.value = '';
                 }
               }}
-              className="w-full bg-tech-grey border border-border-dark rounded px-4 py-2 text-text-white"
+              className="w-full bg-panel thin-border rounded px-4 py-2 text-text-white"
             />
           </div>
 
@@ -373,7 +373,7 @@ export default function ExerciseEditPage() {
             <label className="block text-sm font-medium mb-2">Tier Prescriptions</label>
             <div className="space-y-4">
               {formData.tiers.map((tier, i) => (
-                <div key={tier.tier} className="bg-tech-grey p-4 rounded">
+                <div key={tier.tier} className="bg-panel p-4 rounded">
                   <h4 className="font-semibold mb-3">{tier.tier} Tier</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -386,7 +386,7 @@ export default function ExerciseEditPage() {
                           newTiers[i].description = e.target.value;
                           setFormData({ ...formData, tiers: newTiers });
                         }}
-                        className="w-full bg-deep-asphalt border border-border-dark rounded px-3 py-2 text-text-white text-sm"
+                        className="w-full bg-dark thin-border rounded px-3 py-2 text-text-white text-sm"
                       />
                     </div>
                     <div>
@@ -399,7 +399,7 @@ export default function ExerciseEditPage() {
                           newTiers[i].typicalReps = e.target.value;
                           setFormData({ ...formData, tiers: newTiers });
                         }}
-                        className="w-full bg-deep-asphalt border border-border-dark rounded px-3 py-2 text-text-white text-sm"
+                        className="w-full bg-dark thin-border rounded px-3 py-2 text-text-white text-sm"
                       />
                     </div>
                   </div>
@@ -415,7 +415,7 @@ export default function ExerciseEditPage() {
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={3}
-              className="w-full bg-tech-grey border border-border-dark rounded px-4 py-2 text-text-white"
+              className="w-full bg-panel thin-border rounded px-4 py-2 text-text-white"
             />
           </div>
 
@@ -437,13 +437,13 @@ export default function ExerciseEditPage() {
             <button
               type="submit"
               disabled={saving}
-              className="bg-node-volt text-deep-asphalt font-bold py-3 px-6 rounded hover:opacity-90 disabled:opacity-50"
+              className="bg-node-volt text-dark font-bold py-3 px-6 rounded hover:opacity-90 disabled:opacity-50"
             >
               {saving ? 'Saving...' : isNew ? 'Create Exercise' : 'Save Changes'}
             </button>
             <Link
               href="/admin/exercises"
-              className="bg-tech-grey text-text-white font-bold py-3 px-6 rounded hover:opacity-90"
+              className="bg-panel text-text-white font-bold py-3 px-6 rounded hover:opacity-90"
             >
               Cancel
             </Link>

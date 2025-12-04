@@ -25,7 +25,7 @@ export default function SectionWarmup({ title, note, blocks }: SectionWarmupProp
 
       <div className="w-full max-w-4xl space-y-6">
         {blocks.map((block, idx) => (
-          <div key={block.id || idx} className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+          <div key={block.id || idx} className="bg-panel thin-border rounded-lg p-6">
             <div className="flex items-start justify-between mb-2">
               <div>
                 {block.label && (
@@ -44,21 +44,21 @@ export default function SectionWarmup({ title, note, blocks }: SectionWarmupProp
             {(block.tierSilver || block.tierGold || block.tierBlack) && (
               <div className="grid grid-cols-3 gap-4 mt-4">
                 {block.tierSilver && (
-                  <div className="bg-tech-grey border border-border-dark rounded p-3">
+                  <div className="bg-panel thin-border rounded p-3">
                     <div className="text-sm text-muted-text mb-1">SILVER</div>
                     {block.tierSilver.load && <div className="font-medium">{block.tierSilver.load}</div>}
                     {block.tierSilver.targetReps && <div className="text-sm text-muted-text">{block.tierSilver.targetReps} reps</div>}
                   </div>
                 )}
                 {block.tierGold && (
-                  <div className="bg-tech-grey border border-border-dark rounded p-3">
+                  <div className="bg-panel thin-border rounded p-3">
                     <div className="text-sm text-muted-text mb-1">GOLD</div>
                     {block.tierGold.load && <div className="font-medium">{block.tierGold.load}</div>}
                     {block.tierGold.targetReps && <div className="text-sm text-muted-text">{block.tierGold.targetReps} reps</div>}
                   </div>
                 )}
                 {block.tierBlack && (
-                  <div className="bg-tech-grey border border-border-dark rounded p-3 border-node-volt">
+                  <div className="bg-panel thin-border rounded p-3 border-node-volt">
                     <div className="text-sm text-node-volt mb-1">BLACK</div>
                     {block.tierBlack.load && <div className="font-medium text-node-volt">{block.tierBlack.load}</div>}
                     {block.tierBlack.targetReps && <div className="text-sm text-muted-text">{block.tierBlack.targetReps} reps</div>}

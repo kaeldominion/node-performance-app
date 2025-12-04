@@ -38,7 +38,7 @@ export function WorkoutDeckSlide({
               {section.blocks.map((block: any, idx: number) => (
                 <div
                   key={block.id || idx}
-                  className="bg-concrete-grey/50 backdrop-blur-sm border border-border-dark rounded-lg p-8"
+                  className="bg-panel/50 backdrop-blur-sm thin-border rounded-lg p-8"
                 >
                   <div className="flex items-center justify-center gap-4 mb-4">
                     {block.label && (
@@ -77,7 +77,7 @@ export function WorkoutDeckSlide({
               {section.blocks.map((block: any, idx: number) => (
                 <div
                   key={block.id || idx}
-                  className="bg-concrete-grey/50 backdrop-blur-sm border-2 border-border-dark rounded-lg p-6 hover:border-node-volt transition-colors"
+                  className="bg-panel/50 backdrop-blur-sm border-2 thin-border rounded-lg p-6 hover:border-node-volt transition-colors"
                 >
                   {block.label && (
                     <div className="text-node-volt font-mono text-2xl font-bold mb-2">
@@ -114,7 +114,7 @@ export function WorkoutDeckSlide({
               {section.blocks.map((block: any, idx: number) => (
                 <div
                   key={block.id || idx}
-                  className="bg-concrete-grey/50 backdrop-blur-sm border border-border-dark rounded-lg p-8"
+                  className="bg-panel/50 backdrop-blur-sm thin-border rounded-lg p-8"
                 >
                   <div className="flex items-center justify-center gap-4 mb-4">
                     {block.label && (
@@ -146,7 +146,7 @@ export function WorkoutDeckSlide({
               {section.blocks.map((block: any, idx: number) => (
                 <div
                   key={block.id || idx}
-                  className="bg-concrete-grey/50 backdrop-blur-sm border border-border-dark rounded-lg p-8"
+                  className="bg-panel/50 backdrop-blur-sm thin-border rounded-lg p-8"
                 >
                   <div className="flex items-center justify-center gap-4 mb-4">
                     {block.label && (
@@ -182,11 +182,11 @@ export function WorkoutDeckSlide({
               {pairs.map((pair, pairIdx) => (
                 <div
                   key={pairIdx}
-                  className="bg-concrete-grey/50 backdrop-blur-sm border-2 border-node-volt rounded-lg p-8"
+                  className="bg-panel/50 backdrop-blur-sm border-2 border-node-volt rounded-lg p-8"
                 >
                   <div className="grid grid-cols-2 gap-8">
                     {pair.map((block, idx) => (
-                      <div key={block.id || idx} className="bg-tech-grey/50 border border-border-dark rounded-lg p-6">
+                      <div key={block.id || idx} className="bg-panel/50 thin-border rounded-lg p-6">
                         <div className="text-center mb-4">
                           <span className="text-node-volt font-mono text-3xl font-bold">
                             {block.label || (idx === 0 ? 'A' : 'B')}
@@ -230,7 +230,7 @@ export function WorkoutDeckSlide({
             className={`px-4 py-2 rounded-lg border transition-all cursor-pointer ${
               selectedTier === 'SILVER'
                 ? 'bg-node-volt/20 border-node-volt'
-                : 'bg-tech-grey border-border-dark'
+                : 'bg-panel thin-border'
             }`}
             onClick={() => setSelectedTier('SILVER')}
           >
@@ -245,7 +245,7 @@ export function WorkoutDeckSlide({
             className={`px-4 py-2 rounded-lg border transition-all cursor-pointer ${
               selectedTier === 'GOLD'
                 ? 'bg-node-volt/20 border-node-volt'
-                : 'bg-tech-grey border-border-dark'
+                : 'bg-panel thin-border'
             }`}
             onClick={() => setSelectedTier('GOLD')}
           >
@@ -260,7 +260,7 @@ export function WorkoutDeckSlide({
             className={`px-4 py-2 rounded-lg border transition-all cursor-pointer ${
               selectedTier === 'BLACK'
                 ? 'bg-node-volt/20 border-node-volt'
-                : 'bg-tech-grey border-border-dark'
+                : 'bg-panel thin-border'
             }`}
             onClick={() => setSelectedTier('BLACK')}
           >
@@ -299,7 +299,7 @@ export function WorkoutDeckSlide({
         {!isFirst && (
           <button
             onClick={onPrevious}
-            className="bg-concrete-grey/80 backdrop-blur-sm border border-border-dark text-text-white px-6 py-3 rounded-lg hover:bg-tech-grey transition-colors font-medium"
+            className="bg-panel/80 backdrop-blur-sm thin-border text-text-white px-6 py-3 rounded-lg hover:bg-panel transition-colors font-medium"
           >
             ← Previous
           </button>
@@ -307,7 +307,7 @@ export function WorkoutDeckSlide({
         {timerComplete || section.type === 'WARMUP' || section.type === 'COOLDOWN' || section.type === 'WAVE' ? (
           <button
             onClick={isLast ? onComplete : onNext}
-            className="bg-node-volt text-deep-asphalt font-bold px-8 py-3 rounded-lg hover:opacity-90 transition-opacity text-lg"
+            className="bg-node-volt text-dark font-bold px-8 py-3 rounded-lg hover:opacity-90 transition-opacity text-lg"
             style={{ fontFamily: 'var(--font-space-grotesk)' }}
           >
             {isLast ? 'Complete Workout' : 'Next →'}

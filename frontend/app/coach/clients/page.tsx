@@ -85,7 +85,7 @@ export default function CoachClientsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-deep-asphalt flex items-center justify-center">
+      <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-muted-text">Loading...</div>
       </div>
     );
@@ -96,7 +96,7 @@ export default function CoachClientsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-deep-asphalt">
+    <div className="min-h-screen bg-dark">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8 flex justify-between items-center">
@@ -108,7 +108,7 @@ export default function CoachClientsPage() {
           </div>
           <button
             onClick={() => setShowAddModal(true)}
-            className="bg-node-volt text-deep-asphalt font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
+            className="bg-node-volt text-dark font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
             style={{ fontFamily: 'var(--font-space-grotesk)' }}
           >
             + Add Client
@@ -116,10 +116,10 @@ export default function CoachClientsPage() {
         </div>
 
         {/* Clients List */}
-        <div className="bg-concrete-grey border border-border-dark rounded-lg overflow-hidden">
+        <div className="bg-panel thin-border rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-tech-grey border-b border-border-dark">
+              <thead className="bg-panel border-b thin-border">
                 <tr>
                   <th className="px-6 py-3 text-left text-sm font-semibold">Client</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold">Status</th>
@@ -130,7 +130,7 @@ export default function CoachClientsPage() {
               </thead>
               <tbody>
                 {clients.map((client) => (
-                  <tr key={client.id} className="border-b border-border-dark hover:bg-tech-grey/50">
+                  <tr key={client.id} className="border-b thin-border hover:bg-panel/50">
                     <td className="px-6 py-4">
                       <Link
                         href={`/coach/clients/${client.clientId}`}
@@ -144,7 +144,7 @@ export default function CoachClientsPage() {
                         className={`px-3 py-1 rounded text-sm ${
                           client.status === 'ACTIVE'
                             ? 'bg-node-volt/20 text-node-volt'
-                            : 'bg-tech-grey text-muted-text'
+                            : 'bg-panel text-muted-text'
                         }`}
                       >
                         {client.status}
@@ -194,7 +194,7 @@ export default function CoachClientsPage() {
         {/* Add Client Modal */}
         {showAddModal && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-concrete-grey border border-border-dark rounded-lg p-8 max-w-md w-full mx-4">
+            <div className="bg-panel thin-border rounded-lg p-8 max-w-md w-full mx-4">
               <h2 className="text-3xl font-bold mb-6" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                 Add Client
               </h2>
@@ -212,7 +212,7 @@ export default function CoachClientsPage() {
                       setSelectedUserId(e.target.value);
                     }}
                     placeholder="client@example.com"
-                    className="w-full bg-tech-grey border border-border-dark rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
+                    className="w-full bg-panel thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
                   />
                   <p className="text-xs text-muted-text mt-2">
                     Enter the email address of the user you want to add as a client
@@ -227,7 +227,7 @@ export default function CoachClientsPage() {
                     value={clientNotes}
                     onChange={(e) => setClientNotes(e.target.value)}
                     placeholder="Any initial notes about this client..."
-                    className="w-full bg-tech-grey border border-border-dark rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt resize-none"
+                    className="w-full bg-panel thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt resize-none"
                     rows={3}
                   />
                 </div>
@@ -241,14 +241,14 @@ export default function CoachClientsPage() {
                     setClientNotes('');
                     setSearchEmail('');
                   }}
-                  className="flex-1 bg-tech-grey border border-border-dark text-text-white px-6 py-3 rounded-lg hover:bg-concrete-grey transition-colors font-medium"
+                  className="flex-1 bg-panel thin-border text-text-white px-6 py-3 rounded-lg hover:bg-panel transition-colors font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleAddClient}
                   disabled={!selectedUserId}
-                  className="flex-1 bg-node-volt text-deep-asphalt font-bold px-6 py-3 rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                  className="flex-1 bg-node-volt text-dark font-bold px-6 py-3 rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
                   style={{ fontFamily: 'var(--font-space-grotesk)' }}
                 >
                   Add Client

@@ -162,13 +162,13 @@ export function WorkoutTimer({
       {/* EMOM/E2MOM Round Indicator */}
       {(type === 'EMOM' || type === 'E2MOM') && (
         <div className="flex items-center gap-4">
-          <div className="bg-concrete-grey/50 backdrop-blur-sm border border-border-dark rounded-lg px-6 py-3">
+          <div className="bg-panel/50 backdrop-blur-sm thin-border rounded-lg px-6 py-3">
             <div className="text-muted-text text-sm mb-1">Round</div>
             <div className="text-2xl font-bold text-node-volt">
               {currentRound} / {rounds}
             </div>
           </div>
-          <div className="bg-concrete-grey/50 backdrop-blur-sm border border-border-dark rounded-lg px-6 py-3">
+          <div className="bg-panel/50 backdrop-blur-sm thin-border rounded-lg px-6 py-3">
             <div className="text-muted-text text-sm mb-1">Phase</div>
             <div className="text-xl font-bold" style={{ color: getTimerColor() }}>
               {isWorkPhase ? 'WORK' : 'REST'}
@@ -182,7 +182,7 @@ export function WorkoutTimer({
         {!isRunning && !isPaused && (
           <button
             onClick={handleStart}
-            className="bg-node-volt text-deep-asphalt font-bold px-8 py-3 rounded-lg hover:opacity-90 transition-opacity"
+            className="bg-node-volt text-dark font-bold px-8 py-3 rounded-lg hover:opacity-90 transition-opacity"
             style={{ fontFamily: 'var(--font-space-grotesk)' }}
           >
             Start
@@ -191,7 +191,7 @@ export function WorkoutTimer({
         {isRunning && (
           <button
             onClick={handlePause}
-            className="bg-tech-grey border border-border-dark text-text-white px-6 py-3 rounded-lg hover:bg-concrete-grey transition-colors font-medium"
+            className="bg-panel thin-border text-text-white px-6 py-3 rounded-lg hover:bg-panel transition-colors font-medium"
           >
             Pause
           </button>
@@ -200,13 +200,13 @@ export function WorkoutTimer({
           <>
             <button
               onClick={handleResume}
-              className="bg-node-volt text-deep-asphalt font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
+              className="bg-node-volt text-dark font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
             >
               Resume
             </button>
             <button
               onClick={handleReset}
-              className="bg-tech-grey border border-border-dark text-text-white px-6 py-3 rounded-lg hover:bg-concrete-grey transition-colors font-medium"
+              className="bg-panel thin-border text-text-white px-6 py-3 rounded-lg hover:bg-panel transition-colors font-medium"
             >
               Reset
             </button>

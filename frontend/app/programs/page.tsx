@@ -47,7 +47,7 @@ export default function ProgramsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-deep-asphalt flex items-center justify-center">
+      <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-muted-text">Loading...</div>
       </div>
     );
@@ -58,7 +58,7 @@ export default function ProgramsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-deep-asphalt">
+    <div className="min-h-screen bg-dark">
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -69,7 +69,7 @@ export default function ProgramsPage() {
             <Link
               key={program.id}
               href={`/programs/${program.slug}`}
-              className="bg-concrete-grey border border-border-dark rounded-lg p-6 hover:border-node-volt transition-colors"
+              className="bg-panel thin-border rounded-lg p-6 hover:border-node-volt transition-colors"
             >
               <h2 className="text-2xl font-bold mb-2 font-heading">{program.name}</h2>
               {program.description && (
@@ -88,7 +88,7 @@ export default function ProgramsPage() {
         </div>
 
         {programs.length === 0 && (
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-8 text-center">
+          <div className="bg-panel thin-border rounded-lg p-8 text-center">
             <p className="text-muted-text font-body">No programs available yet.</p>
           </div>
         )}

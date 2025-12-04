@@ -6,9 +6,9 @@ interface TierBadgeProps {
 
 export default function TierBadge({ tier }: TierBadgeProps) {
   const colors = {
-    SILVER: 'bg-concrete-grey text-text-white border border-border-dark',
-    GOLD: 'bg-yellow-500 text-deep-asphalt',
-    BLACK: 'bg-tech-grey text-node-volt border border-node-volt',
+    SILVER: 'bg-panel text-text-white thin-border',
+    GOLD: 'bg-yellow-500 text-dark',
+    BLACK: 'bg-panel text-node-volt border border-node-volt',
   };
 
   return (

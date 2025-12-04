@@ -76,7 +76,7 @@ export default function ProgramDetailPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-deep-asphalt flex items-center justify-center">
+      <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-muted-text">Loading...</div>
       </div>
     );
@@ -87,7 +87,7 @@ export default function ProgramDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-deep-asphalt">
+    <div className="min-h-screen bg-dark">
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -113,14 +113,14 @@ export default function ProgramDetailPage() {
           </div>
         </div>
 
-        <div className="bg-concrete-grey border border-border-dark rounded-lg p-6 mb-8">
+        <div className="bg-panel thin-border rounded-lg p-6 mb-8">
           <h2 className="text-2xl font-bold mb-4 font-heading">Workouts</h2>
           <div className="space-y-3">
             {program.workouts.map((workout) => (
               <Link
                 key={workout.id}
                 href={`/workouts/${workout.id}`}
-                className="block p-4 bg-tech-grey border border-border-dark rounded hover:border-node-volt transition-colors"
+                className="block p-4 bg-panel thin-border rounded hover:border-node-volt transition-colors"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -145,7 +145,7 @@ export default function ProgramDetailPage() {
         <button
           onClick={handleStartProgram}
           disabled={starting}
-          className="bg-node-volt text-deep-asphalt font-bold px-8 py-3 rounded hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity font-heading"
+          className="bg-node-volt text-dark font-bold px-8 py-3 rounded hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity font-heading"
         >
           {starting ? 'Starting...' : 'Start This Program'}
         </button>

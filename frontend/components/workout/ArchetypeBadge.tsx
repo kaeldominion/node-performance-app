@@ -8,12 +8,12 @@ interface ArchetypeBadgeProps {
 const archetypeConfig = {
   PR1ME: {
     label: 'PR1ME',
-    color: 'bg-node-volt text-deep-asphalt',
+    color: 'bg-node-volt text-dark',
     description: 'Primary Strength',
   },
   FORGE: {
     label: 'FORGE',
-    color: 'bg-yellow-500 text-deep-asphalt',
+    color: 'bg-yellow-500 text-dark',
     description: 'Strength Superset',
   },
   ENGIN3: {

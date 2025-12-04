@@ -61,8 +61,8 @@ export default function EmomTimer({
                 key={idx}
                 className={`w-12 h-12 rounded border-2 flex items-center justify-center font-bold ${
                   idx === activeStation
-                    ? 'bg-node-volt border-node-volt text-deep-asphalt'
-                    : 'bg-tech-grey border-border-dark text-muted-text'
+                    ? 'bg-node-volt border-node-volt text-dark'
+                    : 'bg-panel thin-border text-muted-text'
                 }`}
               >
                 {idx + 1}
@@ -76,7 +76,7 @@ export default function EmomTimer({
         {!isRunning && (
           <button
             onClick={start}
-            className="bg-node-volt text-deep-asphalt font-bold px-6 py-2 rounded hover:opacity-90"
+            className="bg-node-volt text-dark font-bold px-6 py-2 rounded hover:opacity-90"
           >
             Start
           </button>
@@ -84,14 +84,14 @@ export default function EmomTimer({
         {isRunning && (
           <button
             onClick={pause}
-            className="bg-tech-grey border border-border-dark text-text-white font-bold px-6 py-2 rounded hover:opacity-90"
+            className="bg-panel thin-border text-text-white font-bold px-6 py-2 rounded hover:opacity-90"
           >
             Pause
           </button>
         )}
         <button
           onClick={reset}
-          className="bg-tech-grey border border-border-dark text-text-white font-bold px-6 py-2 rounded hover:opacity-90"
+          className="bg-panel thin-border text-text-white font-bold px-6 py-2 rounded hover:opacity-90"
         >
           Reset
         </button>

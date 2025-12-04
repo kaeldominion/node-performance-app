@@ -55,7 +55,7 @@ export default function CoachDashboard() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-deep-asphalt flex items-center justify-center">
+      <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-muted-text">Loading...</div>
       </div>
     );
@@ -68,10 +68,10 @@ export default function CoachDashboard() {
   // If no profile exists, show setup
   if (!profile) {
     return (
-      <div className="min-h-screen bg-deep-asphalt">
+      <div className="min-h-screen bg-dark">
         <Navbar />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-8 text-center">
+          <div className="bg-panel thin-border rounded-lg p-8 text-center">
             <h1 className="text-4xl font-bold mb-4" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               Set Up Your Coach Profile
             </h1>
@@ -80,7 +80,7 @@ export default function CoachDashboard() {
             </p>
             <Link
               href="/coach/setup"
-              className="inline-block bg-node-volt text-deep-asphalt font-bold px-8 py-3 rounded-lg hover:opacity-90 transition-opacity"
+              className="inline-block bg-node-volt text-dark font-bold px-8 py-3 rounded-lg hover:opacity-90 transition-opacity"
               style={{ fontFamily: 'var(--font-space-grotesk)' }}
             >
               Create Profile
@@ -92,7 +92,7 @@ export default function CoachDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-deep-asphalt">
+    <div className="min-h-screen bg-dark">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
@@ -105,19 +105,19 @@ export default function CoachDashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+          <div className="bg-panel thin-border rounded-lg p-6">
             <div className="text-muted-text text-sm mb-2">Total Clients</div>
             <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               {stats.totalClients}
             </div>
           </div>
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+          <div className="bg-panel thin-border rounded-lg p-6">
             <div className="text-muted-text text-sm mb-2">Active Clients</div>
             <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               {stats.activeClients}
             </div>
           </div>
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+          <div className="bg-panel thin-border rounded-lg p-6">
             <div className="text-muted-text text-sm mb-2">Active Programs</div>
             <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               {stats.totalPrograms}
@@ -129,7 +129,7 @@ export default function CoachDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <Link
             href="/coach/clients"
-            className="bg-concrete-grey border border-border-dark rounded-lg p-6 hover:border-node-volt transition-colors"
+            className="bg-panel thin-border rounded-lg p-6 hover:border-node-volt transition-colors"
           >
             <h3 className="text-2xl font-bold mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               Manage Clients
@@ -138,7 +138,7 @@ export default function CoachDashboard() {
           </Link>
           <Link
             href="/coach/programs"
-            className="bg-concrete-grey border border-border-dark rounded-lg p-6 hover:border-node-volt transition-colors"
+            className="bg-panel thin-border rounded-lg p-6 hover:border-node-volt transition-colors"
           >
             <h3 className="text-2xl font-bold mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               My Programs
@@ -149,7 +149,7 @@ export default function CoachDashboard() {
 
         {/* Recent Clients */}
         {clients.length > 0 && (
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+          <div className="bg-panel thin-border rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                 Recent Clients
@@ -166,7 +166,7 @@ export default function CoachDashboard() {
                 <Link
                   key={client.id}
                   href={`/coach/clients/${client.clientId}`}
-                  className="block bg-tech-grey border border-border-dark rounded-lg p-4 hover:border-node-volt transition-colors"
+                  className="block bg-panel thin-border rounded-lg p-4 hover:border-node-volt transition-colors"
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -187,7 +187,7 @@ export default function CoachDashboard() {
 
         {/* Profile Info */}
         {profile && (
-          <div className="mt-8 bg-concrete-grey border border-border-dark rounded-lg p-6">
+          <div className="mt-8 bg-panel thin-border rounded-lg p-6">
             <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               Coach Profile
             </h2>
@@ -199,7 +199,7 @@ export default function CoachDashboard() {
                     profile.specialties.map((spec: string, idx: number) => (
                       <span
                         key={idx}
-                        className="bg-tech-grey border border-border-dark px-3 py-1 rounded text-sm"
+                        className="bg-panel thin-border px-3 py-1 rounded text-sm"
                       >
                         {spec}
                       </span>
@@ -216,7 +216,7 @@ export default function CoachDashboard() {
                     profile.certifications.map((cert: string, idx: number) => (
                       <span
                         key={idx}
-                        className="bg-tech-grey border border-border-dark px-3 py-1 rounded text-sm"
+                        className="bg-panel thin-border px-3 py-1 rounded text-sm"
                       >
                         {cert}
                       </span>

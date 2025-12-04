@@ -92,7 +92,7 @@ export default function ClientDetailPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-deep-asphalt flex items-center justify-center">
+      <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-muted-text">Loading...</div>
       </div>
     );
@@ -111,7 +111,7 @@ export default function ClientDetailPage() {
     : [];
 
   return (
-    <div className="min-h-screen bg-deep-asphalt">
+    <div className="min-h-screen bg-dark">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
@@ -130,7 +130,7 @@ export default function ClientDetailPage() {
           </div>
           <button
             onClick={() => setShowAssignModal(true)}
-            className="bg-node-volt text-deep-asphalt font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
+            className="bg-node-volt text-dark font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
             style={{ fontFamily: 'var(--font-space-grotesk)' }}
           >
             Assign Program
@@ -140,25 +140,25 @@ export default function ClientDetailPage() {
         {/* Stats Cards */}
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+            <div className="bg-panel thin-border rounded-lg p-6">
               <div className="text-muted-text text-sm mb-2">Total Sessions</div>
               <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                 {stats.totalSessions || 0}
               </div>
             </div>
-            <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+            <div className="bg-panel thin-border rounded-lg p-6">
               <div className="text-muted-text text-sm mb-2">Avg RPE</div>
               <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                 {stats.avgRPE || 0}
               </div>
             </div>
-            <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+            <div className="bg-panel thin-border rounded-lg p-6">
               <div className="text-muted-text text-sm mb-2">Total Hours</div>
               <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                 {stats.totalDurationSec ? Math.round((stats.totalDurationSec / 3600) * 10) / 10 : 0}
               </div>
             </div>
-            <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+            <div className="bg-panel thin-border rounded-lg p-6">
               <div className="text-muted-text text-sm mb-2">Completion Rate</div>
               <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                 {stats.completionRate || 0}%
@@ -169,7 +169,7 @@ export default function ClientDetailPage() {
 
         {/* Trends Chart */}
         {trendsChartData.length > 0 && (
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-6 mb-8">
+          <div className="bg-panel thin-border rounded-lg p-6 mb-8">
             <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               30-Day Activity
             </h2>
@@ -207,7 +207,7 @@ export default function ClientDetailPage() {
         )}
 
         {/* Program Assignments */}
-        <div className="bg-concrete-grey border border-border-dark rounded-lg p-6 mb-8">
+        <div className="bg-panel thin-border rounded-lg p-6 mb-8">
           <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
             Assigned Programs
           </h2>
@@ -216,7 +216,7 @@ export default function ClientDetailPage() {
               {assignments.map((assignment) => (
                 <div
                   key={assignment.id}
-                  className="bg-tech-grey border border-border-dark rounded-lg p-4"
+                  className="bg-panel thin-border rounded-lg p-4"
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -254,7 +254,7 @@ export default function ClientDetailPage() {
         {/* Assign Program Modal */}
         {showAssignModal && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-concrete-grey border border-border-dark rounded-lg p-8 max-w-md w-full mx-4">
+            <div className="bg-panel thin-border rounded-lg p-8 max-w-md w-full mx-4">
               <h2 className="text-3xl font-bold mb-6" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                 Assign Program
               </h2>
@@ -267,7 +267,7 @@ export default function ClientDetailPage() {
                   <select
                     value={selectedProgramId}
                     onChange={(e) => setSelectedProgramId(e.target.value)}
-                    className="w-full bg-tech-grey border border-border-dark rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
+                    className="w-full bg-panel thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
                   >
                     <option value="">Choose a program...</option>
                     {availablePrograms.map((program) => (
@@ -285,14 +285,14 @@ export default function ClientDetailPage() {
                     setShowAssignModal(false);
                     setSelectedProgramId('');
                   }}
-                  className="flex-1 bg-tech-grey border border-border-dark text-text-white px-6 py-3 rounded-lg hover:bg-concrete-grey transition-colors font-medium"
+                  className="flex-1 bg-panel thin-border text-text-white px-6 py-3 rounded-lg hover:bg-panel transition-colors font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleAssignProgram}
                   disabled={!selectedProgramId}
-                  className="flex-1 bg-node-volt text-deep-asphalt font-bold px-6 py-3 rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                  className="flex-1 bg-node-volt text-dark font-bold px-6 py-3 rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
                   style={{ fontFamily: 'var(--font-space-grotesk)' }}
                 >
                   Assign Program

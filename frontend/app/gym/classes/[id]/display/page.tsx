@@ -42,7 +42,7 @@ export default function GymClassDisplayPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-deep-asphalt flex items-center justify-center">
+      <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-muted-text text-2xl">Loading class...</div>
       </div>
     );
@@ -50,7 +50,7 @@ export default function GymClassDisplayPage() {
 
   if (!gymClass || !workout) {
     return (
-      <div className="min-h-screen bg-deep-asphalt flex items-center justify-center">
+      <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-center">
           <div className="text-muted-text text-2xl mb-4">Class or workout not found</div>
           <div className="text-muted-text">This class may not have a workout assigned yet.</div>
@@ -60,7 +60,7 @@ export default function GymClassDisplayPage() {
   }
 
   return (
-    <div className="min-h-screen bg-deep-asphalt">
+    <div className="min-h-screen bg-dark">
       <WorkoutDeckPlayer
         workout={workout}
         sessionId={null}

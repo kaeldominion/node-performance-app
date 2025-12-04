@@ -90,7 +90,7 @@ export default function WorkoutBuilderPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-deep-asphalt flex items-center justify-center">
+      <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-muted-text">Loading...</div>
       </div>
     );
@@ -102,13 +102,13 @@ export default function WorkoutBuilderPage() {
   }
 
   return (
-    <div className="min-h-screen bg-deep-asphalt">
+    <div className="min-h-screen bg-dark">
       <Navbar />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-4xl font-bold mb-8">AI Workout Builder</h1>
 
-        <div className="bg-concrete-grey border border-border-dark rounded-lg p-6 mb-8">
+        <div className="bg-panel thin-border rounded-lg p-6 mb-8">
           <h2 className="text-2xl font-bold mb-6">Workout Parameters</h2>
 
           <div className="space-y-6">
@@ -122,8 +122,8 @@ export default function WorkoutBuilderPage() {
                     onClick={() => setFormData({ ...formData, trainingLevel: level })}
                     className={`px-4 py-2 rounded border transition-colors ${
                       formData.trainingLevel === level
-                        ? 'bg-node-volt text-deep-asphalt border-node-volt'
-                        : 'bg-tech-grey border-border-dark text-text-white hover:border-node-volt'
+                        ? 'bg-node-volt text-dark border-node-volt'
+                        : 'bg-panel thin-border text-text-white hover:border-node-volt'
                     }`}
                   >
                     {level}
@@ -142,8 +142,8 @@ export default function WorkoutBuilderPage() {
                     onClick={() => setFormData({ ...formData, goal })}
                     className={`px-4 py-2 rounded border transition-colors ${
                       formData.goal === goal
-                        ? 'bg-node-volt text-deep-asphalt border-node-volt'
-                        : 'bg-tech-grey border-border-dark text-text-white hover:border-node-volt'
+                        ? 'bg-node-volt text-dark border-node-volt'
+                        : 'bg-panel thin-border text-text-white hover:border-node-volt'
                     }`}
                   >
                     {goal}
@@ -180,8 +180,8 @@ export default function WorkoutBuilderPage() {
                     onClick={() => setFormData({ ...formData, archetype: formData.archetype === archetype ? undefined : archetype })}
                     className={`px-4 py-2 rounded border transition-colors ${
                       formData.archetype === archetype
-                        ? 'bg-node-volt text-deep-asphalt border-node-volt'
-                        : 'bg-tech-grey border-border-dark text-text-white hover:border-node-volt'
+                        ? 'bg-node-volt text-dark border-node-volt'
+                        : 'bg-panel thin-border text-text-white hover:border-node-volt'
                     }`}
                   >
                     {archetype}
@@ -206,8 +206,8 @@ export default function WorkoutBuilderPage() {
                     onClick={() => handleEquipmentToggle(equipment)}
                     className={`px-4 py-2 rounded border transition-colors ${
                       formData.equipment.includes(equipment)
-                        ? 'bg-node-volt text-deep-asphalt border-node-volt'
-                        : 'bg-tech-grey border-border-dark text-text-white hover:border-node-volt'
+                        ? 'bg-node-volt text-dark border-node-volt'
+                        : 'bg-panel thin-border text-text-white hover:border-node-volt'
                     }`}
                   >
                     {equipment}
@@ -220,7 +220,7 @@ export default function WorkoutBuilderPage() {
             <button
               onClick={handleGenerate}
               disabled={loading || formData.equipment.length === 0}
-              className="w-full bg-node-volt text-deep-asphalt font-bold py-3 rounded hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+              className="w-full bg-node-volt text-dark font-bold py-3 rounded hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
             >
               {loading ? 'Generating Workout...' : 'Generate Workout'}
             </button>
@@ -236,7 +236,7 @@ export default function WorkoutBuilderPage() {
 
         {/* Generated Workout Preview */}
         {generatedWorkout && (
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+          <div className="bg-panel thin-border rounded-lg p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl font-bold mb-2">
@@ -251,7 +251,7 @@ export default function WorkoutBuilderPage() {
               </div>
               <button
                 onClick={handleSaveWorkout}
-                className="bg-node-volt text-deep-asphalt font-bold px-6 py-2 rounded hover:opacity-90"
+                className="bg-node-volt text-dark font-bold px-6 py-2 rounded hover:opacity-90"
               >
                 Save Workout
               </button>
@@ -261,7 +261,7 @@ export default function WorkoutBuilderPage() {
               {generatedWorkout.sections?.map((section: any, idx: number) => (
                 <div
                   key={idx}
-                  className="bg-tech-grey border border-border-dark rounded-lg p-4"
+                  className="bg-panel thin-border rounded-lg p-4"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-xl font-bold">{section.title}</h3>
@@ -285,7 +285,7 @@ export default function WorkoutBuilderPage() {
                     {section.blocks?.map((block: any, blockIdx: number) => (
                       <div
                         key={blockIdx}
-                        className="bg-concrete-grey rounded p-2 text-sm"
+                        className="bg-panel rounded p-2 text-sm"
                       >
                         <div className="font-medium">
                           {block.label && (

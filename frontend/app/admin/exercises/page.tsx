@@ -72,7 +72,7 @@ export default function ExercisesAdminPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-deep-asphalt flex items-center justify-center">
+      <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-muted-text">Loading...</div>
       </div>
     );
@@ -83,7 +83,7 @@ export default function ExercisesAdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-deep-asphalt">
+    <div className="min-h-screen bg-dark">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8 flex justify-between items-center">
@@ -93,7 +93,7 @@ export default function ExercisesAdminPage() {
           </div>
           <Link
             href="/admin/exercises/new"
-            className="bg-node-volt text-deep-asphalt font-bold py-2 px-6 rounded hover:opacity-90 transition-opacity"
+            className="bg-node-volt text-dark font-bold py-2 px-6 rounded hover:opacity-90 transition-opacity"
           >
             + Add Exercise
           </Link>
@@ -111,14 +111,14 @@ export default function ExercisesAdminPage() {
             placeholder="Search exercises..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-tech-grey border border-border-dark rounded px-4 py-2 text-text-white focus:outline-none focus:border-node-volt"
+            className="w-full bg-panel thin-border rounded px-4 py-2 text-text-white focus:outline-none focus:border-node-volt"
           />
         </div>
 
-        <div className="bg-concrete-grey border border-border-dark rounded-lg overflow-hidden">
+        <div className="bg-panel thin-border rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-tech-grey border-b border-border-dark">
+              <thead className="bg-panel border-b thin-border">
                 <tr>
                   <th className="px-6 py-3 text-left text-sm font-semibold">ID</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold">Name</th>
@@ -130,7 +130,7 @@ export default function ExercisesAdminPage() {
               </thead>
               <tbody>
                 {filteredExercises.map((exercise) => (
-                  <tr key={exercise.id} className="border-b border-border-dark hover:bg-tech-grey/50">
+                  <tr key={exercise.id} className="border-b thin-border hover:bg-panel/50">
                     <td className="px-6 py-4 text-sm font-mono text-muted-text">{exercise.exerciseId}</td>
                     <td className="px-6 py-4 text-sm">{exercise.name}</td>
                     <td className="px-6 py-4 text-sm text-muted-text">{exercise.category}</td>

@@ -82,7 +82,7 @@ export default function GymClassesPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-deep-asphalt flex items-center justify-center">
+      <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-muted-text">Loading...</div>
       </div>
     );
@@ -93,7 +93,7 @@ export default function GymClassesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-deep-asphalt">
+    <div className="min-h-screen bg-dark">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8 flex justify-between items-center">
@@ -105,7 +105,7 @@ export default function GymClassesPage() {
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="bg-node-volt text-deep-asphalt font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
+            className="bg-node-volt text-dark font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
             style={{ fontFamily: 'var(--font-space-grotesk)' }}
           >
             + Create Class
@@ -118,21 +118,21 @@ export default function GymClassesPage() {
             type="date"
             value={dateRange.start}
             onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-            className="bg-tech-grey border border-border-dark rounded-lg px-4 py-2 text-text-white focus:outline-none focus:border-node-volt"
+            className="bg-panel thin-border rounded-lg px-4 py-2 text-text-white focus:outline-none focus:border-node-volt"
           />
           <input
             type="date"
             value={dateRange.end}
             onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-            className="bg-tech-grey border border-border-dark rounded-lg px-4 py-2 text-text-white focus:outline-none focus:border-node-volt"
+            className="bg-panel thin-border rounded-lg px-4 py-2 text-text-white focus:outline-none focus:border-node-volt"
           />
         </div>
 
         {/* Classes List */}
-        <div className="bg-concrete-grey border border-border-dark rounded-lg overflow-hidden">
+        <div className="bg-panel thin-border rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-tech-grey border-b border-border-dark">
+              <thead className="bg-panel border-b thin-border">
                 <tr>
                   <th className="px-6 py-3 text-left text-sm font-semibold">Class Name</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold">Date & Time</th>
@@ -144,7 +144,7 @@ export default function GymClassesPage() {
               </thead>
               <tbody>
                 {classes.map((gymClass) => (
-                  <tr key={gymClass.id} className="border-b border-border-dark hover:bg-tech-grey/50">
+                  <tr key={gymClass.id} className="border-b thin-border hover:bg-panel/50">
                     <td className="px-6 py-4">
                       <Link
                         href={`/gym/classes/${gymClass.id}`}
@@ -209,7 +209,7 @@ export default function GymClassesPage() {
         {/* Create Class Modal */}
         {showCreateModal && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-concrete-grey border border-border-dark rounded-lg p-8 max-w-md w-full mx-4">
+            <div className="bg-panel thin-border rounded-lg p-8 max-w-md w-full mx-4">
               <h2 className="text-3xl font-bold mb-6" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                 Create Class
               </h2>
@@ -225,7 +225,7 @@ export default function GymClassesPage() {
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
                     placeholder="Morning Strength"
-                    className="w-full bg-tech-grey border border-border-dark rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
+                    className="w-full bg-panel thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
                   />
                 </div>
 
@@ -238,7 +238,7 @@ export default function GymClassesPage() {
                     value={formData.scheduledAt}
                     onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
                     required
-                    className="w-full bg-tech-grey border border-border-dark rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
+                    className="w-full bg-panel thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
                   />
                 </div>
 
@@ -251,7 +251,7 @@ export default function GymClassesPage() {
                     value={formData.workoutId}
                     onChange={(e) => setFormData({ ...formData, workoutId: e.target.value })}
                     placeholder="Workout ID"
-                    className="w-full bg-tech-grey border border-border-dark rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
+                    className="w-full bg-panel thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
                   />
                 </div>
 
@@ -264,7 +264,7 @@ export default function GymClassesPage() {
                     value={formData.maxCapacity}
                     onChange={(e) => setFormData({ ...formData, maxCapacity: parseInt(e.target.value) })}
                     min="1"
-                    className="w-full bg-tech-grey border border-border-dark rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
+                    className="w-full bg-panel thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
                   />
                 </div>
 
@@ -281,13 +281,13 @@ export default function GymClassesPage() {
                         instructorId: '',
                       });
                     }}
-                    className="flex-1 bg-tech-grey border border-border-dark text-text-white px-6 py-3 rounded-lg hover:bg-concrete-grey transition-colors font-medium"
+                    className="flex-1 bg-panel thin-border text-text-white px-6 py-3 rounded-lg hover:bg-panel transition-colors font-medium"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 bg-node-volt text-deep-asphalt font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
+                    className="flex-1 bg-node-volt text-dark font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
                     style={{ fontFamily: 'var(--font-space-grotesk)' }}
                   >
                     Create Class

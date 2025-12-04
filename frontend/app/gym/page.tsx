@@ -67,7 +67,7 @@ export default function GymDashboard() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-deep-asphalt flex items-center justify-center">
+      <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-muted-text">Loading...</div>
       </div>
     );
@@ -80,10 +80,10 @@ export default function GymDashboard() {
   // If no profile exists, show setup
   if (!profile) {
     return (
-      <div className="min-h-screen bg-deep-asphalt">
+      <div className="min-h-screen bg-dark">
         <Navbar />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-8 text-center">
+          <div className="bg-panel thin-border rounded-lg p-8 text-center">
             <h1 className="text-4xl font-bold mb-4" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               Set Up Your Gym Profile
             </h1>
@@ -92,7 +92,7 @@ export default function GymDashboard() {
             </p>
             <Link
               href="/gym/setup"
-              className="inline-block bg-node-volt text-deep-asphalt font-bold px-8 py-3 rounded-lg hover:opacity-90 transition-opacity"
+              className="inline-block bg-node-volt text-dark font-bold px-8 py-3 rounded-lg hover:opacity-90 transition-opacity"
               style={{ fontFamily: 'var(--font-space-grotesk)' }}
             >
               Create Profile
@@ -104,7 +104,7 @@ export default function GymDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-deep-asphalt">
+    <div className="min-h-screen bg-dark">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
@@ -117,25 +117,25 @@ export default function GymDashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+          <div className="bg-panel thin-border rounded-lg p-6">
             <div className="text-muted-text text-sm mb-2">Total Members</div>
             <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               {stats.totalMembers}
             </div>
           </div>
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+          <div className="bg-panel thin-border rounded-lg p-6">
             <div className="text-muted-text text-sm mb-2">Active Members</div>
             <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               {stats.activeMembers}
             </div>
           </div>
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+          <div className="bg-panel thin-border rounded-lg p-6">
             <div className="text-muted-text text-sm mb-2">Classes Today</div>
             <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               {stats.classesToday}
             </div>
           </div>
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+          <div className="bg-panel thin-border rounded-lg p-6">
             <div className="text-muted-text text-sm mb-2">Upcoming Classes</div>
             <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               {upcomingClasses.length}
@@ -147,7 +147,7 @@ export default function GymDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Link
             href="/gym/classes"
-            className="bg-concrete-grey border border-border-dark rounded-lg p-6 hover:border-node-volt transition-colors"
+            className="bg-panel thin-border rounded-lg p-6 hover:border-node-volt transition-colors"
           >
             <h3 className="text-2xl font-bold mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               Manage Classes
@@ -156,7 +156,7 @@ export default function GymDashboard() {
           </Link>
           <Link
             href="/gym/members"
-            className="bg-concrete-grey border border-border-dark rounded-lg p-6 hover:border-node-volt transition-colors"
+            className="bg-panel thin-border rounded-lg p-6 hover:border-node-volt transition-colors"
           >
             <h3 className="text-2xl font-bold mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               Manage Members
@@ -165,7 +165,7 @@ export default function GymDashboard() {
           </Link>
           <Link
             href="/gym/calendar"
-            className="bg-concrete-grey border border-border-dark rounded-lg p-6 hover:border-node-volt transition-colors"
+            className="bg-panel thin-border rounded-lg p-6 hover:border-node-volt transition-colors"
           >
             <h3 className="text-2xl font-bold mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               Class Calendar
@@ -176,7 +176,7 @@ export default function GymDashboard() {
 
         {/* Upcoming Classes */}
         {upcomingClasses.length > 0 && (
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-6 mb-8">
+          <div className="bg-panel thin-border rounded-lg p-6 mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                 Upcoming Classes
@@ -193,7 +193,7 @@ export default function GymDashboard() {
                 <Link
                   key={gymClass.id}
                   href={`/gym/classes/${gymClass.id}`}
-                  className="block bg-tech-grey border border-border-dark rounded-lg p-4 hover:border-node-volt transition-colors"
+                  className="block bg-panel thin-border rounded-lg p-4 hover:border-node-volt transition-colors"
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -214,7 +214,7 @@ export default function GymDashboard() {
 
         {/* Gym Info */}
         {profile && (
-          <div className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+          <div className="bg-panel thin-border rounded-lg p-6">
             <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               Gym Information
             </h2>

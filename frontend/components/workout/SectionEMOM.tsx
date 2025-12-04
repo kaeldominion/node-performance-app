@@ -64,10 +64,10 @@ export default function SectionEMOM({ title, note, blocks, workSec, restSec, rou
         {blocks.map((block, idx) => (
           <div
             key={block.id || idx}
-            className={`bg-concrete-grey border-2 rounded-lg p-4 transition-all ${
+            className={`bg-panel border-2 rounded-lg p-4 transition-all ${
               idx === activeStation
-                ? 'border-node-volt bg-tech-grey'
-                : 'border-border-dark'
+                ? 'border-node-volt bg-panel'
+                : 'thin-border'
             }`}
           >
             <div className="text-center mb-2">
@@ -86,17 +86,17 @@ export default function SectionEMOM({ title, note, blocks, workSec, restSec, rou
             {(block.tierSilver || block.tierGold || block.tierBlack) && (
               <div className="mt-3 space-y-2">
                 {block.tierSilver && (
-                  <div className="text-xs bg-tech-grey rounded p-2">
+                  <div className="text-xs bg-panel rounded p-2">
                     <div className="text-muted-text">SILVER: {block.tierSilver.load || block.tierSilver.targetReps}</div>
                   </div>
                 )}
                 {block.tierGold && (
-                  <div className="text-xs bg-tech-grey rounded p-2">
+                  <div className="text-xs bg-panel rounded p-2">
                     <div className="text-muted-text">GOLD: {block.tierGold.load || block.tierGold.targetReps}</div>
                   </div>
                 )}
                 {block.tierBlack && (
-                  <div className="text-xs bg-tech-grey border border-node-volt rounded p-2">
+                  <div className="text-xs bg-panel border border-node-volt rounded p-2">
                     <div className="text-node-volt">BLACK: {block.tierBlack.load || block.tierBlack.targetReps}</div>
                   </div>
                 )}

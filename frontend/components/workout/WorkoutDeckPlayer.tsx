@@ -169,12 +169,12 @@ export function WorkoutDeckPlayer({ workout, sessionId, onComplete }: WorkoutDec
   if (deckMode) {
     return (
       <div
-        className="fixed inset-0 bg-deep-asphalt overflow-hidden"
+        className="fixed inset-0 bg-dark overflow-hidden"
         onMouseMove={handleMouseMove}
         style={{ fontFamily: 'var(--font-manrope)' }}
       >
         {/* Progress Bar */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-tech-grey z-50">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-panel z-50">
           <div
             className="h-full bg-node-volt transition-all duration-500 ease-out"
             style={{ width: `${progress}%` }}
@@ -183,7 +183,7 @@ export function WorkoutDeckPlayer({ workout, sessionId, onComplete }: WorkoutDec
 
         {/* Section Indicator */}
         <div className="absolute top-4 left-4 z-40">
-          <div className="bg-concrete-grey/90 backdrop-blur-sm border border-border-dark rounded-lg px-4 py-2">
+          <div className="bg-panel/90 backdrop-blur-sm thin-border rounded-lg px-4 py-2">
             <div className="text-muted-text text-sm font-medium">
               {currentSectionIndex + 1} / {workout.sections.length}
             </div>
@@ -198,13 +198,13 @@ export function WorkoutDeckPlayer({ workout, sessionId, onComplete }: WorkoutDec
           <div className="absolute top-4 right-4 z-40 flex gap-2">
             <button
               onClick={() => setDeckMode(false)}
-              className="bg-concrete-grey/90 backdrop-blur-sm border border-border-dark text-text-white px-4 py-2 rounded-lg hover:bg-tech-grey transition-colors text-sm font-medium"
+              className="bg-panel/90 backdrop-blur-sm thin-border text-text-white px-4 py-2 rounded-lg hover:bg-panel transition-colors text-sm font-medium"
             >
               Exit Deck
             </button>
             <button
               onClick={() => router.push('/')}
-              className="bg-concrete-grey/90 backdrop-blur-sm border border-border-dark text-text-white px-4 py-2 rounded-lg hover:bg-tech-grey transition-colors text-sm font-medium"
+              className="bg-panel/90 backdrop-blur-sm thin-border text-text-white px-4 py-2 rounded-lg hover:bg-panel transition-colors text-sm font-medium"
             >
               Exit Workout
             </button>
@@ -243,7 +243,7 @@ export function WorkoutDeckPlayer({ workout, sessionId, onComplete }: WorkoutDec
               className={`w-2 h-2 rounded-full transition-all ${
                 idx === currentSectionIndex
                   ? 'bg-node-volt w-8'
-                  : 'bg-tech-grey hover:bg-concrete-grey'
+                  : 'bg-panel hover:bg-panel'
               }`}
             />
           ))}
@@ -252,7 +252,7 @@ export function WorkoutDeckPlayer({ workout, sessionId, onComplete }: WorkoutDec
         {/* Complete Modal */}
         {showCompleteModal && (
           <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-concrete-grey border border-border-dark rounded-lg p-8 max-w-md w-full mx-4">
+            <div className="bg-panel thin-border rounded-lg p-8 max-w-md w-full mx-4">
               <h2 className="text-3xl font-bold mb-6" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                 Complete Workout
               </h2>
@@ -280,7 +280,7 @@ export function WorkoutDeckPlayer({ workout, sessionId, onComplete }: WorkoutDec
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="w-full bg-tech-grey border border-border-dark rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt resize-none"
+                    className="w-full bg-panel thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt resize-none"
                     rows={4}
                     placeholder="How did it feel? Any notes?"
                   />
@@ -290,13 +290,13 @@ export function WorkoutDeckPlayer({ workout, sessionId, onComplete }: WorkoutDec
               <div className="flex gap-4 mt-8">
                 <button
                   onClick={() => setShowCompleteModal(false)}
-                  className="flex-1 bg-tech-grey border border-border-dark text-text-white px-6 py-3 rounded-lg hover:bg-concrete-grey transition-colors font-medium"
+                  className="flex-1 bg-panel thin-border text-text-white px-6 py-3 rounded-lg hover:bg-panel transition-colors font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleCompleteWorkout}
-                  className="flex-1 bg-node-volt text-deep-asphalt font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
+                  className="flex-1 bg-node-volt text-dark font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
                   style={{ fontFamily: 'var(--font-space-grotesk)' }}
                 >
                   Save & Complete
