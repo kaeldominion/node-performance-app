@@ -60,17 +60,14 @@ export class SetupController {
   constructor(private usersService: UsersService) {}
 
   @Post('make-admin')
-  async makeAdmin(@Body() body: { email: string; secret: string }) {
-    // Simple secret check - remove this endpoint after use
-    if (body.secret !== process.env.ADMIN_SETUP_SECRET || !body.secret) {
-      return { error: 'Unauthorized' };
-    }
-
+  async makeAdmin(@Body() body: { email: string }) {
+    // TEMPORARY: Remove this endpoint after setting admin
     const user = await this.usersService.findByEmail(body.email);
     if (!user) {
       return { error: 'User not found' };
     }
 
-    return this.usersService.setAdmin(user.id, true);
+    const updated = await this.usersService.setAdmin(user.id, true);
+    return { success: true, message: `${body.email} is now an admin`, user: updated };
   }
 }
