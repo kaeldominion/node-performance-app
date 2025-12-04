@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
+import { ExercisesService } from '../exercises/exercises.service';
 
 @Injectable()
 export class AiService {
   private openai: OpenAI;
 
-  constructor() {
+  constructor(private exercisesService: ExercisesService) {
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
@@ -23,9 +24,35 @@ export class AiService {
     const archetypeParam = params.archetype || undefined;
     const archetypeGuidance = this.getArchetypeGuidance(archetypeParam);
     
+    // Get exercises from database and filter by available equipment
+    const allExercises = await this.exercisesService.findAll();
+    const availableExercises = allExercises.filter((ex) =>
+      params.equipment.some((eq) =>
+        ex.equipment.some((e) => e.toLowerCase().includes(eq.toLowerCase())),
+      ) || ex.equipment.length === 0, // Include bodyweight exercises
+    );
+
+    // Format exercises for prompt
+    const exerciseList = availableExercises
+      .map((ex) => {
+        const equipmentStr = ex.equipment.join(', ');
+        const archetypesStr = ex.suitableArchetypes.join(', ');
+        return `- ${ex.name} (${ex.category}, ${ex.movementPattern}, Equipment: ${equipmentStr || 'bodyweight'}, Archetypes: ${archetypesStr})`;
+      })
+      .join('\n');
+
+    // REVL and Hyrox workout examples
+    const workoutExamples = this.getWorkoutExamples();
+    
     const systemPrompt = `You are an elite hybrid coach designing sessions for the NØDE performance training system.
 
 ${archetypeGuidance}
+
+AVAILABLE EXERCISES (use these exact names):
+${exerciseList}
+
+WORKOUT EXAMPLES (study these for structure and rep schemes):
+${workoutExamples}
 
 You MUST respond with ONLY valid JSON that matches this exact schema:
 
@@ -187,6 +214,82 @@ Use FLOW section type for tempo work and movement flows.`,
 6. FLOWSTATE: Deload and mobility for recovery
 
 Select the appropriate archetype based on the user's goals and available time.`;
+  }
+
+  private getWorkoutExamples(): string {
+    return `
+REVL WORKOUT EXAMPLES:
+
+Example 1 - Hyrox-Style MetCon:
+"HYROX PREP // 01"
+WARMUP: 5 min dynamic warmup
+AMRAP 20:00:
+- 100m SkiErg
+- 80 Wall Balls (9/6 kg)
+- 60m Farmers Walk (24/16 kg)
+- 40 Burpee Broad Jumps
+- 20m Sandbag Lunges (20/14 kg)
+- 100m Row
+FINISHER: 3 rounds for time: 10 Cal Bike + 10 KB Swings
+
+Example 2 - REVL Strength Circuit:
+"REVL STRENGTH // 02"
+WARMUP: 8 min movement prep
+AMRAP 12:00:
+- 8 DB Thrusters (22.5/15 kg)
+- 12 Pull-ups
+- 16 DB Goblet Squats (22.5/15 kg)
+- 20 Cal Row
+REST 2:00
+AMRAP 10:00:
+- 10 KB Swings (24/16 kg)
+- 15 Box Step-ups (24/20")
+- 20 Cal Bike
+- 25 AbMat Sit-ups
+
+HYROX WORKOUT EXAMPLES:
+
+Example 1 - Hyrox Race Simulation:
+"HYROX RACE SIM // 01"
+WARMUP: 10 min run + dynamic prep
+FOR_TIME (Cap 45:00):
+- 1km Run
+- 100m SkiErg
+- 1km Run
+- 50 Wall Balls (9/6 kg)
+- 1km Run
+- 100m Farmers Walk (24/16 kg)
+- 1km Run
+- 80m Sandbag Lunges (20/14 kg)
+- 1km Run
+- 100 Burpee Broad Jumps
+- 1km Run
+- 1000m Row
+- 1km Run
+- 200m Farmers Walk (24/16 kg)
+
+Example 2 - Hyrox Station Focus:
+"HYROX STATIONS // 02"
+WARMUP: 5 min
+EMOM x 20:
+Min 1: 20 Wall Balls (9/6 kg)
+Min 2: 15 Burpee Broad Jumps
+Min 3: 100m Farmers Walk (24/16 kg)
+Min 4: 20m Sandbag Lunges (20/14 kg)
+Min 5: 100m Row
+REST 2:00
+Repeat 3 more rounds
+FINISHER: 2km Run for time
+
+REVL/HYROX REP SCHEME PATTERNS:
+- Descending reps: 100 → 80 → 60 → 40 → 20
+- Ascending reps: 10 → 15 → 20 → 25 → 30
+- Round-based: 5 rounds of 20/15/10
+- Time-based: AMRAP 12:00, FOR_TIME with cap
+- Distance-based: 100m, 200m, 400m, 1km runs/rows
+- Mixed modal: Run → Station → Run → Station pattern
+
+Use these patterns and exercise names when generating workouts.`;
   }
 }
 
