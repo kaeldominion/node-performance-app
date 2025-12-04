@@ -39,11 +39,11 @@ enum SectionType {
   FOR_TIME
   FINISHER
   COOLDOWN
-  WAVE        // For PR1ME: Strength wave sets (10-8-8-8, 6-4-3-2-1, etc.)
-  SUPERSET    // For FORGE: Push/pull or squat/hinge supersets
-  CIRCUIT     // For CIRCUIT_X: Multiple AMRAP blocks
-  CAPACITY    // For CAPAC1TY: Long engine blocks (12-20 min)
-  FLOW        // For FLOWSTATE: Tempo work, KB flows, slow EMOMs
+  WAVE // For PR1ME: Strength wave sets (10-8-8-8, 6-4-3-2-1, etc.)
+  SUPERSET // For FORGE: Push/pull or squat/hinge supersets
+  CIRCUIT // For CIRCUIT_X: Multiple AMRAP blocks
+  CAPACITY // For CAPAC1TY: Long engine blocks (12-20 min)
+  FLOW // For FLOWSTATE: Tempo work, KB flows, slow EMOMs
   OTHER
 }
 
@@ -73,17 +73,17 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  profile      UserProfile?
-  programs     UserProgram[]
-  sessions     SessionLog[]
+  profile  UserProfile?
+  programs UserProgram[]
+  sessions SessionLog[]
 
   @@map("users")
 }
 
 model UserProfile {
-  id            String        @id @default(cuid())
-  userId        String        @unique
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   trainingLevel TrainingLevel
   primaryGoal   TrainingGoal?
@@ -95,78 +95,78 @@ model UserProfile {
 }
 
 model Program {
-  id            String    @id @default(cuid())
+  id            String         @id @default(cuid())
   name          String
-  slug          String    @unique
+  slug          String         @unique
   description   String?
   level         TrainingLevel?
   goal          TrainingGoal?
   durationWeeks Int?
-  isPublic      Boolean   @default(true)
+  isPublic      Boolean        @default(true)
   currentCycle  ProgramCycle?
 
-  workouts      Workout[]
-  userPrograms  UserProgram[]
+  workouts     Workout[]
+  userPrograms UserProgram[]
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("programs")
 }
 
 model Workout {
-  id          String   @id @default(cuid())
-  programId   String?
-  program     Program? @relation(fields: [programId], references: [id], onDelete: SetNull)
+  id        String   @id @default(cuid())
+  programId String?
+  program   Program? @relation(fields: [programId], references: [id], onDelete: SetNull)
 
   name        String
   displayCode String?
   dayIndex    Int?
   archetype   WorkoutArchetype?
-  description String?  // Archetype-specific description
+  description String? // Archetype-specific description
 
-  sections    WorkoutSection[]
-  sessions    SessionLog[]
+  sections WorkoutSection[]
+  sessions SessionLog[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("workouts")
 }
 
 model WorkoutSection {
-  id          String   @id @default(cuid())
-  workoutId   String
-  workout     Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  workoutId String
+  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
 
-  title       String
-  type        SectionType
-  order       Int
+  title String
+  type  SectionType
+  order Int
 
   durationSec Int?
   emomWorkSec Int?
   emomRestSec Int?
   emomRounds  Int?
 
-  note        String?
+  note String?
 
-  blocks      ExerciseBlock[]
+  blocks ExerciseBlock[]
 
   @@map("workout_sections")
 }
 
 model ExerciseBlock {
-  id            String   @id @default(cuid())
-  sectionId     String
-  section       WorkoutSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  order         Int
+  id        String         @id @default(cuid())
+  sectionId String
+  section   WorkoutSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  order     Int
 
-  label         String?
-  exerciseName  String
-  description   String?
-  repScheme     String?
-  distance      Int?
-  distanceUnit  String?
+  label        String?
+  exerciseName String
+  description  String?
+  repScheme    String?
+  distance     Int?
+  distanceUnit String?
 
   tierPrescriptions TierPrescription[]
 
@@ -174,9 +174,9 @@ model ExerciseBlock {
 }
 
 model TierPrescription {
-  id         String        @id @default(cuid())
-  blockId    String
-  block      ExerciseBlock @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  id      String        @id @default(cuid())
+  blockId String
+  block   ExerciseBlock @relation(fields: [blockId], references: [id], onDelete: Cascade)
 
   tier       Tier
   load       String?
@@ -188,12 +188,12 @@ model TierPrescription {
 }
 
 model UserProgram {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  programId   String
-  program     Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  programId String
+  program   Program @relation(fields: [programId], references: [id], onDelete: Cascade)
 
   startDate   DateTime
   currentWeek Int      @default(1)
@@ -203,12 +203,12 @@ model UserProgram {
 }
 
 model SessionLog {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  workoutId   String
-  workout     Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  workoutId String
+  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
 
   performedAt DateTime @default(now())
   durationSec Int?
@@ -219,4 +219,3 @@ model SessionLog {
 
   @@map("session_logs")
 }
-
