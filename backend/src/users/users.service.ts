@@ -30,7 +30,7 @@ export class UsersService {
     
     // Remove passwordHash from response
     const { passwordHash, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    return userWithoutPassword as typeof userWithoutPassword & { isAdmin: boolean };
   }
 
   async updateProfile(userId: string, updateDto: UpdateUserProfileDto) {

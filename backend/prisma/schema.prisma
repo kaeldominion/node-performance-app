@@ -65,11 +65,60 @@ enum ProgramCycle {
   RESET
 }
 
+enum ExerciseCategory {
+  STRENGTH
+  MIXED
+  SKILL
+  ENGINE
+  CORE
+  MOBILITY
+}
+
+enum MovementPattern {
+  HORIZONTAL_PUSH
+  HORIZONTAL_PULL
+  VERTICAL_PUSH
+  VERTICAL_PULL
+  SQUAT
+  HINGE
+  LUNGE
+  CARRY
+  LOC0MOTION
+  FULL_BODY
+  CORE_ANTI_EXTENSION
+  CORE_ROTATION
+  BREATH_MOBILITY
+}
+
+enum SpaceRequirement {
+  SPOT
+  OPEN_AREA
+  LANE_5M
+  LANE_10M
+  RUN_ROUTE
+}
+
+enum ImpactLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TypicalUse {
+  PRIMARY
+  ASSISTANCE
+  CONDITIONING
+  WARMUP
+  FINISHER
+  FLOWSTATE
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
   passwordHash String
   name         String?
+  isAdmin      Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -218,4 +267,41 @@ model SessionLog {
   metrics     Json?
 
   @@map("session_logs")
+}
+
+model Exercise {
+  id                 String             @id @default(cuid())
+  exerciseId         String             @unique // e.g., "db_bench_press"
+  name               String
+  aliases            String[]           @default([])
+  category           ExerciseCategory
+  movementPattern    MovementPattern
+  primaryMuscles     String[]           @default([])
+  secondaryMuscles   String[]           @default([])
+  equipment          String[]           @default([])
+  space              SpaceRequirement
+  impactLevel        ImpactLevel
+  typicalUse         TypicalUse[]
+  suitableArchetypes WorkoutArchetype[]
+  indoorFriendly     Boolean            @default(true)
+  notes              String?
+
+  tiers ExerciseTier[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("exercises")
+}
+
+model ExerciseTier {
+  id          String   @id @default(cuid())
+  exerciseId  String
+  exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  tier        Tier
+  description String?
+  typicalReps String?
+
+  @@unique([exerciseId, tier])
+  @@map("exercise_tiers")
 }
