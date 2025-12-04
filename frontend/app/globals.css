@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+/* NØDE Design System - Color Palette */
+:root {
+  /* NØDE Volt - Primary accent */
+  --node-volt: #ccff00;
+  
+  /* Dark Mode Foundation */
+  --deep-asphalt: #121212;
+  --concrete-grey: #1e1e1e;
+  --tech-grey: #252525;
+  
+  /* Text Colors */
+  --text-white: #ffffff;
+  --muted-text: #b0b0b0;
+  
+  /* Borders */
+  --border-dark: #333333;
+}
+
+@theme inline {
+  --color-node-volt: var(--node-volt);
+  --color-deep-asphalt: var(--deep-asphalt);
+  --color-concrete-grey: var(--concrete-grey);
+  --color-tech-grey: var(--tech-grey);
+  --color-text-white: var(--text-white);
+  --color-muted-text: var(--muted-text);
+  --color-border-dark: var(--border-dark);
+  
+  --font-headline: var(--font-space-grotesk);
+  --font-body: var(--font-manrope);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--deep-asphalt);
+  color: var(--text-white);
+  font-family: var(--font-manrope), 'Inter', 'Roboto', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-space-grotesk), 'DM Sans', 'Archivo', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-white);
+}
+
+h1 {
+  font-weight: 700;
+}
+
+h2 {
+  font-weight: 500;
+}
+
+p, span, div, a {
+  font-family: var(--font-manrope), 'Inter', 'Roboto', sans-serif;
+  color: var(--muted-text);
+  font-weight: 400;
+}
+
+/* Utility Classes */
+.text-volt {
+  color: var(--node-volt);
+}
+
+.bg-deep-asphalt {
+  background-color: var(--deep-asphalt);
+}
+
+.bg-concrete-grey {
+  background-color: var(--concrete-grey);
+}
+
+.bg-tech-grey {
+  background-color: var(--tech-grey);
+}
+
+.border-dark {
+  border-color: var(--border-dark);
+}
