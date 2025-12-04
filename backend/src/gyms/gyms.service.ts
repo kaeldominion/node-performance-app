@@ -97,13 +97,22 @@ export class GymsService {
   }
 
   // Member Management
-  async addMember(gymId: string, userId: string) {
+  async addMember(gymId: string, userId: string, membershipType?: string, status?: string) {
     const gym = await this.prisma.gymProfile.findUnique({
       where: { id: gymId },
     });
 
     if (!gym) {
       throw new NotFoundException('Gym not found');
+    }
+
+    // Check if user exists
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
 
     return this.prisma.gymMember.upsert({
@@ -114,12 +123,14 @@ export class GymsService {
         },
       },
       update: {
-        status: 'ACTIVE',
+        status: status || 'ACTIVE',
+        membershipType: membershipType || undefined,
       },
       create: {
         gymId,
         userId,
-        status: 'ACTIVE',
+        status: status || 'ACTIVE',
+        membershipType: membershipType || undefined,
       },
       include: {
         user: {
@@ -152,6 +163,19 @@ export class GymsService {
   }
 
   async removeMember(gymId: string, userId: string) {
+    const member = await this.prisma.gymMember.findUnique({
+      where: {
+        gymId_userId: {
+          gymId,
+          userId,
+        },
+      },
+    });
+
+    if (!member) {
+      throw new NotFoundException('Member not found');
+    }
+
     return this.prisma.gymMember.delete({
       where: {
         gymId_userId: {
@@ -280,6 +304,52 @@ export class GymsService {
   }
 
   // Attendance Management
+  async getClassAttendance(classId: string) {
+    return this.prisma.gymClassAttendance.findMany({
+      where: { classId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            profile: true,
+          },
+        },
+        sessionLog: true,
+      },
+    });
+  }
+
+  async markAttendance(classId: string, memberId: string, attended: boolean) {
+    return this.prisma.gymClassAttendance.upsert({
+      where: {
+        classId_userId: {
+          classId,
+          userId: memberId,
+        },
+      },
+      update: {
+        attended,
+      },
+      create: {
+        classId,
+        userId: memberId,
+        attended,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            profile: true,
+          },
+        },
+      },
+    });
+  }
+
   async registerAttendance(classId: string, userId: string) {
     const gymClass = await this.prisma.gymClass.findUnique({
       where: { id: classId },

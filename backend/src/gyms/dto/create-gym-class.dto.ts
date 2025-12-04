@@ -22,5 +22,13 @@ export class CreateGymClassDto {
   @IsOptional()
   @IsInt()
   capacity?: number;
+
+  @IsOptional()
+  @IsInt()
+  maxCapacity?: number;
+
+  @IsOptional()
+  @IsString()
+  instructorId?: string;
 }
 

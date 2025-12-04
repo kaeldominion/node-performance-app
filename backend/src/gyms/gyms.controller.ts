@@ -39,34 +39,39 @@ export class GymsController {
 
   // Members
   @Post('members')
-  async addMember(@Body() body: { gymId: string; userId: string }) {
-    return this.gymsService.addMember(body.gymId, body.userId);
+  async addMember(@Request() req, @Body() body: { memberId: string; membershipType?: string; status?: string }) {
+    const profile = await this.gymsService.getProfile(req.user.id);
+    return this.gymsService.addMember(profile.id, body.memberId, body.membershipType, body.status);
   }
 
-  @Get(':gymId/members')
-  async getMembers(@Param('gymId') gymId: string) {
-    return this.gymsService.getMembers(gymId);
+  @Get('members')
+  async getMembers(@Request() req) {
+    const profile = await this.gymsService.getProfile(req.user.id);
+    return this.gymsService.getMembers(profile.id);
   }
 
-  @Delete(':gymId/members/:userId')
-  async removeMember(@Param('gymId') gymId: string, @Param('userId') userId: string) {
-    return this.gymsService.removeMember(gymId, userId);
+  @Delete('members/:memberId')
+  async removeMember(@Request() req, @Param('memberId') memberId: string) {
+    const profile = await this.gymsService.getProfile(req.user.id);
+    return this.gymsService.removeMember(profile.id, memberId);
   }
 
   // Classes
-  @Post(':gymId/classes')
-  async createClass(@Param('gymId') gymId: string, @Body() createDto: CreateGymClassDto) {
-    return this.gymsService.createClass(gymId, createDto);
+  @Post('classes')
+  async createClass(@Request() req, @Body() createDto: CreateGymClassDto) {
+    const profile = await this.gymsService.getProfile(req.user.id);
+    return this.gymsService.createClass(profile.id, createDto);
   }
 
-  @Get(':gymId/classes')
+  @Get('classes')
   async getClasses(
-    @Param('gymId') gymId: string,
+    @Request() req,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
+    const profile = await this.gymsService.getProfile(req.user.id);
     return this.gymsService.getClasses(
-      gymId,
+      profile.id,
       startDate ? new Date(startDate) : undefined,
       endDate ? new Date(endDate) : undefined,
     );
@@ -88,6 +93,19 @@ export class GymsController {
   }
 
   // Attendance
+  @Get('classes/:classId/attendance')
+  async getClassAttendance(@Param('classId') classId: string) {
+    return this.gymsService.getClassAttendance(classId);
+  }
+
+  @Post('classes/:classId/attendance')
+  async markAttendance(
+    @Param('classId') classId: string,
+    @Body() body: { memberId: string; attended: boolean },
+  ) {
+    return this.gymsService.markAttendance(classId, body.memberId, body.attended);
+  }
+
   @Post('classes/:classId/attend')
   async registerAttendance(@Param('classId') classId: string, @Request() req) {
     return this.gymsService.registerAttendance(classId, req.user.id);
