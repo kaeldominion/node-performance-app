@@ -80,7 +80,7 @@ export default function GymSetupPage() {
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              placeholder="NØDE Performance Gym"
+              placeholder="NØDE OS Gym"
               className="w-full bg-panel thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
             />
           </div>
