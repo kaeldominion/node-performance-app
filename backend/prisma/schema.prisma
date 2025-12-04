@@ -1,0 +1,228 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TrainingLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  ELITE
+}
+
+enum TrainingGoal {
+  STRENGTH
+  HYPERTROPHY
+  HYBRID
+  CONDITIONING
+  FAT_LOSS
+  LONGEVITY
+}
+
+enum Tier {
+  SILVER
+  GOLD
+  BLACK
+}
+
+enum SectionType {
+  WARMUP
+  EMOM
+  AMRAP
+  FOR_TIME
+  FINISHER
+  COOLDOWN
+  WAVE        // For PR1ME: Strength wave sets (10-8-8-8, 6-4-3-2-1, etc.)
+  SUPERSET    // For FORGE: Push/pull or squat/hinge supersets
+  CIRCUIT     // For CIRCUIT_X: Multiple AMRAP blocks
+  CAPACITY    // For CAPAC1TY: Long engine blocks (12-20 min)
+  FLOW        // For FLOWSTATE: Tempo work, KB flows, slow EMOMs
+  OTHER
+}
+
+enum WorkoutArchetype {
+  PR1ME
+  FORGE
+  ENGIN3
+  CIRCUIT_X
+  CAPAC1TY
+  FLOWSTATE
+}
+
+enum ProgramCycle {
+  BASE
+  LOAD
+  INTENSIFY
+  DELOAD
+  PEAK
+  RESET
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  profile      UserProfile?
+  programs     UserProgram[]
+  sessions     SessionLog[]
+
+  @@map("users")
+}
+
+model UserProfile {
+  id            String        @id @default(cuid())
+  userId        String        @unique
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  trainingLevel TrainingLevel
+  primaryGoal   TrainingGoal?
+  equipment     String[]
+  daysPerWeek   Int?
+  notes         String?
+
+  @@map("user_profiles")
+}
+
+model Program {
+  id            String    @id @default(cuid())
+  name          String
+  slug          String    @unique
+  description   String?
+  level         TrainingLevel?
+  goal          TrainingGoal?
+  durationWeeks Int?
+  isPublic      Boolean   @default(true)
+  currentCycle  ProgramCycle?
+
+  workouts      Workout[]
+  userPrograms  UserProgram[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("programs")
+}
+
+model Workout {
+  id          String   @id @default(cuid())
+  programId   String?
+  program     Program? @relation(fields: [programId], references: [id], onDelete: SetNull)
+
+  name        String
+  displayCode String?
+  dayIndex    Int?
+  archetype   WorkoutArchetype?
+  description String?  // Archetype-specific description
+
+  sections    WorkoutSection[]
+  sessions    SessionLog[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("workouts")
+}
+
+model WorkoutSection {
+  id          String   @id @default(cuid())
+  workoutId   String
+  workout     Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+
+  title       String
+  type        SectionType
+  order       Int
+
+  durationSec Int?
+  emomWorkSec Int?
+  emomRestSec Int?
+  emomRounds  Int?
+
+  note        String?
+
+  blocks      ExerciseBlock[]
+
+  @@map("workout_sections")
+}
+
+model ExerciseBlock {
+  id            String   @id @default(cuid())
+  sectionId     String
+  section       WorkoutSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  order         Int
+
+  label         String?
+  exerciseName  String
+  description   String?
+  repScheme     String?
+  distance      Int?
+  distanceUnit  String?
+
+  tierSilverId  String?  @unique
+  tierSilver    TierPrescription? @relation("SilverTier", fields: [tierSilverId], references: [id])
+  tierGoldId    String?  @unique
+  tierGold      TierPrescription? @relation("GoldTier", fields: [tierGoldId], references: [id])
+  tierBlackId   String?  @unique
+  tierBlack     TierPrescription? @relation("BlackTier", fields: [tierBlackId], references: [id])
+
+  @@map("exercise_blocks")
+}
+
+model TierPrescription {
+  id         String        @id @default(cuid())
+  tier       Tier
+  load       String?
+  targetReps Int?
+  notes      String?
+
+  // Back-relations (only one will be set per prescription)
+  blockAsSilver ExerciseBlock? @relation("SilverTier")
+  blockAsGold   ExerciseBlock? @relation("GoldTier")
+  blockAsBlack  ExerciseBlock? @relation("BlackTier")
+
+  @@map("tier_prescriptions")
+}
+
+model UserProgram {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  programId   String
+  program     Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  startDate   DateTime
+  currentWeek Int      @default(1)
+  isActive    Boolean  @default(true)
+
+  @@map("user_programs")
+}
+
+model SessionLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  workoutId   String
+  workout     Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+
+  performedAt DateTime @default(now())
+  durationSec Int?
+  completed   Boolean  @default(false)
+  rpe         Int?
+  notes       String?
+  metrics     Json?
+
+  @@map("session_logs")
+}
+
