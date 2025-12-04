@@ -57,14 +57,18 @@
   background: rgba(5, 5, 5, 0.3);
 }
 
-* {
-  margin: 0;
-  padding: 0;
+/* Box-sizing for all elements */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
+/* Reset only specific elements, let Tailwind handle the rest */
 html,
 body {
+  margin: 0;
+  padding: 0;
   height: 100%;
   background: var(--dark);
   color: var(--text-white);
@@ -72,6 +76,16 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;
+}
+
+/* Reset only block-level elements that commonly have default margins */
+h1, h2, h3, h4, h5, h6,
+p, blockquote, pre,
+ul, ol, li,
+figure, figcaption,
+dl, dd {
+  margin: 0;
+  padding: 0;
 }
 
 /* Remove default link styling */
