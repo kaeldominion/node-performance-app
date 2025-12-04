@@ -7,9 +7,11 @@ import { WorkoutsModule } from './workouts/workouts.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { AiModule } from './ai/ai.module';
 import { ExercisesModule } from './exercises/exercises.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 import { CoachesModule } from './coaches/coaches.module';
 import { GymsModule } from './gyms/gyms.module';
 import { TemplatesModule } from './templates/templates.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -24,6 +26,7 @@ import { TemplatesModule } from './templates/templates.module';
     CoachesModule,
     GymsModule,
     TemplatesModule,
+    AnalyticsModule,
   ],
 })
 export class AppModule {}

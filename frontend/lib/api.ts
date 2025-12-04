@@ -183,5 +183,41 @@ export const adminApi = {
   },
 };
 
+// Analytics API
+export const analyticsApi = {
+  getStats: async (startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    const response = await api.get(`/analytics/stats?${params.toString()}`);
+    return response.data;
+  },
+  getStrengthProgress: async (exercise?: string) => {
+    const params = exercise ? `?exercise=${exercise}` : '';
+    const response = await api.get(`/analytics/strength${params}`);
+    return response.data;
+  },
+  getEngineProgress: async () => {
+    const response = await api.get('/analytics/engine');
+    return response.data;
+  },
+  getWeeklySummary: async (weekStart?: string) => {
+    const params = weekStart ? `?weekStart=${weekStart}` : '';
+    const response = await api.get(`/analytics/weekly${params}`);
+    return response.data;
+  },
+  getMonthlySummary: async (month?: number, year?: number) => {
+    const params = new URLSearchParams();
+    if (month !== undefined) params.append('month', month.toString());
+    if (year !== undefined) params.append('year', year.toString());
+    const response = await api.get(`/analytics/monthly?${params.toString()}`);
+    return response.data;
+  },
+  getTrends: async (days: number = 30) => {
+    const response = await api.get(`/analytics/trends?days=${days}`);
+    return response.data;
+  },
+};
+
 export default api;
 
