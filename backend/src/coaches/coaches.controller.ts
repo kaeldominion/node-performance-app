@@ -12,10 +12,10 @@ import {
 import { CoachesService } from './coaches.service';
 import { CreateCoachProfileDto } from './dto/create-coach-profile.dto';
 import { CreateCoachClientDto } from './dto/create-coach-client.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ClerkAuthGuard } from '../auth/clerk.guard';
 
 @Controller('coaches')
-@UseGuards(JwtAuthGuard)
+@UseGuards(ClerkAuthGuard)
 export class CoachesController {
   constructor(private readonly coachesService: CoachesService) {}
 

@@ -11,7 +11,7 @@ import {
 import { ExercisesService } from './exercises.service';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
-import { AdminGuard } from '../auth/admin.guard';
+import { ClerkAdminGuard } from '../auth/clerk-admin.guard';
 
 @Controller('exercises')
 export class ExercisesController {
@@ -30,19 +30,19 @@ export class ExercisesController {
 
   // Admin only endpoints
   @Post()
-  @UseGuards(AdminGuard)
+  @UseGuards(ClerkAdminGuard)
   create(@Body() createExerciseDto: CreateExerciseDto) {
     return this.exercisesService.create(createExerciseDto);
   }
 
   @Patch(':id')
-  @UseGuards(AdminGuard)
+  @UseGuards(ClerkAdminGuard)
   update(@Param('id') id: string, @Body() updateExerciseDto: UpdateExerciseDto) {
     return this.exercisesService.update(id, updateExerciseDto);
   }
 
   @Delete(':id')
-  @UseGuards(AdminGuard)
+  @UseGuards(ClerkAdminGuard)
   remove(@Param('id') id: string) {
     return this.exercisesService.remove(id);
   }

@@ -10,12 +10,12 @@ import {
   Request,
 } from '@nestjs/common';
 import { SessionsService } from './sessions.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ClerkAuthGuard } from '../auth/clerk.guard';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
 
 @Controller('me/sessions')
-@UseGuards(JwtAuthGuard)
+@UseGuards(ClerkAuthGuard)
 export class SessionsController {
   constructor(private sessionsService: SessionsService) {}
 

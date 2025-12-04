@@ -14,10 +14,10 @@ import {
 import { GymsService } from './gyms.service';
 import { CreateGymProfileDto } from './dto/create-gym-profile.dto';
 import { CreateGymClassDto } from './dto/create-gym-class.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ClerkAuthGuard } from '../auth/clerk.guard';
 
 @Controller('gyms')
-@UseGuards(JwtAuthGuard)
+@UseGuards(ClerkAuthGuard)
 export class GymsController {
   constructor(private readonly gymsService: GymsService) {}
 

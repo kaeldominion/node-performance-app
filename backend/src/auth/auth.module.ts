@@ -5,6 +5,9 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { AdminGuard } from './admin.guard';
+import { ClerkAuthGuard } from '../auth/clerk.guard';
+import { ClerkAdminGuard } from '../auth/clerk-admin.guard';
+import { ClerkWebhookController } from './clerk-webhook.controller';
 import { UsersModule } from '../users/users.module';
 
 @Module({
@@ -16,9 +19,9 @@ import { UsersModule } from '../users/users.module';
       signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },
     }),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, AdminGuard],
-  exports: [AuthService, AdminGuard],
+  controllers: [AuthController, ClerkWebhookController],
+  providers: [AuthService, JwtStrategy, AdminGuard, ClerkAuthGuard, ClerkAdminGuard],
+  exports: [AuthService, AdminGuard, ClerkAuthGuard, ClerkAdminGuard],
 })
 export class AuthModule {}
 

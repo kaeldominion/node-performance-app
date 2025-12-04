@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, Manrope } from "next/font/google";
+import { ClerkProvider } from '@clerk/nextjs';
 import "./globals.css";
-import { AuthProvider } from "@/contexts/AuthContext";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
@@ -27,13 +27,21 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  
+  if (!clerkKey) {
+    console.warn('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is not set. Please add it to your .env.local file.');
+  }
+
   return (
-    <html lang="en" className="dark">
-      <body
-        className={`${spaceGrotesk.variable} ${manrope.variable} antialiased bg-dark text-text-white`}
-      >
-        <AuthProvider>{children}</AuthProvider>
-      </body>
-    </html>
+    <ClerkProvider publishableKey={clerkKey || 'pk_test_placeholder'}>
+      <html lang="en" className="dark">
+        <body
+          className={`${spaceGrotesk.variable} ${manrope.variable} antialiased bg-dark text-text-white`}
+        >
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

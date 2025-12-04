@@ -1,7 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authApi, userApi } from '@/lib/api';
+import { useUser, useAuth as useClerkAuth } from '@clerk/nextjs';
+import { useEffect, useState } from 'react';
+import { userApi, setApiToken } from '@/lib/api';
 
 interface User {
   id: string;
@@ -16,102 +17,110 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name?: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+// Wrapper to maintain compatibility with existing code
+export function useAuth(): AuthContextType {
+  const { user: clerkUser, isLoaded: clerkLoaded } = useUser();
+  const { signOut, getToken } = useClerkAuth();
+  const [dbUser, setDbUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refreshUser = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-      
-      // Add timeout to prevent long waits
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout')), 5000)
-      );
-      
-      const userData = await Promise.race([
-        userApi.getMe(),
-        timeoutPromise,
-      ]) as any;
-      
-      console.log('User data fetched:', userData);
-      setUser(userData);
-    } catch (error: any) {
-      // Silently clear invalid token - don't log errors for normal cases
-      if (error.response?.status !== 401 && error.message !== 'Request timeout') {
-        console.error('Refresh user error:', error);
-      }
-      // Clear invalid token
-      localStorage.removeItem('token');
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Update API token when Clerk user changes
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      refreshUser();
-    } else {
-      setLoading(false);
+    const updateToken = async () => {
+      if (clerkUser) {
+        try {
+          const token = await getToken();
+          setApiToken(token);
+        } catch (error) {
+          setApiToken(null);
+        }
+      } else {
+        setApiToken(null);
+      }
+    };
+    updateToken();
+  }, [clerkUser, getToken]);
+
+  // Sync Clerk user with database user
+  useEffect(() => {
+    if (!clerkLoaded) {
+      setLoading(true);
+      return;
     }
-  }, []);
+
+    if (!clerkUser) {
+      setDbUser(null);
+      setLoading(false);
+      return;
+    }
+
+    // Fetch user data from our database
+    const fetchUserData = async () => {
+      try {
+        const userData = await userApi.getMe();
+        setDbUser(userData);
+      } catch (error) {
+        console.error('Failed to fetch user data:', error);
+        setDbUser({
+          id: clerkUser.id,
+          email: clerkUser.emailAddresses[0]?.emailAddress || '',
+          name: clerkUser.firstName || clerkUser.lastName 
+            ? `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim()
+            : undefined,
+          role: (clerkUser.publicMetadata?.role as string) || 'HOME_USER',
+          isAdmin: (clerkUser.publicMetadata?.isAdmin as boolean) || false,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [clerkUser, clerkLoaded]);
 
   const login = async (email: string, password: string) => {
-    try {
-      const response = await authApi.login({ email, password });
-      console.log('Login API response:', response);
-      
-      // Small delay to ensure token is saved
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      await refreshUser();
-    } catch (error: any) {
-      console.error('Login error:', error);
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-      });
-      // Re-throw to let the UI handle it
-      throw error;
-    }
+    // Clerk handles login through their UI components
+    // This is kept for compatibility but should use Clerk's SignIn component
+    throw new Error('Please use Clerk SignIn component for login');
   };
 
   const register = async (email: string, password: string, name?: string) => {
-    await authApi.register({ email, password, name });
-    await login(email, password);
+    // Clerk handles registration through their UI components
+    // This is kept for compatibility but should use Clerk's SignUp component
+    throw new Error('Please use Clerk SignUp component for registration');
   };
 
-  const logout = () => {
-    authApi.logout();
-    setUser(null);
+  const logout = async () => {
+    await signOut();
+    setDbUser(null);
   };
 
-  return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, refreshUser }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const refreshUser = async () => {
+    if (clerkUser) {
+      try {
+        const userData = await userApi.getMe();
+        setDbUser(userData);
+      } catch (error) {
+        console.error('Failed to refresh user:', error);
+      }
+    }
+  };
+
+  return {
+    user: dbUser,
+    loading: loading || !clerkLoaded,
+    login,
+    register,
+    logout,
+    refreshUser,
+  };
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+// Export AuthProvider for compatibility (no-op since ClerkProvider handles it)
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
 }
-

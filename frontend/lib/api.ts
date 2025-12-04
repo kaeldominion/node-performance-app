@@ -7,11 +7,18 @@ const api = axios.create({
   },
 });
 
-// Add token to requests
+// Token will be set by components using useApiToken hook
+// This is a simpler approach for client-side requests
+let currentToken: string | null = null;
+
+export const setApiToken = (token: string | null) => {
+  currentToken = token;
+};
+
+// Add Clerk token to requests
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  if (currentToken) {
+    config.headers.Authorization = `Bearer ${currentToken}`;
   }
   return config;
 });
@@ -25,24 +32,19 @@ api.interceptors.response.use(
   },
 );
 
-// Auth API
+// Auth API - Clerk handles authentication, these are kept for compatibility
 export const authApi = {
   login: async (data: { email: string; password: string }) => {
-    const response = await api.post('/auth/login', data);
-    if (response.data.access_token) {
-      localStorage.setItem('token', response.data.access_token);
-    }
-    return response.data;
+    // Clerk handles login through their UI components
+    throw new Error('Please use Clerk SignIn component for login');
   },
   register: async (data: { email: string; password: string; name?: string }) => {
-    const response = await api.post('/auth/register', data);
-    if (response.data.access_token) {
-      localStorage.setItem('token', response.data.access_token);
-    }
-    return response.data;
+    // Clerk handles registration through their UI components
+    throw new Error('Please use Clerk SignUp component for registration');
   },
   logout: () => {
-    localStorage.removeItem('token');
+    // Clerk handles logout through their hooks
+    // This is a no-op, use Clerk's signOut() instead
   },
 };
 

@@ -10,12 +10,12 @@ import {
   Post,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { AdminGuard } from '../auth/admin.guard';
+import { ClerkAuthGuard } from '../auth/clerk.guard';
+import { ClerkAdminGuard } from '../auth/clerk-admin.guard';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
 
 @Controller('me')
-@UseGuards(JwtAuthGuard)
+@UseGuards(ClerkAuthGuard)
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
@@ -39,7 +39,7 @@ export class UsersController {
 }
 
 @Controller('admin/users')
-@UseGuards(AdminGuard)
+@UseGuards(ClerkAdminGuard)
 export class AdminUsersController {
   constructor(private usersService: UsersService) {}
 

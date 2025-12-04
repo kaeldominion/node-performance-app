@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { TemplatesService } from './templates.service';
 import { CreateTemplateDto } from './dto/create-template.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ClerkAuthGuard } from '../auth/clerk.guard';
 
 @Controller('templates')
 export class TemplatesController {
@@ -42,13 +42,13 @@ export class TemplatesController {
 
   // Protected endpoints
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ClerkAuthGuard)
   async create(@Request() req, @Body() createDto: CreateTemplateDto) {
     return this.templatesService.create(req.user.id, createDto);
   }
 
   @Put(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ClerkAuthGuard)
   async update(
     @Param('id') id: string,
     @Request() req,
@@ -58,7 +58,7 @@ export class TemplatesController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ClerkAuthGuard)
   async delete(@Param('id') id: string, @Request() req) {
     return this.templatesService.delete(id, req.user.id);
   }

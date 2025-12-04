@@ -8,10 +8,10 @@ import {
   Request,
 } from '@nestjs/common';
 import { UserProgramsService } from './user-programs.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ClerkAuthGuard } from '../auth/clerk.guard';
 
 @Controller('me/programs')
-@UseGuards(JwtAuthGuard)
+@UseGuards(ClerkAuthGuard)
 export class UserProgramsController {
   constructor(private userProgramsService: UserProgramsService) {}
 
