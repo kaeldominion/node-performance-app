@@ -30,6 +30,9 @@ export default function Navbar() {
                 <Link href="/ai/workout-builder" className="text-muted-text hover:text-text-white transition-colors">
                   AI Builder
                 </Link>
+                <Link href="/progress" className="text-muted-text hover:text-text-white transition-colors">
+                  Progress
+                </Link>
                 {user.isAdmin && (
                   <Link href="/admin" className="text-node-volt hover:text-node-volt/80 transition-colors font-semibold">
                     Admin
