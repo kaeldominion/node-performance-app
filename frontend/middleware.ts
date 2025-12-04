@@ -1,14 +1,8 @@
-// Temporarily disabled Clerk middleware due to Vercel edge runtime issues
-// Auth protection is handled in components via useAuth hook
-// TODO: Re-enable when Clerk middleware is stable on Vercel edge runtime
+import { clerkMiddleware } from '@clerk/nextjs/server';
 
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-
-export function middleware(request: NextRequest) {
-  // Pass through - auth handled in components
-  return NextResponse.next();
-}
+// Simplified middleware - just use Clerk's default protection
+// Public routes are handled by Clerk automatically based on SignIn/SignUp components
+export default clerkMiddleware();
 
 export const config = {
   matcher: [
