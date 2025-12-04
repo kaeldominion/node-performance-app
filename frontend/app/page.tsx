@@ -46,8 +46,8 @@ export default function LandingPage() {
       </div>
 
       {/* Top nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-deep-asphalt/80 backdrop-blur-md border-b border-border-dark">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-deep-asphalt/90 backdrop-blur-md border-b thin-border">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-node-volt text-deep-asphalt font-heading font-bold text-lg flex items-center justify-center rounded">
               Ø
@@ -70,7 +70,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="relative min-h-screen flex items-center pt-24 pb-16 overflow-hidden">
+      <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-deep-asphalt via-concrete-grey/20 to-deep-asphalt" />
           <div className="absolute top-16 left-1/4 w-[600px] h-[600px] bg-node-volt/12 rounded-full blur-3xl" />
@@ -78,7 +78,7 @@ export default function LandingPage() {
           <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(to right, #333 1px, transparent 1px), linear-gradient(to bottom, #333 1px, transparent 1px)', backgroundSize: '36px 36px' }} />
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+        <div className="relative z-10 max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
           <div className="space-y-8 max-w-3xl">
             <div className="inline-flex items-center gap-2 px-4 py-2 border border-node-volt/40 rounded-full bg-node-volt/10 backdrop-blur-sm">
               <span className="w-2 h-2 rounded-full bg-node-volt animate-pulse" />
@@ -108,8 +108,8 @@ export default function LandingPage() {
 
           <div className="hidden lg:block relative">
             <div className="absolute -inset-6 bg-node-volt/15 blur-3xl rounded-full opacity-30" />
-            <div className="relative border border-border-dark/80 bg-concrete-grey/60 backdrop-blur-lg p-6 space-y-4 thin-shadow">
-              <div className="flex justify-between items-start border-b border-border-dark pb-4">
+            <div className="relative thin-border bg-concrete-grey/80 backdrop-blur-md p-6 space-y-4">
+              <div className="flex justify-between items-start border-b thin-border pb-4">
                 <div>
                   <p className="text-[10px] text-muted-text uppercase tracking-[0.25em] mb-1">Location</p>
                   <p className="font-heading text-base text-text-white">Digital / IRL</p>
@@ -121,22 +121,22 @@ export default function LandingPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-deep-asphalt/70 border border-border-dark">
+                <div className="p-3 bg-deep-asphalt/80 thin-border">
                   <h3 className="text-xl font-heading font-bold text-text-white">Deck Mode</h3>
                   <p className="text-[10px] text-muted-text uppercase mt-1">Immersive Player</p>
                 </div>
-                <div className="p-3 bg-deep-asphalt/70 border border-border-dark">
+                <div className="p-3 bg-deep-asphalt/80 thin-border">
                   <h3 className="text-xl font-heading font-bold text-node-volt">RPE</h3>
                   <p className="text-[10px] text-muted-text uppercase mt-1">Precision Logging</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-deep-asphalt/70 border border-border-dark">
+                <div className="p-3 bg-deep-asphalt/80 thin-border">
                   <h3 className="text-xl font-heading font-bold text-text-white">AI</h3>
                   <p className="text-[10px] text-muted-text uppercase mt-1">Session Builder</p>
                 </div>
-                <div className="p-3 bg-deep-asphalt/70 border border-border-dark">
+                <div className="p-3 bg-deep-asphalt/80 thin-border">
                   <h3 className="text-xl font-heading font-bold text-node-volt">Ø</h3>
                   <p className="text-[10px] text-muted-text uppercase mt-1">Brutalist UI</p>
                 </div>
@@ -147,9 +147,9 @@ export default function LandingPage() {
       </section>
 
       {/* Platform Sections */}
-      <section id="platform" className="py-20 bg-deep-asphalt border-t border-border-dark">
+      <section id="platform" className="py-24 bg-deep-asphalt border-t thin-border">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="mb-12 max-w-2xl">
+          <div className="mb-16 max-w-2xl">
             <h2 className="text-4xl sm:text-5xl font-heading font-bold mb-4">THE NØDE STACK</h2>
             <p className="text-muted-text font-body">
               Brutalist surfaces, volt highlights, and grid overlays. Every module is built for clarity and intent: train, track, iterate.
@@ -189,17 +189,17 @@ export default function LandingPage() {
             ].map((item) => (
               <div
                 key={item.title}
-                className="group relative bg-concrete-grey/50 border border-border-dark rounded-2xl p-6 hover:border-node-volt transition-colors overflow-hidden"
+                className="group relative bg-concrete-grey thin-border p-8 hover:border-node-volt transition-colors"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-node-volt/0 via-node-volt/5 to-node-volt/0 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="relative flex items-center justify-between mb-6">
-                  <div className="w-12 h-12 rounded-full border border-border-dark flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full thin-border flex items-center justify-center">
                     {item.icon}
                   </div>
-                  <span className="text-[10px] uppercase tracking-[0.3em] text-muted-text">01</span>
+                  <span className="text-[10px] uppercase tracking-[0.3em] text-muted-text font-heading">01</span>
                 </div>
-                <h3 className="text-2xl font-heading font-bold mb-3">{item.title}</h3>
-                <p className="text-sm text-muted-text leading-relaxed font-body">{item.desc}</p>
+                <h3 className="text-2xl font-heading font-bold mb-4 text-node-volt">{item.title}</h3>
+                <p className="text-sm text-text-white leading-relaxed font-body">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -207,24 +207,24 @@ export default function LandingPage() {
       </section>
 
       {/* Player Section */}
-      <section id="player" className="py-20 bg-deep-asphalt border-t border-border-dark">
-        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+      <section id="player" className="py-24 bg-deep-asphalt border-t thin-border">
+        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
           <div className="relative order-2 lg:order-1">
             <div className="absolute -inset-6 bg-node-volt/10 blur-3xl rounded-full opacity-30" />
-            <div className="relative thin-border bg-concrete-grey/70 backdrop-blur-md p-8 space-y-4">
-              <div className="flex justify-between text-xs text-muted-text uppercase tracking-[0.25em]">
+            <div className="relative thin-border bg-concrete-grey/80 backdrop-blur-md p-6 space-y-4">
+              <div className="flex justify-between text-xs text-muted-text uppercase tracking-[0.25em] font-heading">
                 <span>Deck Mode</span>
                 <span>Now Playing</span>
               </div>
-              <div className="h-64 rounded-2xl bg-gradient-to-br from-tech-grey to-concrete-grey border border-border-dark flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full border-2 border-node-volt flex items-center justify-center text-node-volt font-heading font-bold">
+              <div className="h-64 bg-gradient-to-br from-tech-grey to-concrete-grey thin-border flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full thin-border border-node-volt flex items-center justify-center text-node-volt font-heading font-bold">
                   Ø
                 </div>
               </div>
               <div className="flex gap-3 text-sm text-muted-text font-body">
-                <span className="px-3 py-2 rounded-lg border border-border-dark">EMOM</span>
-                <span className="px-3 py-2 rounded-lg border border-border-dark">RPE 8</span>
-                <span className="px-3 py-2 rounded-lg border border-border-dark">Wave</span>
+                <span className="px-3 py-2 thin-border">EMOM</span>
+                <span className="px-3 py-2 thin-border">RPE 8</span>
+                <span className="px-3 py-2 thin-border">Wave</span>
               </div>
             </div>
           </div>
@@ -253,8 +253,8 @@ export default function LandingPage() {
       </section>
 
       {/* Analytics */}
-      <section id="analytics" className="py-20 bg-deep-asphalt border-t border-border-dark">
-        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+      <section id="analytics" className="py-24 bg-deep-asphalt border-t thin-border">
+        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
           <div className="space-y-6">
             <span className="text-node-volt uppercase tracking-[0.25em] text-xs font-heading">Analytics</span>
             <h2 className="text-4xl sm:text-5xl font-heading font-bold">Measurable Progress</h2>
@@ -268,8 +268,8 @@ export default function LandingPage() {
                 { label: 'Sessions/Wk', value: '4.2' },
                 { label: 'PRs This Cycle', value: '12' },
               ].map((stat) => (
-                <div key={stat.label} className="p-4 border border-border-dark rounded-xl bg-concrete-grey/50">
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-text">{stat.label}</p>
+                <div key={stat.label} className="p-4 thin-border bg-concrete-grey/80">
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-text font-heading">{stat.label}</p>
                   <p className="text-2xl font-heading font-bold text-text-white">{stat.value}</p>
                 </div>
               ))}
@@ -277,12 +277,12 @@ export default function LandingPage() {
           </div>
           <div className="relative">
             <div className="absolute -inset-6 bg-blue-500/10 blur-3xl rounded-full opacity-30" />
-            <div className="relative border border-border-dark bg-concrete-grey/60 rounded-2xl p-6 space-y-4">
-              <div className="flex justify-between text-xs text-muted-text uppercase tracking-[0.25em]">
+            <div className="relative thin-border bg-concrete-grey/80 p-6 space-y-4">
+              <div className="flex justify-between text-xs text-muted-text uppercase tracking-[0.25em] font-heading">
                 <span>Analytics</span>
                 <span>Cycle</span>
               </div>
-              <div className="h-56 bg-gradient-to-b from-tech-grey to-deep-asphalt rounded-xl border border-border-dark flex items-end gap-2 p-4">
+              <div className="h-56 bg-gradient-to-b from-tech-grey to-deep-asphalt thin-border flex items-end gap-2 p-4">
                 {[50, 70, 90, 60, 80, 65].map((h, idx) => (
                   <div key={idx} className="flex-1 bg-node-volt/60 rounded-t" style={{ height: `${h}%` }} />
                 ))}
@@ -294,20 +294,20 @@ export default function LandingPage() {
       </section>
 
       {/* AI */}
-      <section id="ai" className="py-20 bg-deep-asphalt border-t border-border-dark">
-        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+      <section id="ai" className="py-24 bg-deep-asphalt border-t thin-border">
+        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
           <div className="relative order-2 lg:order-1">
             <div className="absolute -inset-6 bg-node-volt/10 blur-3xl rounded-full opacity-30" />
-            <div className="relative border border-border-dark bg-concrete-grey/60 rounded-2xl p-6 space-y-4">
-              <div className="flex justify-between text-xs text-muted-text uppercase tracking-[0.25em]">
+            <div className="relative thin-border bg-concrete-grey/80 p-6 space-y-4">
+              <div className="flex justify-between text-xs text-muted-text uppercase tracking-[0.25em] font-heading">
                 <span>AI Builder</span>
                 <span>Archetypes</span>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {['PR1ME', 'ENGIN3', 'FORGE', 'FLOWSTATE'].map((item) => (
-                  <div key={item} className="p-4 border border-border-dark rounded-lg bg-deep-asphalt/70 text-center">
+                  <div key={item} className="p-4 thin-border bg-deep-asphalt/80 text-center">
                     <p className="font-heading font-bold text-text-white">{item}</p>
-                    <p className="text-[11px] text-muted-text uppercase tracking-[0.2em]">Preset</p>
+                    <p className="text-[11px] text-muted-text uppercase tracking-[0.2em] font-heading">Preset</p>
                   </div>
                 ))}
               </div>
@@ -339,8 +339,8 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-concrete-grey/10 border-t border-border-dark">
-        <div className="max-w-4xl mx-auto px-6 text-center space-y-6">
+      <section className="py-24 bg-concrete-grey/10 border-t thin-border">
+        <div className="max-w-4xl mx-auto px-6 text-center space-y-8">
           <h2 className="text-4xl sm:text-5xl font-heading font-bold">Access the NØDE</h2>
           <p className="text-muted-text font-body">
             Train with brutalist clarity. Volt highlights. Cinematic player. Analytics and AI built for lifters and coaches.
@@ -363,8 +363,8 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-deep-asphalt border-t border-border-dark py-12">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between gap-8">
+      <footer className="bg-deep-asphalt border-t thin-border py-16">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between gap-12">
           <div className="flex items-center gap-3">
             <div className="w-7 h-7 bg-node-volt text-deep-asphalt font-heading font-bold text-sm flex items-center justify-center rounded">
               Ø
