@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsUrl } from 'class-validator';
+import { IsString, IsOptional, IsUrl, IsInt } from 'class-validator';
 
 export class CreateGymProfileDto {
   @IsString()
@@ -7,6 +7,10 @@ export class CreateGymProfileDto {
   @IsOptional()
   @IsString()
   address?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
 
   @IsOptional()
   @IsUrl()
@@ -19,5 +23,13 @@ export class CreateGymProfileDto {
   @IsOptional()
   @IsString()
   logo?: string;
+
+  @IsOptional()
+  @IsInt()
+  capacity?: number;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
 }
 
