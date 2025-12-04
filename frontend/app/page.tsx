@@ -2,27 +2,27 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 
 export default function LandingPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { isSignedIn, isLoaded: clerkLoaded } = useUser();
   const router = useRouter();
   const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
-    // Don't do anything while auth is still loading
-    if (authLoading) {
+    // Wait for Clerk to load
+    if (!clerkLoaded) {
       return;
     }
 
-    // Only redirect once when we confirm user is logged in
-    if (user && !redirecting) {
+    // Use Clerk's isSignedIn as source of truth - redirect if signed in
+    if (isSignedIn && !redirecting) {
       setRedirecting(true);
       // Use replace instead of push to avoid adding to history
       router.replace('/dashboard');
     }
-  }, [user, authLoading, router, redirecting]);
+  }, [isSignedIn, clerkLoaded, router, redirecting]);
 
   // Always show landing page - redirect happens in background
   // This prevents flickering
