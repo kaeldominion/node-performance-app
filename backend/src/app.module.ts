@@ -11,7 +11,6 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { CoachesModule } from './coaches/coaches.module';
 import { GymsModule } from './gyms/gyms.module';
 import { TemplatesModule } from './templates/templates.module';
-import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
