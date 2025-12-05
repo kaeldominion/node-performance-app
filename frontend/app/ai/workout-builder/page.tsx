@@ -921,7 +921,9 @@ Browse Recommended
                   )}
                 </div>
               ))}
-            </div>
+                </div>
+              </>
+            )}
           </div>
         )}
       </main>
