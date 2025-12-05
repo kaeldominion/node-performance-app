@@ -172,9 +172,7 @@ export default function HyroxAIBuilderPage() {
       {/* Header */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b thin-border bg-dark/95 backdrop-blur-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <Link href="/">
-            <Logo className="text-xl transition-transform hover:scale-105" />
-          </Link>
+          <Logo className="text-xl transition-transform hover:scale-105" />
           <Link
             href="/"
             className="px-5 py-2 thin-border border-node-volt text-node-volt font-heading font-bold text-xs uppercase tracking-[0.2em] hover:bg-node-volt hover:text-dark transition-colors"
