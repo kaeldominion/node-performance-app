@@ -213,7 +213,11 @@ export default function ExercisesPage() {
                 </div>
                 <div>
                   <span className="text-muted-text">Equipment:</span>{' '}
-                  <span className="text-text-white">{exercise.equipment.join(', ') || 'None'}</span>
+                  <span className="text-text-white">
+                    {exercise.equipment && exercise.equipment.length > 0
+                      ? exercise.equipment.join(', ')
+                      : 'Bodyweight'}
+                  </span>
                 </div>
                 <div className="flex gap-2 mt-3">
                   {exercise.suitableArchetypes.slice(0, 3).map((arch) => (
@@ -353,17 +357,19 @@ export default function ExercisesPage() {
                 <div>
                   <div className="text-muted-text text-sm mb-2">Equipment</div>
                   <div className="flex flex-wrap gap-2">
-                    {selectedExercise.equipment.length > 0 ? (
+                    {selectedExercise.equipment && selectedExercise.equipment.length > 0 ? (
                       selectedExercise.equipment.map((eq) => (
                         <span
                           key={eq}
-                          className="bg-tech-grey border border-border-dark px-3 py-1 rounded text-sm"
+                          className="bg-tech-grey border border-border-dark px-3 py-1 rounded text-sm capitalize"
                         >
                           {eq.replace(/_/g, ' ')}
                         </span>
                       ))
                     ) : (
-                      <span className="text-muted-text text-sm">None required</span>
+                      <span className="bg-tech-grey border border-border-dark px-3 py-1 rounded text-sm">
+                        Bodyweight
+                      </span>
                     )}
                   </div>
                 </div>

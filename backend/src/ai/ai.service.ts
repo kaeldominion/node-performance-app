@@ -341,7 +341,74 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
   /**
    * Extract exercises from AI-generated workout and store new ones in database
    */
-  private async extractAndStoreExercises(workout: any): Promise<void> {
+  private inferEquipmentFromName(exerciseName: string, workoutEquipment: string[]): string[] {
+    const name = exerciseName.toLowerCase();
+    const equipment: string[] = [];
+    
+    // Equipment patterns
+    if (name.includes('bb ') || name.includes('barbell') || name.includes('bar ')) {
+      equipment.push('barbell');
+    }
+    if (name.includes('db ') || name.includes('dumbbell') || name.includes('dumbbell')) {
+      equipment.push('dumbbell');
+    }
+    if (name.includes('kb ') || name.includes('kettlebell')) {
+      equipment.push('kettlebell');
+    }
+    if (name.includes('bench') || name.includes('incline') || name.includes('decline')) {
+      if (!equipment.includes('bench')) equipment.push('bench');
+    }
+    if (name.includes('row') && (name.includes('erg') || name.includes('machine'))) {
+      equipment.push('rower');
+    }
+    if (name.includes('bike') || name.includes('erg') && name.includes('bike')) {
+      equipment.push('bike');
+    }
+    if (name.includes('ski') && name.includes('erg')) {
+      equipment.push('ski_erg');
+    }
+    if (name.includes('assault bike') || name.includes('airdyne')) {
+      equipment.push('assault_bike');
+    }
+    if (name.includes('sled')) {
+      equipment.push('sled');
+    }
+    if (name.includes('wall ball') || name.includes('wallball')) {
+      equipment.push('wall_ball');
+    }
+    if (name.includes('sandbag')) {
+      equipment.push('sandbag');
+    }
+    if (name.includes('farmers') || name.includes('farmer')) {
+      equipment.push('dumbbell'); // Farmers walk typically uses DBs or KBs
+    }
+    if (name.includes('pull') && (name.includes('up') || name.includes('down'))) {
+      equipment.push('pull_up_bar');
+    }
+    if (name.includes('dip')) {
+      equipment.push('dip_bar');
+    }
+    if (name.includes('ghd') || name.includes('glute ham')) {
+      equipment.push('ghd');
+    }
+    
+    // If no equipment inferred and it's not bodyweight, try to match from workout equipment
+    if (equipment.length === 0 && workoutEquipment.length > 0) {
+      // Check if exercise name contains any workout equipment keywords
+      const workoutEqLower = workoutEquipment.map(eq => eq.toLowerCase());
+      for (const eq of workoutEqLower) {
+        if (name.includes(eq.replace(/_/g, ' ')) || name.includes(eq.replace(/_/g, ''))) {
+          equipment.push(eq);
+        }
+      }
+    }
+    
+    // If still no equipment, it's likely bodyweight
+    // Return empty array to indicate bodyweight (frontend will display "Bodyweight")
+    return equipment;
+  }
+
+  private async extractAndStoreExercises(workout: any, workoutEquipment: string[] = []): Promise<void> {
     try {
       const exerciseNames = new Set<string>();
       
@@ -383,6 +450,9 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
             .catch(() => null);
           
           if (!existing) {
+            // Infer equipment from exercise name and workout context
+            const inferredEquipment = this.inferEquipmentFromName(exerciseName, workoutEquipment);
+            
             // Create basic exercise entry - will be enriched with instructions/variations later
             await this.exercisesService.create({
               exerciseId,
@@ -390,7 +460,7 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
               category: 'MIXED', // Default - can be updated later
               movementPattern: 'FULL_BODY', // Default - can be updated later
               primaryMuscles: [], // Will be inferred later from exercise name/context
-              equipment: [], // Will be inferred from workout context
+              equipment: inferredEquipment, // Inferred from name and workout context
               space: 'OPEN_AREA', // Default
               impactLevel: 'MEDIUM', // Default
               typicalUse: ['PRIMARY'],
@@ -407,7 +477,7 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
               regressionTips: null,
             });
             
-            console.log(`✅ Stored new AI-generated exercise: ${exerciseName}`);
+            console.log(`✅ Stored new AI-generated exercise: ${exerciseName} (equipment: ${inferredEquipment.length > 0 ? inferredEquipment.join(', ') : 'bodyweight'})`);
           } else {
             // Increment usage count for existing exercise
             await this.exercisesService.update(existing.id, {
