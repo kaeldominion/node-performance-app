@@ -86,14 +86,20 @@ export class AiService {
     // REVL and Hyrox workout examples
     const workoutExamples = this.getWorkoutExamples();
     
-    const systemPrompt = `You are an elite hybrid coach designing sessions for the NØDE performance training system.
+    const systemPrompt = `You are an elite hybrid coach designing sessions for the NØDE performance training system, following REVL-style programming with extreme detail and precision.
 
 ${archetypeGuidance}
 
-AVAILABLE EXERCISES (use these exact names):
-${exerciseList}
+EXERCISE REFERENCE (for inspiration - you can create variations):
+${exerciseList.length > 0 ? exerciseList.substring(0, 2000) + '...\n(Additional exercises available in database)' : 'No exercises in database - generate based on equipment and movement patterns'}
 
-WORKOUT EXAMPLES (study these for structure and rep schemes):
+CRITICAL: You are NOT limited to the exercise database. Generate exercises based on:
+- Available equipment: ${params.equipment.join(', ')}
+- Movement patterns needed for the archetype
+- REVL-style naming conventions (e.g., "BB FFE Rev Lunge", "SA DB Strict Press", "DBall TNG GTS")
+- Compound movements and variations
+
+REVL WORKOUT FORMATTING EXAMPLES (study these EXACTLY):
 ${workoutExamples}
 
 You MUST respond with ONLY valid JSON that matches this exact schema:
@@ -119,26 +125,28 @@ You MUST respond with ONLY valid JSON that matches this exact schema:
       "blocks": [
         {
           "label": "01",
-          "exerciseName": "Exercise Name",
-          "description": "Form cues or notes",
-          "repScheme": "10" or "10-8-8-8" (for WAVE) or "AMRAP" or "100 cals",
+          "exerciseName": "Exercise Name (use REVL naming: BB FFE Rev Lunge, SA DB Strict Press, DBall TNG GTS, etc.)",
+          "description": "Form cues, tempo notation (e.g., '2220', '2s pause', '3s eccentric'), or special instructions",
+          "repScheme": "MUST be specific: '10-8-8-8' (wave), '16-14-12' (descending), '8-7-6-5+' (descending with max), '10' (fixed), 'AMRAP' (only if truly unlimited), or specific rep ranges like '8-10'",
+          "tempo": "Optional: '2220', '2020', '2s pause', '3s eccentric', 'First 4 Reps: R1-2 = 2220'",
+          "loadPercentage": "Optional: '@ 40-45-50-55%' (progressive across rounds) or '@ 60-65-70-75%'",
           "distance": 200 (optional, for distance-based),
           "distanceUnit": "m" or "cal",
           "order": 1,
           "tierSilver": {
-            "load": "12 kg",
+            "load": "12 kg" or "40% 1RM" or "Bodyweight",
             "targetReps": 10,
-            "notes": "Optional"
+            "notes": "Form focus, steady pace"
           },
           "tierGold": {
-            "load": "16 kg",
+            "load": "20 kg" or "50% 1RM" or "Standard RX",
             "targetReps": 12,
-            "notes": "Optional"
+            "notes": "Challenging pace, standard RX"
           },
           "tierBlack": {
-            "load": "20 kg",
+            "load": "28 kg" or "60% 1RM" or "Heavy",
             "targetReps": 15,
-            "notes": "Optional"
+            "notes": "Competition standard, high intensity"
           }
         }
       ]
@@ -214,11 +222,52 @@ ${cycleGuidance ? `- Cycle: ${cycle} - ${cycleGuidance}` : ''}
 
 ${workoutTypeGuidance}
 
-CRITICAL REQUIREMENTS:
-- EVERY exercise block MUST include all three tiers: tierSilver, tierGold, and tierBlack
-- Users will select their tier during workout execution, so all options must be available
-- Use exercise tier prescriptions from the database when available
-- If database doesn't have tier data, estimate appropriate loads/reps for each tier based on exercise complexity
+CRITICAL REQUIREMENTS - REVL-LEVEL DETAIL:
+
+1. REP SCHEMES - NEVER use vague numbers:
+   - ✅ CORRECT: "10-8-8-8", "16-14-12", "8-7-6-5+", "4-3-2-1-1"
+   - ❌ WRONG: "10 reps", "some reps", "AMRAP" (unless truly unlimited)
+   - Show progression: descending, ascending, or wave patterns
+   - For AMRAP sections, specify target rep ranges per round
+
+2. LOAD SPECIFICATIONS - ALWAYS include:
+   - Percentage-based: "@ 40-45-50-55%" (progressive across rounds)
+   - OR Tier-specific loads: "12 kg / 20 kg / 28 kg"
+   - Show progression if multiple rounds
+
+3. TEMPO NOTATION - Include when relevant:
+   - "2220" = 2s down, 2s pause, 2s up, 0s pause
+   - "2s pause" = pause at bottom
+   - "3s eccentric" = slow lowering
+   - "First 4 Reps: R1-2 = 2220" = tempo for specific reps/rounds
+
+4. EXERCISE NAMING - Use REVL conventions:
+   - Full descriptive names: "BB FFE Rev Lunge", "SA DB Strict Press"
+   - Include equipment: "DBall", "KB", "BB", "SA" (Single Arm), "Alt" (Alternating)
+   - Specify variations: "TNG" (Touch and Go), "FFE" (Front Foot Elevated), "KOT" (Knee Over Toe)
+
+5. EVERY exercise block MUST include:
+   - Specific rep scheme (not vague)
+   - All three tiers (tierSilver, tierGold, tierBlack) with specific loads/reps
+   - Load percentages OR tier-specific loads
+   - Tempo notation when applicable
+   - Clear description with form cues
+
+6. SECTION TIMING - Be explicit:
+   - "1:40 Cap × 4 Rounds" = time cap and round count
+   - "Every 1:10 × 12" = interval and total rounds
+   - "EMOM × 16" = EMOM with total rounds
+   - Always calculate total time: (work + rest) × rounds
+
+7. BLOCK STRUCTURES - When multiple blocks:
+   - Label clearly: "Block A (14-12-10)", "Block B (12-10-8)"
+   - Show rep progression for each block
+   - Specify timing: "2 Blocks Every 1:10 × 12"
+
+8. PAIR/TEAM WORK - Specify format:
+   - "In Pairs 1:1" = one works, one rests
+   - "In Pairs YGIG" = You Go I Go alternating
+   - "Teams of 3-4" = team format
 
 CRITICAL TIME CONSTRAINTS:
 - Total workout must fit within ${params.availableMinutes} minutes
