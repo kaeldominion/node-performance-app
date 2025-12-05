@@ -61,13 +61,13 @@ You MUST respond with ONLY valid JSON that matches this exact schema:
       "title": "Section Title",
       "type": "WARMUP" | "EMOM" | "AMRAP" | "FOR_TIME" | "FINISHER" | "COOLDOWN" | "WAVE" | "SUPERSET" | "CIRCUIT" | "CAPACITY" | "FLOW" | "INTERVAL",
       "order": 1,
-      "durationSec": 720 (REQUIRED for AMRAP/FOR_TIME/CAPACITY - must be specified in seconds, e.g., 480 for 8:00, 600 for 10:00),
+      "durationSec": 720 (REQUIRED for ALL sections except EMOM/INTERVAL - must be specified in seconds. WARMUP: 300-600s, COOLDOWN: 300s, WAVE: 600-1200s, SUPERSET: 600-900s, AMRAP/FOR_TIME/CAPACITY: 480-1800s, FINISHER: 180-600s, FLOW: 600-900s),
       "emomWorkSec": 45 (REQUIRED for EMOM - work duration in seconds),
       "emomRestSec": 15 (REQUIRED for EMOM - rest duration in seconds),
       "emomRounds": 12 (REQUIRED for EMOM - total number of rounds),
-      "intervalWorkSec": 20 (REQUIRED for INTERVAL/CUSTOM_INTERVAL: work duration in seconds),
-      "intervalRestSec": 100 (REQUIRED for INTERVAL/CUSTOM_INTERVAL: rest duration in seconds),
-      "intervalRounds": 8 (REQUIRED for INTERVAL/CUSTOM_INTERVAL: number of rounds),
+      "intervalWorkSec": 20 (REQUIRED for INTERVAL - work duration in seconds),
+      "intervalRestSec": 100 (REQUIRED for INTERVAL - rest duration in seconds),
+      "intervalRounds": 8 (REQUIRED for INTERVAL - number of rounds),
       "rounds": 4 (OPTIONAL for FOR_TIME: number of rounds when format is "X:XX Cap × Y Rounds"),
       "restBetweenRounds": 30 (OPTIONAL for FOR_TIME: rest duration in seconds between rounds),
       "note": "REQUIRED for AMRAP/CIRCUIT/FOR_TIME sections - MUST include: 'Complete as many rounds as possible in [X:XX]. Rest [X] seconds between rounds if needed. Move through exercises in order: [exercise order].' Include pacing strategy, rest guidance, and round structure.",
@@ -123,6 +123,19 @@ INTERVAL Section Type (Sprint Sessions):
 - Perfect for REVL-style sprint sessions, power development, anaerobic capacity
 - Can be used as FINISHER or standalone section
 
+CRITICAL: EVERY SECTION MUST HAVE A TIME - NO EXCEPTIONS:
+- WARMUP: REQUIRED durationSec: 300-600 seconds (5-10 min). HYROX: 600-900 seconds (10-15 min)
+- COOLDOWN: REQUIRED durationSec: 300 seconds (5 min). HYROX: 300-600 seconds (5-10 min)
+- WAVE: REQUIRED durationSec: 600-1200 seconds (10-20 min) - total time for all waves
+- SUPERSET: REQUIRED durationSec: 600-900 seconds (10-15 min) - total time for superset block
+- AMRAP: REQUIRED durationSec: 480-1800 seconds (8-30 min) - countdown timer duration
+- FOR_TIME: REQUIRED durationSec: 600-3600 seconds (10-60 min) - time cap
+- CAPACITY: REQUIRED durationSec: 720-1800 seconds (12-30 min) - long conditioning block
+- FINISHER: REQUIRED durationSec: 180-600 seconds (3-10 min) - short high-intensity block
+- FLOW: REQUIRED durationSec: 600-900 seconds (10-15 min) - tempo/mobility work
+- EMOM: REQUIRED emomWorkSec + emomRestSec + emomRounds (total time = (workSec + restSec) × rounds)
+- INTERVAL: REQUIRED intervalWorkSec + intervalRestSec + intervalRounds (total time = (workSec + restSec) × rounds)
+
 TIME MANAGEMENT GUIDELINES:
 - WARMUP: 5-10 minutes (movement prep, activation, light cardio). HYROX: 10-15 minutes
 - COOLDOWN: 5 minutes (mobility, stretching, breathing). HYROX: 5-10 minutes
@@ -138,6 +151,7 @@ TIME MANAGEMENT GUIDELINES:
 - FOR_TIME with rounds: "1:40 Cap × 4 Rounds" = durationSec: 100, rounds: 4, restBetweenRounds: 30-45
 - Total workout time = WARMUP + Main Work + FINISHER (optional) + COOLDOWN
 - Always leave 2-3 minutes buffer for transitions
+- ⚠️ NEVER create a section without durationSec (or emomWorkSec/intervalWorkSec for EMOM/INTERVAL)
 
 TIER PRESCRIPTION GUIDELINES:
 - SILVER (Beginner/Intermediate): Focus on mechanics, lighter loads, steady pace, completion goal
@@ -513,11 +527,65 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
       return ergMachinePatterns.some(pattern => pattern.test(exerciseName));
     };
 
-    // Ensure sections have proper structure and validate erg machines
-    workout.sections = workout.sections.map((section: any, index: number) => ({
-      ...section,
-      order: section.order || index + 1,
-      blocks: (section.blocks || []).map((block: any, blockIndex: number) => {
+    // Ensure sections have proper structure, validate timing, and validate erg machines
+    workout.sections = workout.sections.map((section: any, index: number) => {
+      // Ensure every section has appropriate timing
+      let updatedSection = { ...section };
+      
+      if (section.type === 'EMOM') {
+        // EMOM sections need emomWorkSec, emomRestSec, emomRounds
+        if (!section.emomWorkSec) updatedSection.emomWorkSec = 45;
+        if (!section.emomRestSec) updatedSection.emomRestSec = 15;
+        if (!section.emomRounds) updatedSection.emomRounds = 12;
+      } else if (section.type === 'INTERVAL') {
+        // INTERVAL sections need intervalWorkSec, intervalRestSec, intervalRounds
+        if (!section.intervalWorkSec) updatedSection.intervalWorkSec = 20;
+        if (!section.intervalRestSec) updatedSection.intervalRestSec = 100;
+        if (!section.intervalRounds) updatedSection.intervalRounds = 8;
+      } else {
+        // All other sections need durationSec
+        if (!section.durationSec) {
+          // Set default durations based on section type
+          switch (section.type) {
+            case 'WARMUP':
+              updatedSection.durationSec = 300; // 5 minutes default
+              break;
+            case 'COOLDOWN':
+              updatedSection.durationSec = 300; // 5 minutes default
+              break;
+            case 'WAVE':
+              updatedSection.durationSec = 900; // 15 minutes default
+              break;
+            case 'SUPERSET':
+              updatedSection.durationSec = 600; // 10 minutes default
+              break;
+            case 'AMRAP':
+            case 'CIRCUIT':
+              updatedSection.durationSec = 600; // 10 minutes default
+              break;
+            case 'FOR_TIME':
+              updatedSection.durationSec = 1200; // 20 minutes default
+              break;
+            case 'CAPACITY':
+              updatedSection.durationSec = 900; // 15 minutes default
+              break;
+            case 'FINISHER':
+              updatedSection.durationSec = 300; // 5 minutes default
+              break;
+            case 'FLOW':
+              updatedSection.durationSec = 600; // 10 minutes default
+              break;
+            default:
+              updatedSection.durationSec = 600; // 10 minutes default fallback
+          }
+          console.log(`⚠️  Auto-added durationSec (${updatedSection.durationSec}s) to ${section.type} section: ${section.title}`);
+        }
+      }
+      
+      return {
+        ...updatedSection,
+        order: updatedSection.order || index + 1,
+        blocks: (updatedSection.blocks || []).map((block: any, blockIndex: number) => {
         const updatedBlock = {
           ...block,
           order: block.order || blockIndex + 1,

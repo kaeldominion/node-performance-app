@@ -51,6 +51,19 @@ export function WorkoutDeckSlide({
       case 'COOLDOWN':
         return (
           <div className="text-center space-y-8 max-w-4xl">
+            {/* Timer for WARMUP/COOLDOWN */}
+            {section.durationSec && (
+              <div className="mb-6">
+                <WorkoutTimer
+                  type="COUNTDOWN"
+                  durationSec={section.durationSec}
+                  onComplete={() => setTimerComplete(true)}
+                />
+                <div className="text-sm text-muted-text mt-2">
+                  {section.type === 'WARMUP' ? 'Warmup Duration' : 'Cooldown Duration'}
+                </div>
+              </div>
+            )}
             <div className="space-y-6">
               {section.blocks.map((block: any, idx: number) => (
                 <div
@@ -265,6 +278,17 @@ export function WorkoutDeckSlide({
       case 'WAVE':
         return (
           <div className="text-center space-y-8 max-w-5xl">
+            {/* Timer for WAVE */}
+            {section.durationSec && (
+              <div className="mb-6">
+                <WorkoutTimer
+                  type="COUNTDOWN"
+                  durationSec={section.durationSec}
+                  onComplete={() => setTimerComplete(true)}
+                />
+                <div className="text-sm text-muted-text mt-2">Wave Duration</div>
+              </div>
+            )}
             {/* Instructions Box */}
             {section.note && (
               <div className="bg-node-volt/10 border-2 border-node-volt rounded-lg p-6 text-left mb-6">
