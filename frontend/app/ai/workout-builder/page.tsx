@@ -127,8 +127,11 @@ export default function WorkoutBuilderPage() {
       const availableMinutes = isHyrox ? 90 : 55; // Standard: 50-60min (use 55), HYROX: 90min
       
       // For HYROX, don't send goal/archetype (they don't apply)
-      // Estimate when to show reviewing phase (after ~25 seconds of generation)
-      const reviewStartTime = Date.now() + 25000; // Start showing review after 25 seconds
+      // Use a timer to show reviewing phase after generating has been running for ~25 seconds
+      // This matches the backend flow where review happens after generation
+      const reviewTimer = setTimeout(() => {
+        setReviewing(true);
+      }, 25000); // Show reviewing after 25 seconds (when generation should be complete)
       
       const workout = await aiApi.generateWorkout({
         goal: isHyrox ? 'CONDITIONING' : formData.goal, // HYROX always uses CONDITIONING
@@ -145,6 +148,9 @@ export default function WorkoutBuilderPage() {
         isHyrox: isHyrox, // Only true for single HYROX workouts
         includeHyrox: formData.workoutType !== 'single' ? formData.includeHyrox : undefined, // For multi-day programs
       });
+      
+      // Clear the timer since we got the response
+      clearTimeout(reviewTimer);
       setGeneratedWorkout(workout);
       setReviewing(false);
     } catch (err: any) {
