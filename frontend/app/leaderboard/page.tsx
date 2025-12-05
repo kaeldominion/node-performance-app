@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import NextLink from 'next/link';
+import Link from 'next/link';
 import { analyticsApi, networkApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
@@ -285,11 +285,11 @@ export default function LeaderboardPage() {
                     {/* User Info */}
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <NextLink href={`/profile/${entry.userId}`}>
+                        <Link href={`/profile/${entry.userId}`}>
                           <div className="w-12 h-12 rounded-full bg-node-volt/20 border border-node-volt/50 flex items-center justify-center text-node-volt font-bold text-lg hover:bg-node-volt/30 transition-colors cursor-pointer" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                             {entry.name.charAt(0).toUpperCase()}
                           </div>
-                        </NextLink>
+                        </Link>
                         <div>
                           <h3 className="text-xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                             <ClickableUserName
