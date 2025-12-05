@@ -5,6 +5,8 @@ import { WorkoutTimer } from './WorkoutTimer';
 import ArchetypeBadge from './ArchetypeBadge';
 import TierBadge from './TierBadge';
 import { Icons } from '@/lib/iconMapping';
+import { getTierDisplayValue, isHeavyLift } from './tierDisplayUtils';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface WorkoutDeckSlideProps {
   section: any;
@@ -25,6 +27,7 @@ export function WorkoutDeckSlide({
   isFirst,
   isLast,
 }: WorkoutDeckSlideProps) {
+  const { theme } = useTheme();
   const [selectedTier, setSelectedTier] = useState<'SILVER' | 'GOLD' | 'BLACK'>('GOLD');
   const [timerComplete, setTimerComplete] = useState(false);
 
@@ -67,7 +70,7 @@ export function WorkoutDeckSlide({
     return false;
   };
 
-  // Helper to check if repScheme should be hidden (when tiers have different values)
+  // Helper to check if repScheme should be hidden (when tiers have different values or duplicate info)
   const shouldHideRepScheme = (block: any): boolean => {
     // Hide if exercise should use tier-based values
     if (shouldUseTierBasedValues(block)) return true;
@@ -75,6 +78,34 @@ export function WorkoutDeckSlide({
     // Hide repScheme if it's "N/A"
     if (block.repScheme === 'N/A' || block.repScheme === 'n/a' || block.repScheme === null || block.repScheme === undefined) {
       return true;
+    }
+    
+    // For heavy lifts, hide repScheme if tiers show weight (% 1RM)
+    if (isHeavyLift(block.exerciseName, block, block.tierGold || block.tierSilver || block.tierBlack)) {
+      // If tiers show weight, repScheme is redundant
+      return true;
+    }
+    
+    // Check if repScheme matches tier reps (duplication)
+    if (block.repScheme && (block.tierSilver || block.tierGold || block.tierBlack)) {
+      // Extract rep numbers from repScheme (e.g., "8-10" -> [8, 10])
+      const repSchemeMatch = block.repScheme.match(/(\d+)(?:-(\d+))?/);
+      if (repSchemeMatch) {
+        const schemeMin = parseInt(repSchemeMatch[1]);
+        const schemeMax = parseInt(repSchemeMatch[2] || repSchemeMatch[1]);
+        
+        // Check if tier reps match repScheme
+        const tierReps = [
+          block.tierSilver?.targetReps,
+          block.tierGold?.targetReps,
+          block.tierBlack?.targetReps,
+        ].filter(r => r !== null && r !== undefined);
+        
+        // If all tier reps are within the repScheme range, hide repScheme
+        if (tierReps.length > 0 && tierReps.every(r => r >= schemeMin && r <= schemeMax)) {
+          return true;
+        }
+      }
     }
     
     return false;
@@ -103,7 +134,7 @@ export function WorkoutDeckSlide({
             <div className="space-y-6">
               {section.blocks.map((block: any, idx: number) => (
                 <div
-                  key={block.id || idx}
+                  key={`${section.id}-block-${block.id || idx}`}
                   className="bg-panel/50 backdrop-blur-sm thin-border rounded-lg p-8"
                 >
                   <div className="flex items-center justify-center gap-4 mb-4">
@@ -116,6 +147,25 @@ export function WorkoutDeckSlide({
                       {block.exerciseName}
                     </h3>
                   </div>
+                  {block.exerciseImageUrl && (
+                    <div className="mb-4 rounded-lg overflow-hidden max-w-md mx-auto bg-transparent" style={{ aspectRatio: '1', maxHeight: '200px' }}>
+                      <img
+                        src={block.exerciseImageUrl}
+                        alt={block.exerciseName}
+                        className="w-full h-full object-cover"
+                        style={{
+                          filter: theme === 'dark' 
+                            ? 'brightness(0) saturate(100%) invert(85%) sepia(100%) saturate(10000%) hue-rotate(30deg)' // Volt green (#ccff00) for dark mode
+                            : 'brightness(0) saturate(100%) invert(30%) sepia(100%) saturate(10000%) hue-rotate(200deg)', // Blue (#0066ff) for light mode
+                        }}
+                      />
+                    </div>
+                  )}
+                  {block.exerciseInstructions && (
+                    <div className="mb-4 text-base text-muted-text italic leading-relaxed max-w-2xl mx-auto">
+                      {block.exerciseInstructions}
+                    </div>
+                  )}
                   {block.description && (
                     <p className="text-muted-text text-xl mb-4">{block.description}</p>
                   )}
@@ -147,7 +197,7 @@ export function WorkoutDeckSlide({
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {section.blocks.map((block: any, idx: number) => (
                 <div
-                  key={block.id || idx}
+                  key={`${section.id}-block-${block.id || idx}`}
                   className="bg-panel/50 backdrop-blur-sm border-2 thin-border rounded-lg p-6 hover:border-node-volt transition-colors"
                 >
                   {block.label && (
@@ -232,7 +282,7 @@ export function WorkoutDeckSlide({
               </div>
               {section.blocks.map((block: any, idx: number) => (
                 <div
-                  key={block.id || idx}
+                  key={`${section.id}-block-${block.id || idx}`}
                   className="bg-panel/50 backdrop-blur-sm thin-border rounded-lg p-8 border-l-4 border-node-volt"
                 >
                   <div className="flex items-center justify-center gap-4 mb-4">
@@ -245,6 +295,25 @@ export function WorkoutDeckSlide({
                       {block.exerciseName}
                     </h3>
                   </div>
+                  {block.exerciseImageUrl && (
+                    <div className="mb-4 rounded-lg overflow-hidden max-w-md mx-auto bg-transparent" style={{ aspectRatio: '1', maxHeight: '200px' }}>
+                      <img
+                        src={block.exerciseImageUrl}
+                        alt={block.exerciseName}
+                        className="w-full h-full object-cover"
+                        style={{
+                          filter: theme === 'dark' 
+                            ? 'brightness(0) saturate(100%) invert(85%) sepia(100%) saturate(10000%) hue-rotate(30deg)' // Volt green (#ccff00) for dark mode
+                            : 'brightness(0) saturate(100%) invert(30%) sepia(100%) saturate(10000%) hue-rotate(200deg)', // Blue (#0066ff) for light mode
+                        }}
+                      />
+                    </div>
+                  )}
+                  {block.exerciseInstructions && (
+                    <div className="mb-4 text-base text-muted-text italic leading-relaxed max-w-2xl mx-auto">
+                      {block.exerciseInstructions}
+                    </div>
+                  )}
                   {block.description && (
                     <p className="text-muted-text text-xl mb-4">{block.description}</p>
                   )}
@@ -282,7 +351,7 @@ export function WorkoutDeckSlide({
             <div className="space-y-6">
               {section.blocks.map((block: any, idx: number) => (
                 <div
-                  key={block.id || idx}
+                  key={`${section.id}-block-${block.id || idx}`}
                   className="bg-panel/50 backdrop-blur-sm thin-border rounded-lg p-8 border-l-4 border-node-volt"
                 >
                   <div className="flex items-center justify-center gap-4 mb-4">
@@ -290,6 +359,25 @@ export function WorkoutDeckSlide({
                       {block.exerciseName}
                     </h3>
                   </div>
+                  {block.exerciseImageUrl && (
+                    <div className="mb-4 rounded-lg overflow-hidden max-w-md mx-auto bg-transparent" style={{ aspectRatio: '1', maxHeight: '200px' }}>
+                      <img
+                        src={block.exerciseImageUrl}
+                        alt={block.exerciseName}
+                        className="w-full h-full object-cover"
+                        style={{
+                          filter: theme === 'dark' 
+                            ? 'brightness(0) saturate(100%) invert(85%) sepia(100%) saturate(10000%) hue-rotate(30deg)' // Volt green (#ccff00) for dark mode
+                            : 'brightness(0) saturate(100%) invert(30%) sepia(100%) saturate(10000%) hue-rotate(200deg)', // Blue (#0066ff) for light mode
+                        }}
+                      />
+                    </div>
+                  )}
+                  {block.exerciseInstructions && (
+                    <div className="mb-4 text-base text-muted-text italic leading-relaxed max-w-2xl mx-auto">
+                      {block.exerciseInstructions}
+                    </div>
+                  )}
                   {block.description && (
                     <p className="text-muted-text text-xl mb-4">{block.description}</p>
                   )}
@@ -337,7 +425,7 @@ export function WorkoutDeckSlide({
             <div className="space-y-6">
               {section.blocks.map((block: any, idx: number) => (
                 <div
-                  key={block.id || idx}
+                  key={`${section.id}-block-${block.id || idx}`}
                   className="bg-panel/50 backdrop-blur-sm thin-border rounded-lg p-8"
                 >
                   <div className="flex items-center justify-center gap-4 mb-4">
@@ -350,6 +438,25 @@ export function WorkoutDeckSlide({
                       {block.exerciseName}
                     </h3>
                   </div>
+                  {block.exerciseImageUrl && (
+                    <div className="mb-4 rounded-lg overflow-hidden max-w-md mx-auto bg-transparent" style={{ aspectRatio: '1', maxHeight: '200px' }}>
+                      <img
+                        src={block.exerciseImageUrl}
+                        alt={block.exerciseName}
+                        className="w-full h-full object-cover"
+                        style={{
+                          filter: theme === 'dark' 
+                            ? 'brightness(0) saturate(100%) invert(85%) sepia(100%) saturate(10000%) hue-rotate(30deg)' // Volt green (#ccff00) for dark mode
+                            : 'brightness(0) saturate(100%) invert(30%) sepia(100%) saturate(10000%) hue-rotate(200deg)', // Blue (#0066ff) for light mode
+                        }}
+                      />
+                    </div>
+                  )}
+                  {block.exerciseInstructions && (
+                    <div className="mb-4 text-base text-muted-text italic leading-relaxed max-w-2xl mx-auto">
+                      {block.exerciseInstructions}
+                    </div>
+                  )}
                   {block.description && (
                     <p className="text-muted-text text-xl mb-4">{block.description}</p>
                   )}
@@ -409,7 +516,7 @@ export function WorkoutDeckSlide({
                 >
                   <div className="grid grid-cols-2 gap-8">
                     {pair.map((block, idx) => (
-                      <div key={block.id || idx} className="bg-panel/50 thin-border rounded-lg p-6">
+                      <div key={`${section.id}-block-${block.id || idx}`} className="bg-panel/50 thin-border rounded-lg p-6">
                         <div className="text-center mb-4">
                           <span className="text-node-volt font-mono text-3xl font-bold">
                             {block.label || (idx === 0 ? 'A' : 'B')}
@@ -457,82 +564,25 @@ export function WorkoutDeckSlide({
   const renderTierPrescriptions = (block: any) => {
     if (!block.tierSilver && !block.tierGold && !block.tierBlack) return null;
 
-    const getTierDisplay = (tier: any, exerciseName: string) => {
-      // Import the utility function logic inline to avoid import issues
-      const isErgMachine = (name: string): boolean => {
-        const ergPatterns = [/row/i, /bike/i, /ski/i, /erg/i, /assault/i, /echo/i, /airdyne/i];
-        return ergPatterns.some(pattern => pattern.test(name));
-      };
-      
-      const isBodyweightRepExercise = (name: string): boolean => {
-        const nameLower = name.toLowerCase();
-        const bodyweightRepExercises = [
-          'box jump', 'pull up', 'pullup', 'chin up', 'push up', 'pushup',
-          'dip', 'situp', 'sit-up', 'crunch', 'plank', 'burpee',
-          'jump', 'lunge', 'squat', 'air squat', 'hollow', 'dead bug',
-          'knees to chest', 'ttb', 'toes to bar', 'muscle up'
-        ];
-        return bodyweightRepExercises.some(ex => nameLower.includes(ex));
-      };
-      
-      const isErg = isErgMachine(exerciseName);
-      const isBodyweightRep = isBodyweightRepExercise(exerciseName);
-      
-      // 1. For erg machines, always show distance/calories
-      if (isErg) {
-        if (tier.distance !== null && tier.distance !== undefined && tier.distanceUnit) {
-          return `${tier.distance}${tier.distanceUnit}`;
-        }
-        return 'Choose tier for distance/cal';
-      }
-      
-      // 2. For distance-based exercises (not erg machines)
-      if (tier.distance !== null && tier.distance !== undefined && tier.distanceUnit) {
-        return `${tier.distance}${tier.distanceUnit}`;
-      }
-      
-      // 3. For bodyweight rep exercises, prioritize targetReps
-      if (isBodyweightRep && tier.targetReps !== null && tier.targetReps !== undefined) {
-        return `${tier.targetReps} reps`;
-      }
-      
-      // 4. For other exercises, show targetReps if available
-      if (tier.targetReps !== null && tier.targetReps !== undefined) {
-        return `${tier.targetReps} reps`;
-      }
-      
-      // 5. Show load only if it's not "Bodyweight" (or if there's no targetReps)
-      if (tier.load) {
-        const loadLower = tier.load.toLowerCase();
-        // Skip "Bodyweight" if this is a bodyweight rep exercise (should show reps instead)
-        if (loadLower === 'bodyweight' && isBodyweightRep) {
-          return '—';
-        }
-        return tier.load;
-      }
-      
-      return '—';
-    };
-
     // Use warm-up section styling: 3-column grid with rounded boxes
     return (
       <div className="grid grid-cols-3 gap-4 mt-4">
         {block.tierSilver && (
-          <div className="bg-panel thin-border rounded p-3">
-            <div className="text-sm text-muted-text mb-1">SILVER</div>
-            <div className="font-medium">{getTierDisplay(block.tierSilver, block.exerciseName)}</div>
+          <div className="bg-panel thin-border rounded p-3" style={{ borderColor: '#94a3b8', backgroundColor: 'rgba(148, 163, 184, 0.1)' }}>
+            <div className="text-sm mb-1 font-bold uppercase tracking-wider" style={{ color: '#94a3b8' }}>SILVER</div>
+            <div className="font-medium" style={{ color: '#94a3b8' }}>{getTierDisplayValue(block.tierSilver, block.exerciseName, block)}</div>
           </div>
         )}
         {block.tierGold && (
-          <div className="bg-panel thin-border rounded p-3">
-            <div className="text-sm text-muted-text mb-1">GOLD</div>
-            <div className="font-medium">{getTierDisplay(block.tierGold, block.exerciseName)}</div>
+          <div className="bg-panel thin-border rounded p-3" style={{ borderColor: '#fbbf24', backgroundColor: 'rgba(251, 191, 36, 0.1)' }}>
+            <div className="text-sm mb-1 font-bold uppercase tracking-wider" style={{ color: '#fbbf24' }}>GOLD</div>
+            <div className="font-medium" style={{ color: '#fbbf24' }}>{getTierDisplayValue(block.tierGold, block.exerciseName, block)}</div>
           </div>
         )}
         {block.tierBlack && (
-          <div className="bg-panel thin-border rounded p-3 border-node-volt">
-            <div className="text-sm text-node-volt mb-1">BLACK</div>
-            <div className="font-medium text-node-volt">{getTierDisplay(block.tierBlack, block.exerciseName)}</div>
+          <div className="bg-panel thin-border rounded p-3 border-node-volt" style={{ backgroundColor: theme === 'dark' ? 'rgba(26, 26, 26, 0.8)' : 'rgba(31, 41, 55, 0.8)' }}>
+            <div className="text-sm mb-1 font-bold uppercase tracking-wider text-node-volt">BLACK</div>
+            <div className="font-medium text-node-volt">{getTierDisplayValue(block.tierBlack, block.exerciseName, block)}</div>
           </div>
         )}
       </div>

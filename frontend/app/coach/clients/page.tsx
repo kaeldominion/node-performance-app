@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { coachApi, userApi } from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+import { ClickableUserName } from '@/components/user/ClickableUserName';
 
 export default function CoachClientsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -132,12 +133,21 @@ export default function CoachClientsPage() {
                 {clients.map((client) => (
                   <tr key={client.id} className="border-b thin-border hover:bg-panel/50">
                     <td className="px-6 py-4">
-                      <Link
-                        href={`/coach/clients/${client.clientId}`}
-                        className="font-medium text-text-white hover:text-node-volt transition-colors"
-                      >
-                        {client.client.name || client.client.email}
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <ClickableUserName
+                          userId={client.clientId}
+                          name={client.client.name}
+                          email={client.client.email}
+                          className="font-medium text-text-white"
+                        />
+                        <span className="text-muted-text">•</span>
+                        <Link
+                          href={`/coach/clients/${client.clientId}`}
+                          className="text-node-volt hover:underline text-sm"
+                        >
+                          Coach View
+                        </Link>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <span

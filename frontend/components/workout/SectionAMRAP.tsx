@@ -3,6 +3,7 @@
 import CountdownTimer from '@/components/timers/CountdownTimer';
 import { useVoice } from '@/hooks/useVoice';
 import { getTierDisplayValue } from './tierDisplayUtils';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface ExerciseBlock {
   id: string;
@@ -23,6 +24,7 @@ interface SectionAMRAPProps {
 }
 
 export default function SectionAMRAP({ title, note, blocks, durationSec }: SectionAMRAPProps) {
+  const { theme } = useTheme();
   const { speak } = useVoice();
 
   const handleComplete = () => {
@@ -62,6 +64,25 @@ export default function SectionAMRAP({ title, note, blocks, durationSec }: Secti
                 <span className="text-2xl font-medium">{block.exerciseName}</span>
               </div>
             </div>
+            {block.exerciseImageUrl && (
+              <div className="mb-4 rounded-lg overflow-hidden max-w-xs mx-auto bg-transparent" style={{ aspectRatio: '1', maxHeight: '150px' }}>
+                <img
+                  src={block.exerciseImageUrl}
+                  alt={block.exerciseName}
+                  className="w-full h-full object-cover"
+                  style={{
+                    filter: theme === 'dark' 
+                      ? 'brightness(0) saturate(100%) invert(85%) sepia(100%) saturate(10000%) hue-rotate(30deg)' // Volt green (#ccff00) for dark mode
+                      : 'brightness(0) saturate(100%) invert(30%) sepia(100%) saturate(10000%) hue-rotate(200deg)', // Blue (#0066ff) for light mode
+                  }}
+                />
+              </div>
+            )}
+            {block.exerciseInstructions && (
+              <div className="mb-4 text-sm text-muted-text italic leading-relaxed max-w-2xl mx-auto">
+                {block.exerciseInstructions}
+              </div>
+            )}
             {block.description && (
               <p className="text-muted-text mb-4">{block.description}</p>
             )}
@@ -85,21 +106,21 @@ export default function SectionAMRAP({ title, note, blocks, durationSec }: Secti
             {(block.tierSilver || block.tierGold || block.tierBlack) && (
               <div className="grid grid-cols-3 gap-4 mt-4">
                 {block.tierSilver && (
-                  <div className="bg-panel thin-border rounded p-3">
-                    <div className="text-sm text-muted-text mb-1">SILVER</div>
-                    <div className="font-medium">{getTierDisplayValue(block.tierSilver, block.exerciseName)}</div>
+                  <div className="bg-panel thin-border rounded p-3" style={{ borderColor: '#94a3b8', backgroundColor: 'rgba(148, 163, 184, 0.1)' }}>
+                    <div className="text-sm mb-1 font-bold uppercase tracking-wider" style={{ color: '#94a3b8' }}>SILVER</div>
+                    <div className="font-medium" style={{ color: '#94a3b8' }}>{getTierDisplayValue(block.tierSilver, block.exerciseName, block)}</div>
                   </div>
                 )}
                 {block.tierGold && (
-                  <div className="bg-panel thin-border rounded p-3">
-                    <div className="text-sm text-muted-text mb-1">GOLD</div>
-                    <div className="font-medium">{getTierDisplayValue(block.tierGold, block.exerciseName)}</div>
+                  <div className="bg-panel thin-border rounded p-3" style={{ borderColor: '#fbbf24', backgroundColor: 'rgba(251, 191, 36, 0.1)' }}>
+                    <div className="text-sm mb-1 font-bold uppercase tracking-wider" style={{ color: '#fbbf24' }}>GOLD</div>
+                    <div className="font-medium" style={{ color: '#fbbf24' }}>{getTierDisplayValue(block.tierGold, block.exerciseName, block)}</div>
                   </div>
                 )}
                 {block.tierBlack && (
-                  <div className="bg-panel thin-border rounded p-3 border-node-volt">
-                    <div className="text-sm text-node-volt mb-1">BLACK</div>
-                    <div className="font-medium text-node-volt">{getTierDisplayValue(block.tierBlack, block.exerciseName)}</div>
+                  <div className="bg-panel thin-border rounded p-3 border-node-volt" style={{ backgroundColor: theme === 'dark' ? 'rgba(26, 26, 26, 0.8)' : 'rgba(31, 41, 55, 0.8)' }}>
+                    <div className="text-sm mb-1 font-bold uppercase tracking-wider text-node-volt">BLACK</div>
+                    <div className="font-medium text-node-volt">{getTierDisplayValue(block.tierBlack, block.exerciseName, block)}</div>
                   </div>
                 )}
               </div>

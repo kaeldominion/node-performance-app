@@ -9,6 +9,7 @@ import { Icons } from '@/lib/iconMapping';
 import { ShowQRCodeModal } from '@/components/network/ShowQRCodeModal';
 import { networkApi } from '@/lib/api';
 import { User, Settings, CreditCard, HelpCircle, LogOut, UserCircle, QrCode } from 'lucide-react';
+import { UserProfileModal } from '@/components/user/UserProfileModal';
 
 interface UserMenuProps {
   user: any;
@@ -44,6 +45,7 @@ export function UserMenu({ user, onLogout }: UserMenuProps) {
 
   const [showQRModal, setShowQRModal] = useState(false);
   const [networkCode, setNetworkCode] = useState<string | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   // Load network code on mount
   useEffect(() => {
@@ -93,8 +95,11 @@ export function UserMenu({ user, onLogout }: UserMenuProps) {
     {
       icon: UserCircle,
       label: 'View Profile',
-      href: `/profile/${user?.id}`,
-      onClick: () => setIsOpen(false),
+      href: '#',
+      onClick: () => {
+        setIsOpen(false);
+        setShowProfileModal(true);
+      },
     },
   ];
 
@@ -208,6 +213,15 @@ export function UserMenu({ user, onLogout }: UserMenuProps) {
         <ShowQRCodeModal
           onClose={() => setShowQRModal(false)}
           currentUserNetworkCode={networkCode || undefined}
+        />
+      )}
+
+      {/* User Profile Modal */}
+      {showProfileModal && user?.id && (
+        <UserProfileModal
+          userId={user.id}
+          isOpen={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
         />
       )}
     </div>

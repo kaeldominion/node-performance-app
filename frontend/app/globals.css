@@ -291,3 +291,127 @@ html {
   background-size: 1000px 100%;
   animation: shimmer 2s infinite;
 }
+
+/* Deck Animations */
+@keyframes slide-forward {
+  0% {
+    opacity: 0;
+    transform: translateX(100px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes slide-backward {
+  0% {
+    opacity: 0;
+    transform: translateX(-100px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes pulse-glow-enhanced {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 20px rgba(204, 255, 0, 0.3);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.08);
+    box-shadow: 0 0 40px rgba(204, 255, 0, 0.6);
+  }
+}
+
+@keyframes celebration {
+  0% {
+    transform: scale(0.8) rotate(-5deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1) rotate(5deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes number-flip {
+  0% {
+    transform: rotateX(0deg);
+  }
+  50% {
+    transform: rotateX(90deg);
+  }
+  100% {
+    transform: rotateX(0deg);
+  }
+}
+
+@keyframes scale-bounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+@keyframes progress-ring {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.animate-confetti-fall {
+  animation: confetti-fall 3s linear forwards;
+}
+
+.animate-slide-forward {
+  animation: slide-forward 0.5s ease-out;
+}
+
+.animate-slide-backward {
+  animation: slide-backward 0.5s ease-out;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow-enhanced 2s ease-in-out infinite;
+}
+
+.animate-celebration {
+  animation: celebration 0.6s ease-out;
+}
+
+.animate-number-flip {
+  animation: number-flip 0.5s ease-in-out;
+}
+
+.animate-scale-bounce {
+  animation: scale-bounce 0.4s ease-out;
+}
+
+.animate-progress-ring {
+  animation: progress-ring 1s linear;
+}

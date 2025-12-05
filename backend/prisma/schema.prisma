@@ -136,6 +136,7 @@ model User {
   email            String           @unique
   passwordHash     String
   name             String?
+  username         String?           @unique // Username for network connections
   role             UserRole         @default(HOME_USER)
   isAdmin          Boolean          @default(false) // Legacy - use role instead
   subscriptionTier SubscriptionTier @default(FREE)
@@ -158,6 +159,12 @@ model User {
   networkAsRequester Network[]            @relation("NetworkRequester")
   networkAsAddressee Network[]             @relation("NetworkAddressee")
   networkCode        String?              @unique // QR code for adding to network
+  notifications     Notification[]
+  activityLogs       ActivityLog[]
+  createdWorkouts   Workout[]             @relation("CreatedWorkouts")
+  achievements       UserAchievement[]
+  workoutRatings     WorkoutRating[]
+  favoriteWorkouts   WorkoutFavorite[]
 
   @@map("users")
 }
@@ -221,6 +228,8 @@ model Workout {
   program    Program?         @relation(fields: [programId], references: [id], onDelete: SetNull)
   templateId String?
   template   WorkoutTemplate? @relation("TemplateWorkouts", fields: [templateId], references: [id], onDelete: SetNull)
+  createdBy  String? // userId who created/saved this workout
+  creator    User?            @relation("CreatedWorkouts", fields: [createdBy], references: [id], onDelete: SetNull)
 
   name          String
   displayCode   String?
@@ -234,6 +243,8 @@ model Workout {
   sessions          SessionLog[]
   gymClasses        GymClass[]
   scheduledWorkouts ScheduledWorkout[] @relation("ScheduledWorkouts")
+  ratings           WorkoutRating[]
+  favorites         WorkoutFavorite[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -378,7 +389,51 @@ model SessionLog {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  ratings WorkoutRating[]
+
   @@map("session_logs")
+}
+
+model WorkoutRating {
+  id               String     @id @default(cuid())
+  sessionLogId     String?    @unique
+  sessionLog       SessionLog? @relation(fields: [sessionLogId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workoutId        String
+  workout          Workout    @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+
+  starRating       Int        // 1-5 stars
+  difficultyRating  Int?       // 1-10
+  enjoymentRating   Int?       // 1-10
+  effectivenessRating Int?    // 1-10
+  wouldDoAgain     Boolean?
+  tags             String[]   @default([]) // e.g., "Too Easy", "Perfect", "Too Hard", "Loved It"
+  notes            String?
+  favoriteExercises String[]  @default([]) // Exercise names that were favorites
+
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  @@unique([userId, workoutId, sessionLogId])
+  @@index([workoutId])
+  @@index([userId])
+  @@map("workout_ratings")
+}
+
+model WorkoutFavorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workoutId String
+  workout   Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, workoutId])
+  @@index([userId])
+  @@index([workoutId])
+  @@map("workout_favorites")
 }
 
 model Exercise {
@@ -408,6 +463,19 @@ model Exercise {
   regressionTips  String? // Tips for regressing the exercise if too difficult
   aiGenerated     Boolean  @default(false) // Track if exercise was AI-generated
   usageCount      Int      @default(0) // Track how many times this exercise has been used
+  
+  // Exercise variations and nuances
+  weightRanges    Json? // Weight ranges by tier: {silver: "12-16kg", gold: "20-24kg", black: "28-32kg"}
+  durationRanges  Json? // Duration ranges for time-based exercises: {silver: "30-45s", gold: "45-60s", black: "60-90s"}
+  intensityLevels Json? // Intensity variations: {silver: "Low-Moderate", gold: "Moderate-High", black: "High-Max"}
+  repRanges       Json? // Rep ranges by tier: {silver: "8-12", gold: "12-15", black: "15-20"}
+  tempoOptions    Json? // Tempo variations: ["2020", "2220", "2s pause", "3s eccentric"]
+  equipmentVariations Json? // Equipment variations: ["Dumbbells", "Kettlebells", "Barbell", "Bodyweight"]
+  movementVariations  Json? // Movement variations: ["Standard", "Pause", "Tempo", "Explosive"]
+  
+  // AI-generated image
+  imageUrl        String? // URL to AI-generated brutalist style image of the exercise
+  imageGeneratedAt DateTime? // When the image was generated
 
   tiers ExerciseTier[]
 
@@ -595,4 +663,108 @@ enum NetworkStatus {
   PENDING
   ACCEPTED
   BLOCKED
+}
+
+enum NotificationType {
+  NETWORK_REQUEST
+  NETWORK_ACCEPTED
+  NETWORK_REJECTED
+  FRIEND_WORKOUT_STARTED
+  FRIEND_WORKOUT_COMPLETED
+  FRIEND_WORKOUT_CREATED
+  FRIEND_STATS_IMPROVED
+  FRIEND_LEVEL_UP
+  FRIEND_LEADERBOARD_ENTRY
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  networkId String?          // Reference to Network record if applicable
+  activityLogId String?      // Reference to ActivityLog if applicable
+  activityLog ActivityLog?   @relation(fields: [activityLogId], references: [id], onDelete: SetNull)
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+enum ActivityType {
+  USER_REGISTERED
+  USER_LEVEL_UP
+  WORKOUT_CREATED
+  WORKOUT_SCHEDULED
+  SESSION_STARTED
+  SESSION_COMPLETED
+  NETWORK_CONNECTED
+  PROGRAM_STARTED
+  PROGRAM_COMPLETED
+  STATS_IMPROVED
+  LEADERBOARD_ENTRY
+}
+
+model ActivityLog {
+  id        String       @id @default(cuid())
+  userId    String?
+  user      User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  type      ActivityType
+  entityType String?    // e.g., 'workout', 'session', 'program'
+  entityId  String?      // ID of the related entity
+  message   String       // Human-readable message
+  metadata  Json?        // Additional data (workout name, stats, etc.)
+  createdAt DateTime     @default(now())
+
+  notifications Notification[]
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+// Achievement System
+enum AchievementCategory {
+  STREAK
+  VOLUME
+  CONSISTENCY
+  INTENSITY
+  MILESTONE
+  SPECIAL
+  CONTRIBUTION
+}
+
+model Achievement {
+  id          String              @id @default(cuid())
+  code        String              @unique // e.g., "STREAK_7", "FIRST_WORKOUT"
+  name        String
+  description String
+  category    AchievementCategory
+  icon        String              // Icon identifier
+  rarity      String              @default("COMMON") // COMMON, RARE, EPIC, LEGENDARY
+  xpReward    Int                 @default(0)
+  metadata    Json?               // Additional data (thresholds, conditions, etc.)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  userAchievements UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  earnedAt      DateTime    @default(now())
+  metadata      Json?       // Additional data (value when earned, etc.)
+
+  @@unique([userId, achievementId])
+  @@index([userId, earnedAt])
+  @@map("user_achievements")
 }

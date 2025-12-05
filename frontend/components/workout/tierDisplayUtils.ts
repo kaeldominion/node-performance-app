@@ -26,12 +26,62 @@ export function isBodyweightRepExercise(exerciseName: string): boolean {
 }
 
 /**
+ * Check if an exercise is a slam ball (should show weight/load in tier display)
+ */
+export function isSlamBall(exerciseName: string): boolean {
+  const name = exerciseName.toLowerCase();
+  return /slam\s*ball|slamball/i.test(name);
+}
+
+/**
+ * Check if an exercise is a heavy lift (strength exercise using % 1RM)
+ */
+export function isHeavyLift(exerciseName: string, block?: { loadPercentage?: string | null }, tier?: { load?: string | null }): boolean {
+  const name = exerciseName.toLowerCase();
+  
+  // Check if block has loadPercentage (indicates % 1RM loading)
+  if (block?.loadPercentage) {
+    return true;
+  }
+  
+  // Check if tier load contains % 1RM
+  if (tier?.load && /%\s*(?:1RM|of\s*1RM)/i.test(tier.load)) {
+    return true;
+  }
+  
+  // Common heavy lift patterns (barbell, dumbbell, kettlebell exercises)
+  const heavyLiftPatterns = [
+    /deadlift/i, /squat/i, /bench/i, /press/i, /clean/i, /snatch/i,
+    /jerk/i, /thruster/i, /front.*squat/i, /back.*squat/i, /overhead.*squat/i,
+    /strict.*press/i, /push.*press/i, /shoulder.*press/i,
+    /bb\s/i, /barbell/i, /db\s/i, /dumbbell/i, /kb\s/i, /kettlebell/i
+  ];
+  
+  // Exclude rowing exercises (they use distance, not % 1RM)
+  if (/row/i.test(name) && !/barbell.*row|db.*row|dumbbell.*row/i.test(name)) {
+    return false;
+  }
+  
+  return heavyLiftPatterns.some(pattern => pattern.test(name));
+}
+
+/**
+ * Extract percentage from load string (e.g., "40% 1RM" -> "40%")
+ */
+function extractPercentage(load: string): string | null {
+  const match = load.match(/(\d+(?:\.\d+)?)\s*%\s*(?:1RM|of\s*1RM)?/i);
+  return match ? `${match[1]}%` : null;
+}
+
+/**
  * Get the display value for a tier based on exercise type
  * Priority:
  * 1. Distance/calories for erg machines
- * 2. TargetReps for bodyweight rep exercises
- * 3. Load (if not "Bodyweight" or if no targetReps)
- * 4. Fallback to "—"
+ * 2. Load (% 1RM) for heavy lifts
+ * 3. TargetReps for bodyweight rep exercises
+ * 4. TargetReps for other exercises
+ * 5. Load (if not "Bodyweight" or if no targetReps)
+ * 6. Fallback to "—"
  */
 export function getTierDisplayValue(
   tier: {
@@ -41,10 +91,12 @@ export function getTierDisplayValue(
     load?: string | null;
     notes?: string | null;
   },
-  exerciseName: string
+  exerciseName: string,
+  block?: { loadPercentage?: string | null }
 ): string {
   const isErg = isErgMachine(exerciseName);
   const isBodyweightRep = isBodyweightRepExercise(exerciseName);
+  const isHeavy = isHeavyLift(exerciseName, block, tier);
   
   // 1. For erg machines, always show distance/calories
   if (isErg) {
@@ -60,17 +112,32 @@ export function getTierDisplayValue(
     return `${tier.distance}${tier.distanceUnit}`;
   }
   
-  // 3. For bodyweight rep exercises (box jumps, pull-ups, etc.), prioritize targetReps
+  // 3. For heavy lifts, prioritize load (% 1RM) over reps
+  if (isHeavy && tier.load) {
+    const percentage = extractPercentage(tier.load);
+    if (percentage) {
+      return percentage;
+    }
+    // If load doesn't contain %, show the load as-is (might be "12 kg" etc.)
+    return tier.load;
+  }
+  
+  // 3.5. For slam ball exercises, prioritize load (weight) over reps
+  if (isSlamBall(exerciseName) && tier.load) {
+    return tier.load;
+  }
+  
+  // 4. For bodyweight rep exercises (box jumps, pull-ups, etc.), prioritize targetReps
   if (isBodyweightRep && tier.targetReps !== null && tier.targetReps !== undefined) {
     return `${tier.targetReps} reps`;
   }
   
-  // 4. For other exercises, show targetReps if available
+  // 5. For other exercises, show targetReps if available
   if (tier.targetReps !== null && tier.targetReps !== undefined) {
     return `${tier.targetReps} reps`;
   }
   
-  // 5. Show load only if it's not "Bodyweight" (or if there's no targetReps)
+  // 6. Show load only if it's not "Bodyweight" (or if there's no targetReps)
   if (tier.load) {
     const loadLower = tier.load.toLowerCase();
     // Skip "Bodyweight" if this is a bodyweight rep exercise (should show reps instead)

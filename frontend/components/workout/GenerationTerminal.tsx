@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Icons } from '@/lib/iconMapping';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface GenerationTerminalProps {
   isGenerating: boolean;
@@ -19,6 +20,7 @@ type TerminalStep = {
 };
 
 export function GenerationTerminal({ isGenerating, isReviewing, error, onComplete, workoutReady }: GenerationTerminalProps) {
+  const { theme } = useTheme();
   const [steps, setSteps] = useState<TerminalStep[]>([
     { id: 'input', label: 'User input received', status: 'complete' },
     { id: 'connecting', label: 'Connecting to NØDE AI systems...', status: 'pending' },
@@ -162,15 +164,15 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onComplet
           playSound('step');
         }
       }
-      // Phase 2: Generating (15% → 60%, ~20-25 seconds)
+      // Phase 2: Generating (15% → 45%, ~30 seconds - reduced from 40s for better balance)
       // Only show generating phase when isGenerating is true AND isReviewing is false
       else if (currentPhase === 'generating' && isGenerating && !isReviewing) {
-        const generatingDuration = 25000; // 25 seconds for generation
+        const generatingDuration = 30000; // 30 seconds for generation (reduced from 40s)
         const phaseProgress = Math.min(1, phaseElapsed / generatingDuration);
         setCurrentStepProgress(phaseProgress);
-        setProgress(15 + phaseProgress * 45); // 15% to 60%
+        setProgress(15 + phaseProgress * 30); // 15% to 45% (reduced range)
       }
-      // Phase 3: Reviewing (60% → 85%, ~2-3 seconds)
+      // Phase 3: Reviewing (45% → 65%, ~5 seconds - increased from 2s)
       // Only transition to reviewing when isGenerating is false (generation complete)
       else if (isReviewing && !isGenerating && currentPhase !== 'reviewing') {
         setSteps((prev) =>
@@ -185,10 +187,10 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onComplet
         setCurrentStepProgress(0);
         playSound('step');
       } else if (currentPhase === 'reviewing' && isReviewing && !isGenerating) {
-        const reviewDuration = 2000; // 2 seconds for review (matches backend)
+        const reviewDuration = 5000; // 5 seconds for review (increased from 2s)
         const phaseProgress = Math.min(1, phaseElapsed / reviewDuration);
         setCurrentStepProgress(phaseProgress);
-        setProgress(60 + phaseProgress * 25); // 60% to 85%
+        setProgress(45 + phaseProgress * 20); // 45% to 65% (adjusted range)
         
         // If review completes, transition to optimizing
         if (phaseProgress >= 1) {
@@ -205,7 +207,7 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onComplet
           playSound('step');
         }
       }
-      // Phase 4: Optimizing (85% → 95%, ~3 seconds)
+      // Phase 4: Optimizing (65% → 85%, ~5 seconds - increased from 3s)
       // Transition to optimizing when reviewing is done OR when both flags are false
       else if (currentPhase === 'reviewing' && !isReviewing && !error) {
         // Reviewing phase ended, transition to optimizing
@@ -232,10 +234,10 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onComplet
         setPhaseStartTime(Date.now());
         setCurrentStepProgress(0);
       } else if (currentPhase === 'optimizing' && !isGenerating && !isReviewing && !error) {
-        const optimizeDuration = 3000; // 3 seconds for optimizing
+        const optimizeDuration = 5000; // 5 seconds for optimizing (increased from 3s)
         const phaseProgress = Math.min(1, phaseElapsed / optimizeDuration);
         setCurrentStepProgress(phaseProgress);
-        setProgress(85 + phaseProgress * 10); // 85% to 95%
+        setProgress(65 + phaseProgress * 20); // 65% to 85% (adjusted range)
         
         if (phaseProgress >= 1 && currentPhase === 'optimizing') {
           // Transition to complete phase
@@ -252,11 +254,11 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onComplet
           playSound('complete');
         }
       } else if (currentPhase === 'complete') {
-        // Complete phase: show 100% and completion message for 2 seconds
-        const completeDuration = 2000; // 2 seconds to show completion
+        // Complete phase: show 100% and completion message for 3 seconds (increased from 2s)
+        const completeDuration = 3000; // 3 seconds to show completion (increased from 2s)
         const phaseProgress = Math.min(1, phaseElapsed / completeDuration);
         setCurrentStepProgress(phaseProgress);
-        setProgress(95 + phaseProgress * 5); // 95% to 100%
+        setProgress(85 + phaseProgress * 15); // 85% to 100% (adjusted range)
         
         if (phaseProgress >= 1 && !isShuttingDown) {
           // Mark complete step as done, then start shutdown
@@ -391,7 +393,7 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onComplet
 
   return (
     <div 
-      className="bg-black border-2 border-node-volt/30 rounded-lg p-6 font-mono text-sm overflow-hidden relative transition-all duration-300"
+      className={`${theme === 'light' ? 'bg-gray-100' : 'bg-black'} border-2 ${theme === 'light' ? 'border-blue-500/40' : 'border-node-volt/30'} rounded-lg p-6 font-mono text-sm overflow-hidden relative transition-all duration-300`}
       style={{
         opacity: shutdownOpacity,
         transform: `scale(${shutdownScale})`,
@@ -399,16 +401,16 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onComplet
       }}
     >
       {/* Terminal header */}
-      <div className="flex items-center gap-2 mb-4 pb-3 border-b border-node-volt/20">
+      <div className="flex items-center gap-2 mb-4 pb-3 border-b border-blue-500/30 dark:border-node-volt/20">
         <div className="flex gap-1.5">
           <div className={`w-3 h-3 rounded-full transition-all duration-300 ${isShuttingDown ? 'bg-red-500' : 'bg-red-500/80'}`}></div>
           <div className={`w-3 h-3 rounded-full transition-all duration-300 ${isShuttingDown ? 'bg-yellow-500' : 'bg-yellow-500/80'}`}></div>
           <div className={`w-3 h-3 rounded-full transition-all duration-300 ${isShuttingDown ? 'bg-green-500' : 'bg-green-500/80'}`}></div>
         </div>
-        <div className="text-node-volt/60 text-xs ml-2 font-mono">
+        <div className="text-blue-600/80 dark:text-node-volt/60 text-xs ml-2 font-mono">
           NØDE OS // AI Workout Generator v2.0
         </div>
-        <div className="ml-auto text-node-volt/40 text-xs font-mono">
+        <div className="ml-auto text-blue-600/60 dark:text-node-volt/40 text-xs font-mono">
           {isShuttingDown ? 'SHUTTING DOWN...' : new Date().toLocaleTimeString()}
         </div>
       </div>
@@ -416,22 +418,22 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onComplet
       {/* Progress Bar */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-node-volt/60 text-xs font-mono">
+          <span className="text-blue-600/80 dark:text-node-volt/60 text-xs font-mono">
             {isShuttingDown ? 'Terminal Status' : 'Progress'}
           </span>
-          <span className="text-node-volt font-mono font-bold text-sm">
+          <span className="text-blue-700 dark:text-node-volt font-mono font-bold text-sm">
             {isShuttingDown ? 'CLOSING...' : `${Math.round(progress)}%`}
           </span>
         </div>
-        <div className="w-full h-2 bg-node-volt/10 rounded-full overflow-hidden border border-node-volt/20">
+        <div className="w-full h-2 bg-blue-100/50 dark:bg-node-volt/10 rounded-full overflow-hidden border border-blue-500/30 dark:border-node-volt/20">
           {isShuttingDown ? (
             <div className="h-full bg-gradient-to-r from-red-500/50 to-red-500 transition-all duration-300 ease-out relative">
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
             </div>
           ) : (
             <div
-              className="h-full bg-gradient-to-r from-node-volt/50 to-node-volt transition-all duration-300 ease-out relative"
-              style={{ width: `${progress}%` }}
+              className="h-full bg-gradient-to-r from-blue-500/70 to-blue-600 dark:from-node-volt/50 dark:to-node-volt transition-all duration-300 ease-out relative"
+              style={{ width: `${Math.round(progress)}%` }}
             >
               {/* Animated shimmer effect */}
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
@@ -442,20 +444,20 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onComplet
 
       {/* Shutdown overlay with terminal-style messages */}
       {isShuttingDown && (
-        <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center z-10 backdrop-blur-sm p-6">
+        <div className={`absolute inset-0 ${theme === 'light' ? 'bg-gray-100/95' : 'bg-black/90'} flex flex-col items-center justify-center z-10 backdrop-blur-sm p-6`}>
           <div className="w-full max-w-md space-y-2 font-mono text-sm">
-            <div className="text-node-volt/80">$ shutdown -h now</div>
-            <div className="text-green-400/60">Saving session state...</div>
-            <div className="text-green-400/60" style={{ transitionDelay: '0.2s', opacity: shutdownProgress > 0.3 ? 1 : 0 }}>
+            <div className="text-blue-700 dark:text-node-volt/80">$ shutdown -h now</div>
+            <div className="text-green-600/80 dark:text-green-400/60">Saving session state...</div>
+            <div className="text-green-600/80 dark:text-green-400/60" style={{ transitionDelay: '0.2s', opacity: shutdownProgress > 0.3 ? 1 : 0 }}>
               Closing AI connections...
             </div>
-            <div className="text-green-400/60" style={{ transitionDelay: '0.4s', opacity: shutdownProgress > 0.5 ? 1 : 0 }}>
+            <div className="text-green-600/80 dark:text-green-400/60" style={{ transitionDelay: '0.4s', opacity: shutdownProgress > 0.5 ? 1 : 0 }}>
               Flushing workout cache...
             </div>
-            <div className="text-green-400/60" style={{ transitionDelay: '0.6s', opacity: shutdownProgress > 0.7 ? 1 : 0 }}>
+            <div className="text-green-600/80 dark:text-green-400/60" style={{ transitionDelay: '0.6s', opacity: shutdownProgress > 0.7 ? 1 : 0 }}>
               Transferring to display module...
             </div>
-            <div className="text-node-volt text-lg font-bold mt-4 animate-pulse" style={{ opacity: shutdownProgress > 0.8 ? 1 : 0 }}>
+            <div className="text-blue-700 dark:text-node-volt text-lg font-bold mt-4 animate-pulse" style={{ opacity: shutdownProgress > 0.8 ? 1 : 0 }}>
               SYSTEM SHUTDOWN COMPLETE
             </div>
           </div>
@@ -475,24 +477,24 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onComplet
               className={`flex items-center gap-3 transition-all duration-300 ${
                 isShuttingDown ? 'opacity-50' : ''
               } ${
-                isActive ? 'text-node-volt' : isStepComplete ? 'text-green-400' : isError ? 'text-red-400' : 'text-gray-500'
+                isActive ? 'text-blue-600 dark:text-node-volt' : isStepComplete ? 'text-green-600 dark:text-green-400' : isError ? 'text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-gray-500'
               }`}
             >
               {/* Status indicator */}
               <div className="w-2 h-2 flex-shrink-0">
                 {isActive ? (
-                  <div className="w-2 h-2 bg-node-volt rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-blue-600 dark:bg-node-volt rounded-full animate-pulse"></div>
                 ) : isComplete ? (
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <div className="w-2 h-2 bg-green-600 dark:bg-green-400 rounded-full"></div>
                 ) : isError ? (
-                  <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+                  <div className="w-2 h-2 bg-red-600 dark:bg-red-400 rounded-full"></div>
                 ) : (
-                  <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full"></div>
                 )}
               </div>
 
               {/* Command prompt */}
-              <span className="text-node-volt/40">$</span>
+              <span className="text-blue-600/60 dark:text-node-volt/40">$</span>
 
               {/* Step label */}
               <span className={isActive ? 'animate-pulse' : ''}>
@@ -502,13 +504,13 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onComplet
               {/* Step progress indicator for active steps */}
               {isActive && (
                 <div className="ml-auto flex items-center gap-2">
-                  <div className="w-16 h-1.5 bg-node-volt/10 rounded-full overflow-hidden border border-node-volt/20">
+                  <div className="w-16 h-1.5 bg-blue-100/50 dark:bg-node-volt/10 rounded-full overflow-hidden border border-blue-500/30 dark:border-node-volt/20">
                     <div
-                      className="h-full bg-node-volt transition-all duration-300 ease-out"
-                      style={{ width: `${Math.max(0, Math.min(100, currentStepProgress * 100))}%` }}
+                      className="h-full bg-blue-600 dark:bg-node-volt transition-all duration-300 ease-out"
+                      style={{ width: `${Math.round(Math.max(0, Math.min(100, currentStepProgress * 100)))}%` }}
                     />
                   </div>
-                  <span className="text-node-volt/60 text-xs font-mono w-8 text-right">
+                  <span className="text-blue-600/80 dark:text-node-volt/60 text-xs font-mono w-8 text-right">
                     {Math.round(Math.max(0, Math.min(100, currentStepProgress * 100)))}%
                   </span>
                 </div>
@@ -516,17 +518,17 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onComplet
 
               {/* Active cursor - only show when step is active but has no progress yet */}
               {isActive && currentStepProgress === 0 && (
-                <span className="text-node-volt animate-pulse ml-2">▊</span>
+                <span className="text-blue-600 dark:text-node-volt animate-pulse ml-2">▊</span>
               )}
 
               {/* Success checkmark */}
               {isStepComplete && (
-                <Icons.CHECK size={16} className="text-green-400 ml-auto" />
+                <Icons.CHECK size={16} className="text-green-600 dark:text-green-400 ml-auto" />
               )}
 
               {/* Error X */}
               {isError && (
-                <Icons.X size={16} className="text-red-400 ml-auto" />
+                <Icons.X size={16} className="text-red-600 dark:text-red-400 ml-auto" />
               )}
             </div>
           );
@@ -534,29 +536,29 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onComplet
 
         {/* Error message */}
         {error && (
-          <div className="mt-4 pt-4 border-t border-red-500/20">
-            <div className="text-red-400 text-xs">
-              <span className="text-red-500/60">ERROR:</span> {error}
+          <div className="mt-4 pt-4 border-t border-red-500/30 dark:border-red-500/20">
+            <div className="text-red-600 dark:text-red-400 text-xs">
+              <span className="text-red-700/80 dark:text-red-500/60">ERROR:</span> {error}
             </div>
           </div>
         )}
       </div>
 
       {/* Terminal footer */}
-      <div className="mt-4 pt-3 border-t border-node-volt/10 text-xs text-node-volt/40 font-mono">
+      <div className="mt-4 pt-3 border-t border-blue-500/20 dark:border-node-volt/10 text-xs text-blue-600/60 dark:text-node-volt/40 font-mono">
         <div className="flex items-center gap-2 flex-wrap">
           <span>NØDE OS v2.0</span>
           <span>•</span>
           <span>AI Engine: GPT-4o</span>
           <span>•</span>
           <span>Status:</span>
-          <span className={`${isGenerating || isReviewing ? 'text-node-volt animate-pulse' : isComplete ? 'text-green-400' : error ? 'text-red-400' : 'text-green-400'}`}>
+          <span className={`${isGenerating || isReviewing ? 'text-blue-600 dark:text-node-volt animate-pulse' : isComplete ? 'text-green-600 dark:text-green-400' : error ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
             {isShuttingDown ? 'SHUTTING DOWN' : isGenerating || isReviewing ? 'PROCESSING' : isComplete ? 'COMPLETE' : error ? 'ERROR' : 'READY'}
           </span>
           {(isGenerating || isReviewing) && (
             <>
               <span>•</span>
-              <span className="text-node-volt">
+              <span className="text-blue-600 dark:text-node-volt">
                 {Math.round(progress)}% Complete
               </span>
             </>

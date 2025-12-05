@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { coachApi, analyticsApi, programsApi } from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+import { ClickableUserName } from '@/components/user/ClickableUserName';
 import {
   LineChart,
   Line,
@@ -124,7 +125,16 @@ export default function ClientDetailPage() {
               ← Back to Clients
             </Link>
             <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-              {client?.name || client?.email || 'Client'}
+              {client ? (
+                <ClickableUserName
+                  userId={clientId}
+                  name={client.name}
+                  email={client.email}
+                  className="text-text-white"
+                />
+              ) : (
+                'Client'
+              )}
             </h1>
             <p className="text-muted-text">Client overview and metrics</p>
           </div>

@@ -9,7 +9,14 @@ import Link from 'next/link';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { Icons } from '@/lib/iconMapping';
 import { AddNetworkModal } from '@/components/network/AddNetworkModal';
-import { NetworkActivity } from '@/components/network/NetworkActivity';
+import { TerminalActivityFeed } from '@/components/activity/TerminalActivityFeed';
+import { AchievementIcon } from '@/components/achievements/AchievementIcon';
+import { useAchievementNotificationContext } from '@/contexts/AchievementNotificationContext';
+import ArchetypeBadge from '@/components/workout/ArchetypeBadge';
+import { UserProfileModal } from '@/components/user/UserProfileModal';
+import { AchievementShareModal } from '@/components/achievements/AchievementShareModal';
+import { Share2 } from 'lucide-react';
+import { WorkoutCard } from '@/components/workout/WorkoutCard';
 
 // Mini AI Form Component
 function AIMiniForm() {
@@ -139,6 +146,7 @@ function AIMiniForm() {
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { showAchievements } = useAchievementNotificationContext();
   const [todaySession, setTodaySession] = useState<any>(null);
   const [recentSessions, setRecentSessions] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
@@ -149,6 +157,14 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [showAddNetworkModal, setShowAddNetworkModal] = useState(false);
   const [currentUserNetworkCode, setCurrentUserNetworkCode] = useState<string | null>(null);
+  const [friendIds, setFriendIds] = useState<string[]>([]);
+  const [allBadges, setAllBadges] = useState<any[]>([]);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [selectedWorkoutForSchedule, setSelectedWorkoutForSchedule] = useState<{ id: string; name: string } | null>(null);
+  const [selectedUserIdForProfile, setSelectedUserIdForProfile] = useState<string | null>(null);
+  const [selectedBadgeForShare, setSelectedBadgeForShare] = useState<any | null>(null);
+  const [showBadgeShareModal, setShowBadgeShareModal] = useState(false);
 
   useEffect(() => {
     // Wait for auth to load
@@ -166,6 +182,18 @@ export default function Dashboard() {
     if (user) {
       loadDashboardData();
     }
+    
+    // Listen for schedule updates
+    const handleScheduleUpdate = () => {
+      if (user) {
+        loadDashboardData();
+      }
+    };
+    window.addEventListener('schedule-updated', handleScheduleUpdate);
+    
+    return () => {
+      window.removeEventListener('schedule-updated', handleScheduleUpdate);
+    };
   }, [user, authLoading, router]);
 
   const loadDashboardData = async () => {
@@ -177,7 +205,7 @@ export default function Dashboard() {
       endDate.setDate(endDate.getDate() + 7); // Next 7 days
       endDate.setHours(23, 59, 59, 999);
 
-      const [schedule, recent, statsData, trendsData, workouts, scheduled, xpData, userData] = await Promise.all([
+      const [schedule, recent, statsData, trendsData, workouts, scheduled, xpData, userData, badgesData] = await Promise.all([
         userApi.getSchedule().catch(() => ({ today: null, upcoming: [] })),
         sessionsApi.getRecent().catch(() => []),
         analyticsApi.getStats().catch(() => null),
@@ -186,6 +214,7 @@ export default function Dashboard() {
         scheduleApi.getSchedule(startDate.toISOString(), endDate.toISOString()).catch(() => []),
         gamificationApi.getStats().catch(() => null),
         userApi.getMe().catch(() => null),
+        gamificationApi.getAllAchievements().catch(() => []),
       ]);
 
       // Find today's workout from schedule
@@ -199,10 +228,52 @@ export default function Dashboard() {
       setTodaySession(todayWorkout || null);
       setRecentSessions(recent.slice(0, 5) || []);
       setStats(statsData);
-      setMyWorkouts(workouts.slice(0, 6) || []);
-      setUpcomingSessions((scheduled || []).slice(0, 5) || []);
+      setMyWorkouts(workouts.slice(0, 4) || []);
+      // Filter to only show future workouts (not completed and scheduled date is in the future)
+      const now = new Date();
+      const upcoming = (scheduled || []).filter((s: any) => {
+        const scheduledDate = new Date(s.scheduledDate);
+        return scheduledDate >= now && !s.isCompleted;
+      });
+      console.log('Upcoming sessions:', upcoming.length, 'out of', scheduled?.length || 0);
+      setUpcomingSessions(upcoming.slice(0, 5) || []);
       setXpStats(xpData);
       setCurrentUserNetworkCode((userData as any)?.networkCode || null);
+      
+      // Set badges - log for debugging
+      if (badgesData && Array.isArray(badgesData)) {
+        console.log('Loaded badges:', badgesData.length);
+        setAllBadges(badgesData);
+      } else {
+        console.warn('No badges data received:', badgesData);
+        setAllBadges([]);
+      }
+      
+      // Check for achievements from sessionStorage (from workout completion)
+      const storedAchievements = sessionStorage.getItem('newAchievements');
+      if (storedAchievements) {
+        try {
+          const achievements = JSON.parse(storedAchievements);
+          if (Array.isArray(achievements) && achievements.length > 0) {
+            showAchievements(achievements);
+            sessionStorage.removeItem('newAchievements');
+          }
+        } catch (error) {
+          console.error('Failed to parse stored achievements:', error);
+          sessionStorage.removeItem('newAchievements');
+        }
+      }
+      
+      // Load network connections for friend filtering
+      try {
+        const networkData = await networkApi.getNetwork();
+        const friendUserIds = networkData.map((conn: any) => 
+          conn.requesterId === user?.id ? conn.addresseeId : conn.requesterId
+        );
+        setFriendIds(friendUserIds);
+      } catch (error) {
+        console.error('Failed to load network:', error);
+      }
       
       // Format trends for chart
       if (trendsData?.dailyStats) {
@@ -756,35 +827,191 @@ export default function Dashboard() {
                 View All <span>→</span>
               </Link>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {myWorkouts.map((workout: any) => (
-                <Link
+                <WorkoutCard
                   key={workout.id}
-                  href={`/workouts/${workout.id}`}
-                  className="group bg-tech-grey border border-border-dark rounded-lg p-5 hover:border-node-volt hover:bg-tech-grey/80 transition-all"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      {workout.displayCode && (
-                        <div className="text-node-volt font-mono text-xs mb-1">
-                          {workout.displayCode}
-                        </div>
-                      )}
-                      <h3 className="font-bold text-lg mb-1 group-hover:text-node-volt transition-colors" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                        {workout.name}
-                      </h3>
-                    </div>
-                    <span className="text-node-volt text-xl group-hover:translate-x-1 transition-transform">→</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm text-muted-text">
-                    <span>{workout.sections?.length || 0} sections</span>
-                    <span className="text-node-volt font-semibold">Start</span>
-                  </div>
-                </Link>
+                  workout={workout}
+                  loadWorkouts={loadDashboardData}
+                />
               ))}
             </div>
           </div>
         )}
+
+        {/* Badges Section - All Available Badges */}
+        <div className="bg-gradient-to-br from-concrete-grey to-tech-grey border border-border-dark rounded-xl p-8 mt-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-3xl font-bold mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                  All Badges
+                </h2>
+                <p className="text-sm text-muted-text">
+                  {allBadges.filter((b: any) => b.earned).length} of {allBadges.length} earned
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/badges"
+                  className="text-node-volt hover:underline text-sm font-medium flex items-center gap-2"
+                >
+                  View All Badges <span>→</span>
+                </Link>
+                <Link
+                  href="/progress"
+                  className="text-muted-text hover:text-text-white text-sm font-medium"
+                >
+                  Progress
+                </Link>
+              </div>
+            </div>
+
+            {/* Group badges by category - only show earned and close to earning (>= 85%) */}
+            {['STREAK', 'VOLUME', 'CONSISTENCY', 'INTENSITY', 'MILESTONE', 'SPECIAL', 'CONTRIBUTION'].map((category) => {
+              const categoryBadges = allBadges.filter((b: any) => {
+                // Only show badges that are earned or close to earning (>= 85% progress)
+                return b.category === category && (b.earned || (b.progress && b.progress >= 85));
+              });
+              if (categoryBadges.length === 0) return null;
+
+              return (
+                <div key={category} className="mb-8">
+                  <h3 className="text-lg font-bold mb-4 text-node-volt uppercase tracking-[0.1em]" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                    {category}
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    {categoryBadges.map((badge: any) => {
+                      const isClose = !badge.earned && badge.progress >= 85;
+                      const progress = badge.progress || 0;
+                      
+                      return (
+                        <div
+                          key={badge.id}
+                          className={`relative bg-tech-grey thin-border rounded-lg p-4 text-center transition-all group overflow-hidden ${
+                            badge.earned
+                              ? 'hover:border-node-volt opacity-100'
+                              : isClose
+                              ? 'opacity-70 hover:opacity-90 border-node-volt/30'
+                              : 'opacity-40 hover:opacity-60'
+                          }`}
+                        >
+                          {/* "Almost There" indicator */}
+                          {isClose && (
+                            <div className="absolute top-2 right-2 z-20">
+                              <div className="bg-node-volt text-dark text-[8px] font-bold px-2 py-0.5 rounded-full animate-pulse flex items-center gap-1">
+                                <span>⚡</span>
+                                <span>{progress}%</span>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Progress bar for unearned badges */}
+                          {!badge.earned && progress > 0 && (
+                            <div className="absolute top-0 left-0 right-0 h-1 bg-tech-grey/50">
+                              <div 
+                                className={`h-full transition-all ${
+                                  isClose ? 'bg-node-volt' : 'bg-muted-text'
+                                }`}
+                                style={{ width: `${progress}%` }}
+                              />
+                            </div>
+                          )}
+                          
+                          {/* Rarity glow effect - only for earned */}
+                          {badge.earned && (
+                            <div 
+                              className={`absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity ${
+                                badge.rarity === 'LEGENDARY' ? 'bg-yellow-500' :
+                                badge.rarity === 'EPIC' ? 'bg-purple-500' :
+                                badge.rarity === 'RARE' ? 'bg-blue-500' :
+                                'bg-gray-500'
+                              }`}
+                            />
+                          )}
+                          
+                          {/* Close indicator glow */}
+                          {isClose && (
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity bg-node-volt" />
+                          )}
+                          
+                          {/* Share Button - only for earned badges */}
+                          {badge.earned && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedBadgeForShare(badge);
+                                setShowBadgeShareModal(true);
+                              }}
+                              className="absolute top-2 left-2 z-20 p-1.5 bg-node-volt/20 hover:bg-node-volt/30 border border-node-volt/50 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                              title="Share badge"
+                            >
+                              <Share2 size={12} className="text-node-volt" />
+                            </button>
+                          )}
+                          
+                          <div className="relative z-10">
+                            <div className={badge.earned ? '' : 'grayscale opacity-50'}>
+                              <AchievementIcon
+                                icon={badge.icon}
+                                rarity={badge.rarity}
+                                size="md"
+                                className="mx-auto mb-2"
+                              />
+                            </div>
+                            <div className={`text-xs font-bold mb-1 ${badge.earned ? 'text-text-white' : isClose ? 'text-node-volt' : 'text-muted-text'}`} style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                              {badge.name}
+                            </div>
+                            <div className="text-[10px] text-muted-text mb-1 line-clamp-2">
+                              {badge.description}
+                            </div>
+                            
+                            {/* Progress info for unearned badges */}
+                            {!badge.earned && progress > 0 && (
+                              <div className="text-[9px] text-muted-text mb-1">
+                                {progress}% complete
+                                {badge.value !== null && badge.value !== undefined && (
+                                  <span className="block text-node-volt font-bold mt-0.5">
+                                    {badge.value}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            
+                            {badge.earned && badge.earnedAt && (
+                              <div className="text-[9px] text-node-volt font-bold">
+                                {new Date(badge.earnedAt).toLocaleDateString()}
+                              </div>
+                            )}
+                            {!badge.earned && progress === 0 && (
+                              <div className="text-[9px] text-muted-text font-bold">
+                                Locked
+                              </div>
+                            )}
+                            <div className={`text-[9px] uppercase tracking-[0.1em] font-bold mt-1 ${
+                              badge.rarity === 'LEGENDARY' ? 'text-yellow-400' :
+                              badge.rarity === 'EPIC' ? 'text-purple-400' :
+                              badge.rarity === 'RARE' ? 'text-blue-400' :
+                              'text-gray-400'
+                            }`}>
+                              {badge.rarity}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+            
+            {allBadges.length === 0 && (
+              <div className="text-center py-12 text-muted-text">
+                <Icons.GAMIFICATION size={48} className="mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-bold mb-2">Loading badges...</p>
+                <p className="text-sm">Badges will appear here once loaded</p>
+              </div>
+            )}
+          </div>
 
         {/* Network Activity Section */}
         <div className="bg-gradient-to-br from-concrete-grey to-tech-grey border border-border-dark rounded-xl p-8 mt-8">
@@ -796,13 +1023,30 @@ export default function Dashboard() {
               onClick={() => setShowAddNetworkModal(true)}
               className="bg-node-volt text-dark font-bold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity text-sm flex items-center gap-2"
             >
-              <Icons.SHARE size={16} />
+              <Icons.USER_PLUS size={16} />
               Add to Network
             </button>
           </div>
-          <NetworkActivity />
+          <div className="h-[500px] rounded-lg overflow-hidden thin-border" style={{ backgroundColor: 'var(--panel)' }}>
+            <TerminalActivityFeed
+              friendIds={friendIds}
+              showFriendFilter={true}
+              onUsernameClick={(userId, username) => {
+                setSelectedUserIdForProfile(userId);
+              }}
+            />
+          </div>
         </div>
       </div>
+
+      {/* User Profile Modal */}
+      {selectedUserIdForProfile && (
+        <UserProfileModal
+          userId={selectedUserIdForProfile}
+          isOpen={!!selectedUserIdForProfile}
+          onClose={() => setSelectedUserIdForProfile(null)}
+        />
+      )}
 
       {/* Add Network Modal */}
       {showAddNetworkModal && (
@@ -813,6 +1057,26 @@ export default function Dashboard() {
             setShowAddNetworkModal(false);
           }}
           currentUserNetworkCode={currentUserNetworkCode || undefined}
+        />
+      )}
+
+      {/* Badge Share Modal */}
+      {showBadgeShareModal && selectedBadgeForShare && (
+        <AchievementShareModal
+          isOpen={showBadgeShareModal}
+          onClose={() => {
+            setShowBadgeShareModal(false);
+            setSelectedBadgeForShare(null);
+          }}
+          achievement={{
+            code: selectedBadgeForShare.code || selectedBadgeForShare.id,
+            name: selectedBadgeForShare.name,
+            description: selectedBadgeForShare.description,
+            icon: selectedBadgeForShare.icon,
+            rarity: selectedBadgeForShare.rarity || 'COMMON',
+            earnedAt: selectedBadgeForShare.earnedAt,
+            value: selectedBadgeForShare.value,
+          }}
         />
       )}
     </div>

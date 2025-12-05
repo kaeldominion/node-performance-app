@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { coachApi, analyticsApi } from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+import { ClickableUserName } from '@/components/user/ClickableUserName';
 
 export default function CoachDashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -171,13 +172,26 @@ export default function CoachDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="font-medium text-text-white">
-                        {client.client.name || client.client.email}
+                        <ClickableUserName
+                          userId={client.clientId}
+                          name={client.client.name}
+                          email={client.client.email}
+                          className="text-text-white"
+                        />
                       </div>
                       <div className="text-sm text-muted-text">
                         {client.assignments?.length || 0} active programs • {client.status}
                       </div>
                     </div>
-                    <div className="text-node-volt">→</div>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/coach/clients/${client.clientId}`}
+                        className="text-node-volt hover:underline text-sm"
+                      >
+                        Coach View
+                      </Link>
+                      <span className="text-node-volt">→</span>
+                    </div>
                   </div>
                 </Link>
               ))}

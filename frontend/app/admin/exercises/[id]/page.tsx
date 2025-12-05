@@ -41,6 +41,15 @@ export default function ExerciseEditPage() {
     suitableArchetypes: [] as string[],
     indoorFriendly: true,
     notes: '',
+    instructions: '',
+    imageUrl: '',
+    weightRanges: null as any,
+    durationRanges: null as any,
+    intensityLevels: null as any,
+    repRanges: null as any,
+    tempoOptions: null as any,
+    equipmentVariations: null as any,
+    movementVariations: null as any,
     tiers: [
       { tier: 'SILVER', description: '', typicalReps: '' },
       { tier: 'GOLD', description: '', typicalReps: '' },
@@ -89,6 +98,15 @@ export default function ExerciseEditPage() {
         suitableArchetypes: exercise.suitableArchetypes || [],
         indoorFriendly: exercise.indoorFriendly ?? true,
         notes: exercise.notes || '',
+        instructions: exercise.instructions || '',
+        imageUrl: exercise.imageUrl || '',
+        weightRanges: exercise.weightRanges || null,
+        durationRanges: exercise.durationRanges || null,
+        intensityLevels: exercise.intensityLevels || null,
+        repRanges: exercise.repRanges || null,
+        tempoOptions: exercise.tempoOptions || null,
+        equipmentVariations: exercise.equipmentVariations || null,
+        movementVariations: exercise.movementVariations || null,
         tiers: TIERS.map((tier) => ({
           tier,
           description: tierMap[tier]?.description || '',
@@ -407,6 +425,103 @@ export default function ExerciseEditPage() {
               ))}
             </div>
           </div>
+
+          {/* Exercise Instructions */}
+          {formData.instructions && (
+            <div>
+              <label className="block text-sm font-medium mb-2">Instructions (Auto-generated)</label>
+              <div className="bg-panel/50 thin-border rounded p-4 text-sm text-muted-text italic leading-relaxed">
+                {formData.instructions}
+              </div>
+            </div>
+          )}
+
+          {/* Exercise Image */}
+          {formData.imageUrl && (
+            <div>
+              <label className="block text-sm font-medium mb-2">Generated Image</label>
+              <div className="mb-4 rounded-lg overflow-hidden max-w-md bg-transparent" style={{ aspectRatio: '1', maxHeight: '300px' }}>
+                <img
+                  src={formData.imageUrl}
+                  alt={formData.name}
+                  className="w-full h-full object-cover"
+                  style={{
+                    filter: 'brightness(0) saturate(100%) invert(85%) sepia(100%) saturate(10000%) hue-rotate(30deg)', // Volt green
+                  }}
+                />
+              </div>
+              <p className="text-xs text-muted-text mb-2">
+                Image generated automatically when exercise is created. Shows 2-3 movement phases in single color.
+              </p>
+            </div>
+          )}
+
+          {/* Exercise Variations Display */}
+          {(formData.weightRanges || formData.durationRanges || formData.intensityLevels || formData.repRanges) && (
+            <div>
+              <label className="block text-sm font-medium mb-2">Exercise Variations (Auto-generated)</label>
+              <div className="bg-panel/50 thin-border rounded p-4 space-y-2 text-sm">
+                {formData.weightRanges && (
+                  <div>
+                    <span className="font-semibold">Weight Ranges: </span>
+                    <span className="text-muted-text">
+                      SILVER: {formData.weightRanges.silver || 'N/A'}, 
+                      GOLD: {formData.weightRanges.gold || 'N/A'}, 
+                      BLACK: {formData.weightRanges.black || 'N/A'}
+                    </span>
+                  </div>
+                )}
+                {formData.durationRanges && (
+                  <div>
+                    <span className="font-semibold">Duration Ranges: </span>
+                    <span className="text-muted-text">
+                      SILVER: {formData.durationRanges.silver || 'N/A'}, 
+                      GOLD: {formData.durationRanges.gold || 'N/A'}, 
+                      BLACK: {formData.durationRanges.black || 'N/A'}
+                    </span>
+                  </div>
+                )}
+                {formData.intensityLevels && (
+                  <div>
+                    <span className="font-semibold">Intensity Levels: </span>
+                    <span className="text-muted-text">
+                      SILVER: {formData.intensityLevels.silver || 'N/A'}, 
+                      GOLD: {formData.intensityLevels.gold || 'N/A'}, 
+                      BLACK: {formData.intensityLevels.black || 'N/A'}
+                    </span>
+                  </div>
+                )}
+                {formData.repRanges && (
+                  <div>
+                    <span className="font-semibold">Rep Ranges: </span>
+                    <span className="text-muted-text">
+                      SILVER: {formData.repRanges.silver || 'N/A'}, 
+                      GOLD: {formData.repRanges.gold || 'N/A'}, 
+                      BLACK: {formData.repRanges.black || 'N/A'}
+                    </span>
+                  </div>
+                )}
+                {formData.tempoOptions && Array.isArray(formData.tempoOptions) && formData.tempoOptions.length > 0 && (
+                  <div>
+                    <span className="font-semibold">Tempo Options: </span>
+                    <span className="text-muted-text">{formData.tempoOptions.join(', ')}</span>
+                  </div>
+                )}
+                {formData.equipmentVariations && Array.isArray(formData.equipmentVariations) && formData.equipmentVariations.length > 0 && (
+                  <div>
+                    <span className="font-semibold">Equipment Variations: </span>
+                    <span className="text-muted-text">{formData.equipmentVariations.join(', ')}</span>
+                  </div>
+                )}
+                {formData.movementVariations && Array.isArray(formData.movementVariations) && formData.movementVariations.length > 0 && (
+                  <div>
+                    <span className="font-semibold">Movement Variations: </span>
+                    <span className="text-muted-text">{formData.movementVariations.join(', ')}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Notes */}
           <div>

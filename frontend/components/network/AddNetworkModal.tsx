@@ -3,7 +3,10 @@
 import { useState, useEffect } from 'react';
 import { networkApi } from '@/lib/api';
 import { Icons } from '@/lib/iconMapping';
+import { ClickableUserName } from '@/components/user/ClickableUserName';
+import Link from 'next/link';
 import { ShowQRCodeModal } from './ShowQRCodeModal';
+import { QRScanner } from './QRScanner';
 import dynamic from 'next/dynamic';
 
 const QRCodeSVG = dynamic(() => import('qrcode.react').then((mod) => mod.QRCodeSVG), {
@@ -20,7 +23,7 @@ export function AddNetworkModal({ onClose, onNetworkAdded, currentUserNetworkCod
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [activeTab, setActiveTab] = useState<'search' | 'qr'>('search');
+  const [activeTab, setActiveTab] = useState<'search' | 'qr' | 'scan'>('search');
   const [networkCode, setNetworkCode] = useState('');
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
@@ -146,7 +149,17 @@ export function AddNetworkModal({ onClose, onNetworkAdded, currentUserNetworkCod
                 : 'border-transparent text-muted-text hover:text-text-white'
             }`}
           >
-            QR Code
+            My QR Code
+          </button>
+          <button
+            onClick={() => setActiveTab('scan')}
+            className={`px-4 py-2 font-medium transition-colors border-b-2 ${
+              activeTab === 'scan'
+                ? 'border-node-volt text-node-volt'
+                : 'border-transparent text-muted-text hover:text-text-white'
+            }`}
+          >
+            Scan QR
           </button>
         </div>
 
@@ -206,11 +219,20 @@ export function AddNetworkModal({ onClose, onNetworkAdded, currentUserNetworkCod
                     className="flex items-center justify-between bg-dark thin-border rounded-lg p-4"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-node-volt/20 border border-node-volt flex items-center justify-center text-sm font-bold text-node-volt">
-                        {user.name?.charAt(0).toUpperCase() || user.email.charAt(0).toUpperCase()}
-                      </div>
+                      <Link href={`/profile/${user.id}`}>
+                        <div className="w-10 h-10 rounded-full bg-node-volt/20 border border-node-volt flex items-center justify-center text-sm font-bold text-node-volt hover:bg-node-volt/30 transition-colors cursor-pointer">
+                          {user.name?.charAt(0).toUpperCase() || user.email.charAt(0).toUpperCase()}
+                        </div>
+                      </Link>
                       <div>
-                        <div className="font-medium text-text-white">{user.name || user.email}</div>
+                        <div className="font-medium text-text-white">
+                          <ClickableUserName
+                            userId={user.id}
+                            name={user.name}
+                            email={user.email}
+                            className="text-text-white"
+                          />
+                        </div>
                         {user.name && <div className="text-xs text-muted-text">{user.email}</div>}
                         <div className="text-xs text-node-volt mt-1">
                           Level {user.level} • {user.xp?.toLocaleString() || 0} XP
@@ -241,12 +263,19 @@ export function AddNetworkModal({ onClose, onNetworkAdded, currentUserNetworkCod
                       className="flex items-center justify-between bg-dark thin-border rounded-lg p-4"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-node-volt/20 border border-node-volt flex items-center justify-center text-sm font-bold text-node-volt">
-                          {request.requester.name?.charAt(0).toUpperCase() || request.requester.email.charAt(0).toUpperCase()}
-                        </div>
+                        <Link href={`/profile/${request.requester.id}`}>
+                          <div className="w-10 h-10 rounded-full bg-node-volt/20 border border-node-volt flex items-center justify-center text-sm font-bold text-node-volt hover:bg-node-volt/30 transition-colors cursor-pointer">
+                            {request.requester.name?.charAt(0).toUpperCase() || request.requester.email.charAt(0).toUpperCase()}
+                          </div>
+                        </Link>
                         <div>
                           <div className="font-medium text-text-white">
-                            {request.requester.name || request.requester.email}
+                            <ClickableUserName
+                              userId={request.requester.id}
+                              name={request.requester.name}
+                              email={request.requester.email}
+                              className="text-text-white"
+                            />
                           </div>
                           {request.requester.name && (
                             <div className="text-xs text-muted-text">{request.requester.email}</div>
@@ -264,6 +293,29 @@ export function AddNetworkModal({ onClose, onNetworkAdded, currentUserNetworkCod
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Scan QR Code Tab */}
+        {activeTab === 'scan' && (
+          <div className="space-y-4">
+            <QRScanner
+              onScan={async (code) => {
+                try {
+                  setIsSearching(true);
+                  const user = await networkApi.searchByCode(code);
+                  setSearchResults([user]);
+                  setActiveTab('search'); // Switch to search tab to show result
+                } catch (error: any) {
+                  alert(error.response?.data?.message || 'User not found with this code');
+                } finally {
+                  setIsSearching(false);
+                }
+              }}
+              onError={(error) => {
+                console.error('QR Scanner error:', error);
+              }}
+            />
           </div>
         )}
 

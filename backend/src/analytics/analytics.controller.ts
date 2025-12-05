@@ -102,8 +102,17 @@ export class AnalyticsController {
   async getLeaderboard(
     @Query('metric') metric?: 'sessions' | 'hours' | 'rpe' | 'streak',
     @Query('limit') limit?: string,
+    @Query('trending') trending?: string,
+    @Query('trendPeriod') trendPeriod?: '7d' | '30d',
   ) {
     // Public endpoint - no auth required
+    if (trending === 'true') {
+      return this.analyticsService.getLeaderboardWithTrending(
+        metric || 'sessions',
+        limit ? parseInt(limit) : 50,
+        trendPeriod || '7d',
+      );
+    }
     return this.analyticsService.getLeaderboard(
       metric || 'sessions',
       limit ? parseInt(limit) : 50,
@@ -113,8 +122,15 @@ export class AnalyticsController {
   // Admin-only system stats
   @Get('admin/system')
   @UseGuards(ClerkAdminGuard)
-  async getSystemStats() {
-    return this.analyticsService.getSystemStats();
+  async getSystemStats(@Request() req: any) {
+    console.log('getSystemStats endpoint called');
+    console.log('User:', req.user);
+    const stats = await this.analyticsService.getSystemStats();
+    console.log('System stats:', {
+      totalUsers: stats.users.total,
+      totalWorkouts: stats.workouts.total,
+    });
+    return stats;
   }
 
   // Get user percentiles compared to network
@@ -129,5 +145,22 @@ export class AnalyticsController {
   @UseGuards(ClerkAuthGuard)
   async getMonthTrends(@Request() req) {
     return this.analyticsService.getUserTrends(req.user.id);
+  }
+
+  // Get user rank in leaderboard for all metrics
+  @Get('my-rank')
+  @UseGuards(ClerkAuthGuard)
+  async getMyRank(@Request() req) {
+    return this.analyticsService.getUserRank(req.user.id);
+  }
+
+  // Get trend comparison for different time periods
+  @Get('trend-comparison')
+  @UseGuards(ClerkAuthGuard)
+  async getTrendComparison(
+    @Request() req,
+    @Query('period') period: '1m' | '3m' | '6m' | '1y',
+  ) {
+    return this.analyticsService.getTrendComparison(req.user.id, period || '1m');
   }
 }

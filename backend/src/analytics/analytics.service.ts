@@ -308,8 +308,10 @@ export class AnalyticsService {
 
   // Leaderboard methods
   async getSystemStats() {
+    console.log('getSystemStats service called');
     // Total users
     const totalUsers = await this.prisma.user.count();
+    console.log(`Total users: ${totalUsers}`);
     const activeUsers = await this.prisma.user.count({
       where: {
         sessions: {
@@ -324,6 +326,7 @@ export class AnalyticsService {
 
     // Total workouts
     const totalWorkouts = await this.prisma.workout.count();
+    console.log(`Total workouts: ${totalWorkouts}`);
     const recommendedWorkouts = await this.prisma.workout.count({
       where: { isRecommended: true },
     });
@@ -440,6 +443,159 @@ export class AnalyticsService {
       },
       recentActivity: recentSessions,
     };
+  }
+
+  async getLeaderboardWithTrending(
+    metric: 'sessions' | 'hours' | 'rpe' | 'streak' = 'sessions',
+    limit: number = 50,
+    trendPeriod: '7d' | '30d' = '7d',
+  ) {
+    // Get current leaderboard
+    const currentLeaderboard = await this.getLeaderboard(metric, limit * 2); // Get more to ensure we have data for trending
+    
+    // Calculate date range for previous period
+    const now = new Date();
+    const daysAgo = trendPeriod === '7d' ? 7 : 30;
+    const previousPeriodEnd = new Date(now);
+    previousPeriodEnd.setDate(previousPeriodEnd.getDate() - daysAgo);
+    const previousPeriodStart = new Date(previousPeriodEnd);
+    previousPeriodStart.setDate(previousPeriodStart.getDate() - daysAgo);
+
+    // Get previous period leaderboard
+    const previousLeaderboard = await this.getLeaderboardForPeriod(
+      metric,
+      previousPeriodStart,
+      previousPeriodEnd,
+      limit * 2,
+    );
+
+    // Create a map of previous ranks by userId
+    const previousRanks = new Map<string, number>();
+    previousLeaderboard.forEach((entry) => {
+      previousRanks.set(entry.userId, entry.rank);
+    });
+
+    // Add trending data to current leaderboard
+    return currentLeaderboard.slice(0, limit).map((entry) => {
+      const previousRank = previousRanks.get(entry.userId);
+      let rankChange: number | null = null;
+      let trend: 'up' | 'down' | 'new' | 'same' | null = null;
+
+      if (previousRank) {
+        rankChange = previousRank - entry.rank; // Positive = moved up, Negative = moved down
+        if (rankChange > 0) {
+          trend = 'up';
+        } else if (rankChange < 0) {
+          trend = 'down';
+        } else {
+          trend = 'same';
+        }
+      } else {
+        // User wasn't in previous leaderboard - they're new or weren't ranked
+        trend = 'new';
+      }
+
+      return {
+        ...entry,
+        previousRank,
+        rankChange,
+        trend,
+      };
+    });
+  }
+
+  async getLeaderboardForPeriod(
+    metric: 'sessions' | 'hours' | 'rpe' | 'streak',
+    startDate: Date,
+    endDate: Date,
+    limit: number = 50,
+  ) {
+    const users = await this.prisma.user.findMany({
+      where: {
+        role: { in: ['HOME_USER', 'COACH'] },
+      },
+      include: {
+        sessions: {
+          where: {
+            completed: true,
+            startedAt: {
+              gte: startDate,
+              lte: endDate,
+            },
+          },
+        },
+      },
+    });
+
+    const leaderboardData = await Promise.all(
+      users.map(async (user) => {
+        const sessions = user.sessions;
+        const totalSessions = sessions.length;
+        const totalHours = sessions.reduce((sum, s) => sum + (s.durationSec || 0), 0) / 3600;
+        const avgRPE = sessions.length > 0
+          ? sessions.reduce((sum, s) => sum + (s.rpe || 0), 0) / sessions.length
+          : 0;
+
+        // Calculate streak for the period
+        let streak = 0;
+        const periodEnd = new Date(endDate);
+        periodEnd.setHours(23, 59, 59, 999);
+        
+        for (let i = 0; i < 365; i++) {
+          const checkDate = new Date(periodEnd);
+          checkDate.setDate(checkDate.getDate() - i);
+          const dateStr = checkDate.toISOString().split('T')[0];
+          
+          const hasSession = sessions.some((s) => {
+            const sessionDate = new Date(s.startedAt).toISOString().split('T')[0];
+            return sessionDate === dateStr;
+          });
+          
+          if (hasSession) {
+            streak++;
+          } else if (i > 0) {
+            break;
+          }
+        }
+
+        let score = 0;
+        switch (metric) {
+          case 'sessions':
+            score = totalSessions;
+            break;
+          case 'hours':
+            score = totalHours;
+            break;
+          case 'rpe':
+            score = avgRPE;
+            break;
+          case 'streak':
+            score = streak;
+            break;
+        }
+
+        return {
+          userId: user.id,
+          name: user.name || user.email.split('@')[0],
+          email: user.email,
+          totalSessions,
+          totalHours: Math.round(totalHours * 10) / 10,
+          avgRPE: Math.round(avgRPE * 10) / 10,
+          streak,
+          score,
+        };
+      })
+    );
+
+    // Sort by score and return top N
+    return leaderboardData
+      .filter((entry) => entry.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map((entry, index) => ({
+        ...entry,
+        rank: index + 1,
+      }));
   }
 
   async getLeaderboard(metric: 'sessions' | 'hours' | 'rpe' | 'streak' = 'sessions', limit: number = 50) {
@@ -741,6 +897,108 @@ export class AnalyticsService {
       prCount: prCounts.length > 0
         ? calculatePercentile(currentUserStats.prCount, prCounts)
         : null,
+    };
+  }
+
+  async getUserRank(userId: string) {
+    // Get ranks for all metrics
+    const metrics: Array<'sessions' | 'hours' | 'rpe' | 'streak'> = ['sessions', 'hours', 'rpe', 'streak'];
+    const ranks: Record<string, number | null> = {};
+
+    for (const metric of metrics) {
+      const leaderboard = await this.getLeaderboard(metric, 1000); // Get large leaderboard to find rank
+      const userEntry = leaderboard.find(entry => entry.userId === userId);
+      ranks[metric] = userEntry ? userEntry.rank : null;
+    }
+
+    return ranks;
+  }
+
+  async getTrendComparison(userId: string, period: '1m' | '3m' | '6m' | '1y') {
+    const now = new Date();
+    let periodStart: Date;
+    let periodEnd: Date;
+    let comparisonStart: Date;
+    let comparisonEnd: Date;
+
+    // Calculate period dates
+    switch (period) {
+      case '1m':
+        periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        periodEnd = now;
+        comparisonStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        comparisonEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+        break;
+      case '3m':
+        periodStart = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+        periodEnd = now;
+        comparisonStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+        comparisonEnd = new Date(now.getFullYear(), now.getMonth() - 2, 0, 23, 59, 59, 999);
+        break;
+      case '6m':
+        periodStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+        periodEnd = now;
+        comparisonStart = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+        comparisonEnd = new Date(now.getFullYear(), now.getMonth() - 5, 0, 23, 59, 59, 999);
+        break;
+      case '1y':
+        periodStart = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        periodEnd = now;
+        comparisonStart = new Date(now.getFullYear() - 2, now.getMonth(), now.getDate());
+        comparisonEnd = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        break;
+    }
+
+    // Get stats for both periods
+    const currentStats = await this.getUserStats(userId, periodStart, periodEnd);
+    const previousStats = await this.getUserStats(userId, comparisonStart, comparisonEnd);
+
+    // Calculate completion rates separately
+    const currentAllSessions = await this.prisma.sessionLog.count({
+      where: {
+        userId,
+        startedAt: { gte: periodStart, lte: periodEnd },
+      },
+    });
+    const currentCompletionRate = currentAllSessions > 0 
+      ? (currentStats.totalSessions / currentAllSessions) * 100 
+      : 0;
+
+    const previousAllSessions = await this.prisma.sessionLog.count({
+      where: {
+        userId,
+        startedAt: { gte: comparisonStart, lte: comparisonEnd },
+      },
+    });
+    const previousCompletionRate = previousAllSessions > 0
+      ? (previousStats.totalSessions / previousAllSessions) * 100
+      : 0;
+
+    // Calculate sessions per week
+    const currentDays = Math.max(1, Math.floor((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24)));
+    const previousDays = Math.max(1, Math.floor((comparisonEnd.getTime() - comparisonStart.getTime()) / (1000 * 60 * 60 * 24)));
+    
+    const currentSessionsPerWeek = (currentStats.totalSessions / currentDays) * 7;
+    const previousSessionsPerWeek = (previousStats.totalSessions / previousDays) * 7;
+
+    // Calculate percentage changes
+    const calculateChange = (current: number, previous: number): number | null => {
+      if (previous === 0) {
+        return current > 0 ? 100 : null;
+      }
+      return Math.round(((current - previous) / previous) * 100);
+    };
+
+    // Calculate PR trend
+    const prTrend = await this.calculatePRTrend(userId, periodStart, periodEnd, comparisonStart, comparisonEnd);
+
+    return {
+      completionRate: calculateChange(currentCompletionRate, previousCompletionRate),
+      avgRPE: calculateChange(currentStats.avgRPE, previousStats.avgRPE),
+      sessionsPerWeek: calculateChange(currentSessionsPerWeek, previousSessionsPerWeek),
+      prCount: prTrend,
+      totalSessions: calculateChange(currentStats.totalSessions, previousStats.totalSessions),
+      totalHours: calculateChange(currentStats.totalDurationHours, previousStats.totalDurationHours),
     };
   }
 }

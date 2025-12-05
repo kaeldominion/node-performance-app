@@ -12,6 +12,8 @@ async function bootstrap() {
   const allowedOrigins = [
     process.env.FRONTEND_URL,
     'https://node-performance-app-frontend.vercel.app',
+    'https://www.nodeos.app',
+    'https://nodeos.app',
     'http://localhost:3000',
   ].filter(Boolean);
 

@@ -36,6 +36,7 @@ export function WorkoutScheduler({ onScheduleCreated }: WorkoutSchedulerProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [draggedItem, setDraggedItem] = useState<ScheduledWorkout | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
 
   useEffect(() => {
     loadSchedule();
@@ -101,6 +102,8 @@ export function WorkoutScheduler({ onScheduleCreated }: WorkoutSchedulerProps) {
       await scheduleApi.delete(id);
       await loadSchedule();
       if (onScheduleCreated) onScheduleCreated();
+      // Notify other components that schedule was updated
+      window.dispatchEvent(new Event('schedule-updated'));
     } catch (error) {
       console.error('Failed to delete scheduled workout:', error);
     }
@@ -174,35 +177,70 @@ export function WorkoutScheduler({ onScheduleCreated }: WorkoutSchedulerProps) {
 
   return (
     <div className="space-y-6">
-      {/* Calendar Header */}
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
+          {viewMode === 'calendar' && (
+            <>
+              <button
+                onClick={() => navigateMonth('prev')}
+                className="p-2 hover:bg-panel rounded-lg transition-colors"
+              >
+                <Icons.CHEVRON_LEFT size={20} />
+              </button>
+              <h2 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+              </h2>
+              <button
+                onClick={() => navigateMonth('next')}
+                className="p-2 hover:bg-panel rounded-lg transition-colors"
+              >
+                <Icons.CHEVRON_RIGHT size={20} />
+              </button>
+            </>
+          )}
+          {viewMode === 'list' && (
+            <h2 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+              Scheduled Workouts
+            </h2>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          {/* View Toggle */}
+          <div className="flex items-center gap-1 bg-panel thin-border rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('calendar')}
+              className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                viewMode === 'calendar'
+                  ? 'bg-node-volt text-dark'
+                  : 'text-muted-text hover:text-text-white'
+              }`}
+            >
+              Calendar
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                viewMode === 'list'
+                  ? 'bg-node-volt text-dark'
+                  : 'text-muted-text hover:text-text-white'
+              }`}
+            >
+              List
+            </button>
+          </div>
           <button
-            onClick={() => navigateMonth('prev')}
-            className="p-2 hover:bg-panel rounded-lg transition-colors"
+            onClick={() => setShowAddModal(true)}
+            className="bg-node-volt text-dark font-bold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
           >
-            <Icons.CHEVRON_LEFT size={20} />
-          </button>
-          <h2 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-            {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-          </h2>
-          <button
-            onClick={() => navigateMonth('next')}
-            className="p-2 hover:bg-panel rounded-lg transition-colors"
-          >
-            <Icons.CHEVRON_RIGHT size={20} />
+            + Add Workout
           </button>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="bg-node-volt text-dark font-bold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
-        >
-          + Add Workout
-        </button>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="bg-panel thin-border rounded-lg overflow-hidden">
+      {/* Calendar View */}
+      {viewMode === 'calendar' && (
+        <div className="bg-panel thin-border rounded-lg overflow-hidden">
         {/* Day Headers */}
         <div className="grid grid-cols-7 border-b thin-border">
           {dayNames.map((day) => (
@@ -296,6 +334,108 @@ export function WorkoutScheduler({ onScheduleCreated }: WorkoutSchedulerProps) {
           })}
         </div>
       </div>
+      )}
+
+      {/* List View */}
+      {viewMode === 'list' && (
+        <div className="bg-panel thin-border rounded-lg overflow-hidden">
+          <div className="divide-y thin-border">
+            {scheduledWorkouts.length === 0 ? (
+              <div className="p-12 text-center">
+                <p className="text-muted-text mb-4">No scheduled workouts</p>
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="text-node-volt hover:underline text-sm font-medium"
+                >
+                  Schedule your first workout →
+                </button>
+              </div>
+            ) : (
+              scheduledWorkouts
+                .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime())
+                .map((workout) => {
+                  const workoutDate = new Date(workout.scheduledDate);
+                  const isPast = workoutDate < new Date() && !workout.isCompleted;
+                  
+                  return (
+                    <div
+                      key={workout.id}
+                      className={`p-4 hover:bg-panel/50 transition-colors ${
+                        isPast ? 'opacity-60' : ''
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          <div className="flex-shrink-0 w-16 text-center">
+                            <div className="text-xs text-muted-text uppercase">
+                              {workoutDate.toLocaleDateString('en-US', { weekday: 'short' })}
+                            </div>
+                            <div className="text-2xl font-bold text-node-volt">
+                              {workoutDate.getDate()}
+                            </div>
+                            <div className="text-xs text-muted-text">
+                              {workoutDate.toLocaleDateString('en-US', { month: 'short' })}
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              {workout.workout?.displayCode && (
+                                <span className="text-node-volt font-mono text-sm">
+                                  {workout.workout.displayCode}
+                                </span>
+                              )}
+                              <Link
+                                href={workout.workout ? `/workouts/${workout.workout.id}` : workout.program ? `/programs/${workout.program.slug}` : '#'}
+                                className="font-bold text-text-white hover:text-node-volt transition-colors truncate"
+                                style={{ fontFamily: 'var(--font-space-grotesk)' }}
+                              >
+                                {workout.workout?.name || workout.program?.name || 'Scheduled Workout'}
+                              </Link>
+                              {workout.workout?.archetype && (
+                                <ArchetypeBadge archetype={workout.workout.archetype} size="sm" />
+                              )}
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-muted-text">
+                              <span>{formatTime(workout.scheduledDate)}</span>
+                              {workout.duration && (
+                                <span>• {workout.duration} min</span>
+                              )}
+                              {workout.isCompleted && (
+                                <span className="text-green-400">• Completed</span>
+                              )}
+                              {isPast && !workout.isCompleted && (
+                                <span className="text-red-400">• Past</span>
+                              )}
+                            </div>
+                            {workout.notes && (
+                              <p className="text-sm text-muted-text mt-1">{workout.notes}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {workout.workout && (
+                            <Link
+                              href={`/workouts/${workout.workout.id}`}
+                              className="px-3 py-1.5 bg-node-volt/20 hover:bg-node-volt/30 text-node-volt rounded text-sm font-medium transition-colors"
+                            >
+                              View
+                            </Link>
+                          )}
+                          <button
+                            onClick={() => handleDelete(workout.id)}
+                            className="p-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded transition-colors"
+                          >
+                            <Icons.X size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Add Workout Modal - Simplified for now */}
       {showAddModal && (
@@ -305,6 +445,8 @@ export function WorkoutScheduler({ onScheduleCreated }: WorkoutSchedulerProps) {
             setShowAddModal(false);
             loadSchedule();
             if (onScheduleCreated) onScheduleCreated();
+            // Notify other components that schedule was updated
+            window.dispatchEvent(new Event('schedule-updated'));
           }}
         />
       )}

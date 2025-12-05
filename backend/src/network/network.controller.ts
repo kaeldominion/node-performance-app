@@ -27,6 +27,11 @@ export class NetworkController {
     return this.networkService.searchByNetworkCode(code, req.user.id);
   }
 
+  @Get('username/:username')
+  async searchByUsername(@Request() req: any, @Param('username') username: string) {
+    return this.networkService.searchByUsername(username, req.user.id);
+  }
+
   @Post()
   async sendNetworkRequest(
     @Request() req: any,
@@ -38,6 +43,11 @@ export class NetworkController {
   @Post(':id/accept')
   async acceptNetworkRequest(@Request() req: any, @Param('id') id: string) {
     return this.networkService.acceptNetworkRequest(req.user.id, id);
+  }
+
+  @Post(':id/reject')
+  async rejectNetworkRequest(@Request() req: any, @Param('id') id: string) {
+    return this.networkService.rejectNetworkRequest(req.user.id, id);
   }
 
   @Delete(':id')
@@ -60,9 +70,35 @@ export class NetworkController {
     return this.networkService.getPendingRequests(req.user.id);
   }
 
+  @Get('directory')
+  async getUserDirectory(
+    @Request() req: any,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('minLevel') minLevel?: string,
+    @Query('maxLevel') maxLevel?: string,
+  ) {
+    return this.networkService.getUserDirectory(req.user.id, {
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      search,
+      minLevel: minLevel ? parseInt(minLevel, 10) : undefined,
+      maxLevel: maxLevel ? parseInt(maxLevel, 10) : undefined,
+    });
+  }
+
   @Post('generate-code')
   async generateNetworkCode(@Request() req: any) {
     return this.networkService.generateNetworkCode(req.user.id);
+  }
+
+  @Post('share-link')
+  async generateShareLink(
+    @Request() req: any,
+    @Body() body: { type?: 'code' | 'user' },
+  ) {
+    return this.networkService.generateShareLink(req.user.id, body.type || 'code');
   }
 }
 

@@ -215,6 +215,12 @@ export default function HyroxAIBuilderPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <Logo className="text-xl transition-transform hover:scale-105" />
           <div className="flex items-center gap-4">
+            <Link
+              href="/"
+              className="px-5 py-2 thin-border border-node-volt text-node-volt font-heading font-bold text-xs uppercase tracking-[0.2em] hover:bg-node-volt hover:text-dark transition-colors"
+            >
+              Back to Home
+            </Link>
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg bg-panel/50 hover:bg-panel thin-border text-node-volt hover:text-node-volt/80 transition-colors flex items-center justify-center"
@@ -223,12 +229,6 @@ export default function HyroxAIBuilderPage() {
             >
               {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
             </button>
-            <Link
-              href="/"
-              className="px-5 py-2 thin-border border-node-volt text-node-volt font-heading font-bold text-xs uppercase tracking-[0.2em] hover:bg-node-volt hover:text-dark transition-colors"
-            >
-              Back to Home
-            </Link>
           </div>
         </div>
       </nav>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk, Manrope } from "next/font/google";
 import { ClerkErrorBoundary } from '@/components/ClerkErrorBoundary';
 import { ThemeProvider } from '@/contexts/ThemeContext';
+import { AchievementNotificationProvider } from '@/contexts/AchievementNotificationContext';
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -35,7 +36,9 @@ export default function RootLayout({
           className={`${spaceGrotesk.variable} ${manrope.variable} antialiased bg-dark text-text-white`}
         >
           <ThemeProvider>
-            {children}
+            <AchievementNotificationProvider>
+              {children}
+            </AchievementNotificationProvider>
           </ThemeProvider>
         </body>
       </html>

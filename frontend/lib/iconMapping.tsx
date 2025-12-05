@@ -28,6 +28,7 @@ import {
   Trophy,             // Achievement, leaderboard ranks
   Award,              // Secondary achievement icon
   Medal,              // Ranking, recognition
+  Layers,             // Level, progression
   
   // Gamification
   Gamepad2,           // Gamification, game mechanics
@@ -48,11 +49,16 @@ import {
   Menu,               // Menu, navigation
   MoreVertical,      // Three dots menu, more options
   Minimize2,          // Minimize window
+  Bell,               // Notifications
+  Plus,               // Add, create
+  UserPlus,           // Add user, network connection
   Maximize2,          // Maximize window
   ChevronLeft,        // Previous, back navigation
   ChevronRight,       // Next, forward navigation
+  ChevronDown,        // Dropdown, expand
   Trash2,             // Delete action
   Users,              // People, participants, group
+  Play,               // Play, start, begin
   
   // Training Goals
   TrendingUp,         // Strength, progression
@@ -187,6 +193,14 @@ export const iconMetadata = {
     icon: ChevronRight,
     reason: 'Chevron right for next/forward navigation - standard UI pattern.',
   },
+  CHEVRON_DOWN: {
+    icon: ChevronDown,
+    reason: 'Chevron down for dropdowns and expandable sections - standard UI pattern.',
+  },
+  STAR: {
+    icon: Star,
+    reason: 'Star for ratings - universally recognized rating symbol.',
+  },
   
   // Streak & Intensity
   STREAK: {
@@ -263,15 +277,25 @@ export const Icons = {
   MAXIMIZE: Maximize2,
   CHEVRON_LEFT: ChevronLeft,
   CHEVRON_RIGHT: ChevronRight,
+  CHEVRON_DOWN: ChevronDown,
+  STAR: Star,
   USERS: Users,
   STREAK: Flame,
   INTENSITY: Zap,
   SESSIONS: Dumbbell,
+  LEVEL: Layers,
   GOAL_STRENGTH: TrendingUp,
   GOAL_HYPERTROPHY: Target,
   GOAL_HYBRID: Zap,
   GOAL_CONDITIONING: Activity,
   GOAL_FAT_LOSS: TrendingDown,
   GOAL_LONGEVITY: Heart,
+  HEART: Heart,             // Favorite, like, heart icon
+  BELL: Bell,
+  PLUS: Plus,
+  USER_PLUS: UserPlus,
+  WORKOUT: Dumbbell,        // Workout icon (same as SESSIONS/PR1ME)
+  PLAY: Play,               // Play/start icon
+  CLIPBOARD_LIST: ClipboardList, // Clipboard list icon (same as PROGRAMS)
 };
 

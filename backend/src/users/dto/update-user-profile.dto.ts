@@ -7,6 +7,7 @@ import {
   IsNumber,
   Min,
   Max,
+  ValidateIf,
 } from 'class-validator';
 import { TrainingLevel, TrainingGoal } from '@prisma/client';
 
@@ -55,5 +56,9 @@ export class UpdateUserProfileDto {
   @IsOptional()
   @IsString()
   bio?: string;
+
+  @IsOptional()
+  @IsString()
+  username?: string;
 }
 

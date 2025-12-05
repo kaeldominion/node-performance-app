@@ -650,7 +650,7 @@ export function WorkoutDeckPlayerV2({ workout, sessionId, onComplete }: WorkoutD
             <div className="p-6 space-y-2">
               {workout.sections.map((section, idx) => (
                 <button
-                  key={section.id}
+                  key={`${workout.id}-section-${section.id || idx}`}
                   onClick={() => handleJumpToSection(idx)}
                   className={`w-full text-left p-4 rounded-lg transition-all ${
                     idx === currentSectionIndex
@@ -1201,7 +1201,7 @@ function ExerciseCard({ block }: { block: any }) {
   const renderTierDisplay = (tier: any, tierName: string, tierColor: string) => {
     if (!tier) return null;
     
-    const displayValue = getTierDisplayValue(tier, block.exerciseName);
+    const displayValue = getTierDisplayValue(tier, block.exerciseName, block);
     
     return (
       <div

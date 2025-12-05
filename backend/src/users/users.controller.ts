@@ -14,28 +14,79 @@ import { ClerkAuthGuard } from '../auth/clerk.guard';
 import { ClerkAdminGuard } from '../auth/clerk-admin.guard';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
 
+@Controller('users')
+export class UsersController {
+  constructor(private usersService: UsersService) {}
+
+  @Get('public/:userId')
+  async getPublicProfile(@Param('userId') userId: string, @Request() req: any) {
+    // Optional auth - if user is logged in, pass their ID for network status
+    const currentUserId = req.user?.id;
+    return this.usersService.getPublicProfile(userId, currentUserId);
+  }
+
+  @Get('public/:userId/stats')
+  async getPublicProfileStats(@Param('userId') userId: string) {
+    // Public endpoint - no auth required
+    const profile = await this.usersService.getPublicProfile(userId);
+    return {
+      userId: profile.id,
+      name: profile.name,
+      username: profile.username,
+      level: profile.level,
+      xp: profile.xp,
+      stats: profile.stats,
+    };
+  }
+}
+
 @Controller('me')
 @UseGuards(ClerkAuthGuard)
-export class UsersController {
+export class MeController {
   constructor(private usersService: UsersService) {}
 
   @Get()
   async getMe(@Request() req) {
-    let user = await this.usersService.findOne(req.user.id);
-    
-    // If user doesn't exist, create them (handles webhook delays)
-    if (!user) {
-      await this.usersService.createFromClerk({
-        id: req.user.id,
-        email: req.user.email,
-        role: req.user.role,
-        isAdmin: req.user.isAdmin,
+    try {
+      console.log('getMe endpoint called, user from request:', {
+        id: req.user?.id,
+        email: req.user?.email,
+        role: req.user?.role,
+        isAdmin: req.user?.isAdmin,
       });
-      // Fetch again with profile included to match return type
-      user = await this.usersService.findOne(req.user.id);
+      
+      if (!req.user || !req.user.id) {
+        console.error('No user in request');
+        throw new Error('User not authenticated');
+      }
+      
+      let user = await this.usersService.findOne(req.user.id);
+      
+      // If user doesn't exist, create them (handles webhook delays)
+      if (!user) {
+        console.log('User not found in DB, creating from Clerk data...');
+        await this.usersService.createFromClerk({
+          id: req.user.id,
+          email: req.user.email,
+          role: req.user.role,
+          isAdmin: req.user.isAdmin,
+        });
+        // Fetch again with profile included to match return type
+        user = await this.usersService.findOne(req.user.id);
+        console.log('User created, fetched:', { id: user?.id, email: user?.email });
+      } else {
+        console.log('User found in DB:', { id: user.id, email: user.email });
+      }
+      
+      return user;
+    } catch (error: any) {
+      console.error('Error in getMe:', {
+        message: error?.message,
+        stack: error?.stack,
+        user: req.user,
+      });
+      throw error;
     }
-    
-    return user;
   }
 
   @Get('profile')

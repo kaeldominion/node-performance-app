@@ -14,6 +14,8 @@ import { TemplatesModule } from './templates/templates.module';
 import { GamificationModule } from './gamification/gamification.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { NetworkModule } from './network/network.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { ActivityModule } from './activity/activity.module';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { NetworkModule } from './network/network.module';
     GamificationModule,
     ScheduleModule,
     NetworkModule,
+    NotificationsModule,
+    ActivityModule,
   ],
 })
 export class AppModule {}

@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { workoutsApi, sessionsApi } from '@/lib/api';
 import { WorkoutDeckPlayerV2 } from '@/components/workout/WorkoutDeckPlayerV2';
+import { LiveDeckPlayer } from '@/components/workout/LiveDeckPlayer';
 import Navbar from '@/components/Navbar';
 import { Icon } from '@/components/icons';
 import Link from 'next/link';
@@ -119,11 +120,18 @@ export default function WorkoutPlayerPage() {
     if (!sessionId) return;
 
     try {
-      await sessionsApi.complete(sessionId, {
+      const result = await sessionsApi.complete(sessionId, {
         completed: true,
         rpe: finalRpe,
         notes: finalNotes,
       });
+      
+      // Check for newly earned achievements
+      if (result._achievements && result._achievements.length > 0) {
+        // Store achievements to show after navigation
+        sessionStorage.setItem('newAchievements', JSON.stringify(result._achievements));
+      }
+      
       router.push('/');
     } catch (error) {
       console.error('Failed to complete session:', error);
@@ -184,6 +192,21 @@ export default function WorkoutPlayerPage() {
 
   // Use deck mode by default for logged-in users
   if (deckMode) {
+    // Use new LiveDeckPlayer (can add feature flag here if needed)
+    const useNewDeck = true; // Feature flag - set to false to use old deck
+    
+    if (useNewDeck) {
+      return (
+        <LiveDeckPlayer
+          workout={workout}
+          sessionId={sessionId}
+          onComplete={async (rpe: number, notes: string) => {
+            await handleCompleteWorkout(rpe, notes);
+          }}
+        />
+      );
+    }
+    
     return (
       <>
         <WorkoutDeckPlayerV2
@@ -352,7 +375,7 @@ export default function WorkoutPlayerPage() {
         <div className="flex gap-2">
           {workout.sections.map((s, idx) => (
             <button
-              key={s.id}
+              key={`${workout.id}-section-${s.id || idx}`}
               onClick={() => setCurrentSection(idx)}
               className={`px-4 py-1 rounded text-sm font-medium transition-colors ${
                 idx === currentSection

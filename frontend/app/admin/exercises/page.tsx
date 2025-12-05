@@ -17,6 +17,7 @@ interface Exercise {
   movementPattern: string;
   equipment: string[];
   suitableArchetypes: string[];
+  imageUrl?: string;
   tiers: Array<{
     tier: string;
     description?: string;
@@ -122,6 +123,7 @@ export default function ExercisesAdminPage() {
             <table className="w-full">
               <thead className="bg-panel border-b thin-border">
                 <tr>
+                  <th className="px-6 py-3 text-left text-sm font-semibold">Image</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold">ID</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold">Name</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold">Category</th>
@@ -133,6 +135,24 @@ export default function ExercisesAdminPage() {
               <tbody>
                 {filteredExercises.map((exercise) => (
                   <tr key={exercise.id} className="border-b thin-border hover:bg-panel/50">
+                    <td className="px-6 py-4">
+                      {exercise.imageUrl ? (
+                        <div className="w-16 h-16 rounded overflow-hidden bg-transparent" style={{ aspectRatio: '1' }}>
+                          <img
+                            src={exercise.imageUrl}
+                            alt={exercise.name}
+                            className="w-full h-full object-cover"
+                            style={{
+                              filter: 'brightness(0) saturate(100%) invert(85%) sepia(100%) saturate(10000%) hue-rotate(30deg)', // Volt green
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 bg-panel/50 rounded flex items-center justify-center text-muted-text text-xs">
+                          No Image
+                        </div>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-sm font-mono text-muted-text">{exercise.exerciseId}</td>
                     <td className="px-6 py-4 text-sm">{exercise.name}</td>
                     <td className="px-6 py-4 text-sm text-muted-text">{exercise.category}</td>

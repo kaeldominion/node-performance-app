@@ -112,13 +112,23 @@ export class ScheduleService {
       const end = endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
       end.setHours(23, 59, 59, 999);
 
-      return this.prisma.scheduledWorkout.findMany({
+      console.log('getSchedule called:', {
+        userId,
+        start: start.toISOString(),
+        end: end.toISOString(),
+        startDate: startDate?.toISOString(),
+        endDate: endDate?.toISOString(),
+      });
+
+      const scheduled = await this.prisma.scheduledWorkout.findMany({
         where: {
           userId,
           scheduledDate: {
             gte: start,
             lte: end,
           },
+          // Only show incomplete workouts for upcoming sessions
+          isCompleted: false,
         },
         include: {
           workout: {
@@ -147,6 +157,13 @@ export class ScheduleService {
           { order: 'asc' },
         ],
       });
+
+      console.log(`Found ${scheduled.length} scheduled workouts for user ${userId}`);
+      scheduled.forEach((sw) => {
+        console.log(`- ${sw.workout?.name || sw.program?.name || 'Unknown'}: ${sw.scheduledDate.toISOString()}, completed: ${sw.isCompleted}`);
+      });
+
+      return scheduled;
     } catch (error: any) {
       // If table doesn't exist yet, return empty array
       if (error.code === 'P2021' || error.message?.includes('does not exist')) {

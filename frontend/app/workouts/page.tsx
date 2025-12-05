@@ -9,6 +9,8 @@ import { workoutsApi, programsApi, scheduleApi } from '@/lib/api';
 import { Icons } from '@/lib/iconMapping';
 import ArchetypeBadge from '@/components/workout/ArchetypeBadge';
 import { WorkoutScheduler } from '@/components/schedule/WorkoutScheduler';
+import { Calendar } from 'lucide-react';
+import { WorkoutDetailsModal } from '@/components/workout/WorkoutDetailsModal';
 
 interface Workout {
   id: string;
@@ -18,30 +20,53 @@ interface Workout {
   description?: string;
   sections: any[];
   createdAt: string;
+  averageRating?: number | null;
+  ratingCount?: number;
 }
 
 export default function WorkoutsPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'my-workouts' | 'programs' | 'recommended' | 'schedule'>(() => {
+  const [activeTab, setActiveTab] = useState<'my-workouts' | 'programs' | 'recommended' | 'schedule' | 'favorites' | 'top-rated'>(() => {
     // Check URL params for tab
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get('tab');
-      if (tab && ['my-workouts', 'programs', 'recommended', 'schedule'].includes(tab)) {
+      if (tab && ['my-workouts', 'programs', 'recommended', 'schedule', 'favorites', 'top-rated'].includes(tab)) {
         return tab as any;
       }
     }
     return 'my-workouts';
   });
+  
+  // Force reload when tab changes or when timestamp param is present (indicates fresh navigation)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('_t') && user) {
+        // Fresh navigation detected, force reload
+        loadWorkouts();
+        // Clean up the timestamp param
+        params.delete('_t');
+        const newUrl = params.toString() 
+          ? `${window.location.pathname}?${params.toString()}`
+          : window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, [user]);
   const [myWorkouts, setMyWorkouts] = useState<Workout[]>([]);
   const [myPrograms, setMyPrograms] = useState<any[]>([]);
   const [recommendedWorkouts, setRecommendedWorkouts] = useState<Workout[]>([]);
   const [recommendedPrograms, setRecommendedPrograms] = useState<any[]>([]);
+  const [favoriteWorkouts, setFavoriteWorkouts] = useState<Workout[]>([]);
+  const [topRatedWorkouts, setTopRatedWorkouts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [selectedWorkoutForSchedule, setSelectedWorkoutForSchedule] = useState<{ id: string; name: string } | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const [selectedWorkoutForDetails, setSelectedWorkoutForDetails] = useState<Workout | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -54,11 +79,23 @@ export default function WorkoutsPage() {
     }
   }, [user, authLoading, activeTab]);
 
+  // Refresh workouts when page becomes visible (e.g., when navigating back)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user && activeTab === 'my-workouts') {
+        loadWorkouts();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [user, activeTab]);
+
   const loadWorkouts = async () => {
     try {
       setLoading(true);
       if (activeTab === 'my-workouts') {
         const workouts = await workoutsApi.getMyWorkouts();
+        console.log('Loaded my workouts:', workouts);
         setMyWorkouts(workouts);
       } else if (activeTab === 'programs') {
         const programs = await programsApi.getAll();
@@ -70,6 +107,14 @@ export default function WorkoutsPage() {
         ]);
         setRecommendedWorkouts(workouts);
         setRecommendedPrograms(programs);
+      } else if (activeTab === 'favorites') {
+        const favorites = await workoutsApi.getFavorites().catch(() => []);
+        setFavoriteWorkouts(favorites);
+        // Update favoriteIds set
+        setFavoriteIds(new Set(favorites.map((w: any) => w.id)));
+      } else if (activeTab === 'top-rated') {
+        const topRated = await workoutsApi.getTopRated(20).catch(() => []);
+        setTopRatedWorkouts(topRated);
       }
     } catch (error) {
       console.error('Failed to load workouts:', error);
@@ -110,43 +155,69 @@ export default function WorkoutsPage() {
         <div className="flex gap-2 mb-8 border-b thin-border overflow-x-auto">
           <button
             onClick={() => setActiveTab('my-workouts')}
-            className={`px-6 py-3 font-medium transition-colors border-b-2 whitespace-nowrap ${
+            className={`px-6 py-3 font-medium transition-colors border-b-2 whitespace-nowrap flex items-center gap-2 ${
               activeTab === 'my-workouts'
                 ? 'border-node-volt text-node-volt'
                 : 'border-transparent text-muted-text hover:text-text-white'
             }`}
           >
+            <Icons.WORKOUT size={18} />
             My Workouts
           </button>
           <button
             onClick={() => setActiveTab('programs')}
-            className={`px-6 py-3 font-medium transition-colors border-b-2 whitespace-nowrap ${
+            className={`px-6 py-3 font-medium transition-colors border-b-2 whitespace-nowrap flex items-center gap-2 ${
               activeTab === 'programs'
                 ? 'border-node-volt text-node-volt'
                 : 'border-transparent text-muted-text hover:text-text-white'
             }`}
           >
+            <Icons.PROGRAMS size={18} />
             Programs
           </button>
           <button
             onClick={() => setActiveTab('recommended')}
-            className={`px-6 py-3 font-medium transition-colors border-b-2 whitespace-nowrap ${
+            className={`px-6 py-3 font-medium transition-colors border-b-2 whitespace-nowrap flex items-center gap-2 ${
               activeTab === 'recommended'
                 ? 'border-node-volt text-node-volt'
                 : 'border-transparent text-muted-text hover:text-text-white'
             }`}
           >
+            <Icons.RECOMMENDED size={18} />
             Recommended
           </button>
           <button
             onClick={() => setActiveTab('schedule')}
-            className={`px-6 py-3 font-medium transition-colors border-b-2 whitespace-nowrap ${
+            className={`px-6 py-3 font-medium transition-colors border-b-2 whitespace-nowrap flex items-center gap-2 ${
               activeTab === 'schedule'
                 ? 'border-node-volt text-node-volt'
                 : 'border-transparent text-muted-text hover:text-text-white'
             }`}
           >
+            <Calendar size={18} />
             Schedule
+          </button>
+          <button
+            onClick={() => setActiveTab('favorites')}
+            className={`px-6 py-3 font-medium transition-colors border-b-2 whitespace-nowrap flex items-center gap-2 ${
+              activeTab === 'favorites'
+                ? 'border-node-volt text-node-volt'
+                : 'border-transparent text-muted-text hover:text-text-white'
+            }`}
+          >
+            <Icons.HEART size={18} />
+            Favorites
+          </button>
+          <button
+            onClick={() => setActiveTab('top-rated')}
+            className={`px-6 py-3 font-medium transition-colors border-b-2 whitespace-nowrap flex items-center gap-2 ${
+              activeTab === 'top-rated'
+                ? 'border-node-volt text-node-volt'
+                : 'border-transparent text-muted-text hover:text-text-white'
+            }`}
+          >
+            <Icons.STAR size={18} />
+            Top Rated
           </button>
         </div>
 
@@ -213,6 +284,162 @@ export default function WorkoutsPage() {
           <WorkoutScheduler />
         )}
 
+        {/* Favorites Tab */}
+        {activeTab === 'favorites' && (
+          <>
+            {favoriteWorkouts.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-muted-text text-lg mb-4">
+                  No favorite workouts yet
+                </p>
+                <p className="text-muted-text text-sm mb-6">
+                  Click the heart icon on any workout to add it to your favorites
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {favoriteWorkouts.map((workout) => (
+                  <div
+                    key={workout.id}
+                    className="group bg-panel thin-border rounded-lg p-6 hover:border-node-volt transition-all hover:shadow-lg hover:shadow-node-volt/20 relative"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <Link href={`/workouts/${workout.id}`} className="flex-1">
+                        {workout.displayCode && (
+                          <div className="text-node-volt font-mono text-sm mb-1">
+                            {workout.displayCode}
+                          </div>
+                        )}
+                        <h3 className="text-xl font-heading font-bold mb-2 group-hover:text-node-volt transition-colors">
+                          {workout.name}
+                        </h3>
+                        {workout.archetype && (
+                          <ArchetypeBadge archetype={workout.archetype} size="sm" />
+                        )}
+                      </Link>
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            await workoutsApi.removeFavorite(workout.id);
+                            setFavoriteWorkouts(favoriteWorkouts.filter((w) => w.id !== workout.id));
+                            setFavoriteIds(new Set(Array.from(favoriteIds).filter((id) => id !== workout.id)));
+                          } catch (error) {
+                            console.error('Failed to remove favorite:', error);
+                            alert('Failed to remove favorite');
+                          }
+                        }}
+                        className="text-red-400 hover:text-red-300 transition-colors"
+                        title="Remove from favorites"
+                      >
+                        <Icons.HEART size={20} className="fill-current" />
+                      </button>
+                    </div>
+                    {workout.description && (
+                      <p className="text-muted-text text-sm mb-4 line-clamp-2">
+                        {workout.description}
+                      </p>
+                    )}
+                    {workout.averageRating !== null && workout.averageRating !== undefined && workout.ratingCount !== undefined && workout.ratingCount > 0 && (
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="flex items-center gap-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Icons.STAR
+                              key={i}
+                              size={14}
+                              className={i < Math.round(workout.averageRating!) ? 'text-yellow-400 fill-current' : 'text-muted-text'}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs text-muted-text">
+                          {workout.averageRating.toFixed(1)} ({workout.ratingCount} {workout.ratingCount === 1 ? 'rating' : 'ratings'})
+                        </span>
+                      </div>
+                    )}
+                    <Link href={`/workouts/${workout.id}`}>
+                      <div className="flex items-center justify-between text-sm text-muted-text">
+                        <span>{workout.sections?.length || 0} sections</span>
+                        <span className="text-node-volt font-semibold">Start →</span>
+                      </div>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Top Rated Tab */}
+        {activeTab === 'top-rated' && (
+          <>
+            {topRatedWorkouts.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-muted-text text-lg mb-4">
+                  No rated workouts yet
+                </p>
+                <p className="text-muted-text text-sm">
+                  Workouts will appear here once users start rating them
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {topRatedWorkouts.map((workout: any) => (
+                  <div
+                    key={workout.id}
+                    className="group bg-panel thin-border rounded-lg p-6 hover:border-node-volt transition-all hover:shadow-lg hover:shadow-node-volt/20 relative"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <Link href={`/workouts/${workout.id}`} className="flex-1">
+                        {workout.displayCode && (
+                          <div className="text-node-volt font-mono text-sm mb-1">
+                            {workout.displayCode}
+                          </div>
+                        )}
+                        <h3 className="text-xl font-heading font-bold mb-2 group-hover:text-node-volt transition-colors">
+                          {workout.name}
+                        </h3>
+                        {workout.archetype && (
+                          <ArchetypeBadge archetype={workout.archetype} size="sm" />
+                        )}
+                      </Link>
+                    </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Icons.STAR
+                            key={i}
+                            size={16}
+                            className={i < Math.round(workout.averageRating) ? 'text-yellow-400 fill-current' : 'text-muted-text'}
+                          />
+                        ))}
+                        <span className="text-sm text-muted-text ml-1">
+                          {workout.averageRating.toFixed(1)} ({workout.ratingCount} {workout.ratingCount === 1 ? 'rating' : 'ratings'})
+                        </span>
+                      </div>
+                    </div>
+                    {workout.creator && (
+                      <p className="text-xs text-muted-text mb-2">
+                        by {workout.creator.username || workout.creator.name || workout.creator.email}
+                      </p>
+                    )}
+                    {workout.description && (
+                      <p className="text-muted-text text-sm mb-4 line-clamp-2">
+                        {workout.description}
+                      </p>
+                    )}
+                    <Link href={`/workouts/${workout.id}`}>
+                      <div className="flex items-center justify-between text-sm text-muted-text">
+                        <span>{workout.sections?.length || 0} sections</span>
+                        <span className="text-node-volt font-semibold">View →</span>
+                      </div>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
         {/* Recommended Tab - Shows both workouts and programs */}
         {activeTab === 'recommended' && (
           <>
@@ -275,6 +502,22 @@ export default function WorkoutsPage() {
                             <p className="text-muted-text text-sm mb-4 line-clamp-2">
                               {workout.description}
                             </p>
+                          )}
+                          {workout.averageRating !== null && workout.averageRating !== undefined && workout.ratingCount !== undefined && workout.ratingCount > 0 && (
+                            <div className="flex items-center gap-2 mb-4">
+                              <div className="flex items-center gap-1">
+                                {[...Array(5)].map((_, i) => (
+                                  <Icons.STAR
+                                    key={i}
+                                    size={14}
+                                    className={i < Math.round(workout.averageRating!) ? 'text-yellow-400 fill-current' : 'text-muted-text'}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-xs text-muted-text">
+                                {workout.averageRating.toFixed(1)} ({workout.ratingCount} {workout.ratingCount === 1 ? 'rating' : 'ratings'})
+                              </span>
+                            </div>
                           )}
                           <Link href={`/workouts/${workout.id}`}>
                             <div className="flex items-center justify-between text-sm text-muted-text">
@@ -451,6 +694,22 @@ export default function WorkoutsPage() {
                         {workout.description}
                       </p>
                     )}
+                    {workout.averageRating !== null && workout.averageRating !== undefined && workout.ratingCount !== undefined && workout.ratingCount > 0 && (
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="flex items-center gap-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Icons.STAR
+                              key={i}
+                              size={14}
+                              className={i < Math.round(workout.averageRating!) ? 'text-yellow-400 fill-current' : 'text-muted-text'}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs text-muted-text">
+                          {workout.averageRating.toFixed(1)} ({workout.ratingCount} {workout.ratingCount === 1 ? 'rating' : 'ratings'})
+                        </span>
+                      </div>
+                    )}
                     <Link href={`/workouts/${workout.id}`}>
                       <div className="flex items-center justify-between text-sm text-muted-text">
                         <span>{workout.sections?.length || 0} sections</span>
@@ -477,7 +736,20 @@ export default function WorkoutsPage() {
           onSuccess={() => {
             setShowScheduleModal(false);
             setSelectedWorkoutForSchedule(null);
+            // Refresh the schedule if we're on the schedule tab
+            if (activeTab === 'schedule') {
+              // Force a reload by triggering a state change
+              window.dispatchEvent(new Event('schedule-updated'));
+            }
           }}
+        />
+      )}
+
+      {/* Workout Details Modal */}
+      {selectedWorkoutForDetails && (
+        <WorkoutDetailsModal
+          workout={selectedWorkoutForDetails}
+          onClose={() => setSelectedWorkoutForDetails(null)}
         />
       )}
     </div>
@@ -518,6 +790,8 @@ function ScheduleWorkoutModal({
         scheduledDate: scheduledDateTime.toISOString(),
         duration: 60, // Default 60 minutes
       });
+      // Notify dashboard and other components that schedule was updated
+      window.dispatchEvent(new Event('schedule-updated'));
       onSuccess();
     } catch (error) {
       console.error('Failed to schedule workout:', error);

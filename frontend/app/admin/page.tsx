@@ -9,6 +9,7 @@ import Navbar from '@/components/Navbar';
 import { Icon } from '@/components/icons';
 import { LevelUpModal } from '@/components/gamification/LevelUpModal';
 import { Icons } from '@/lib/iconMapping';
+import { ClickableUserName } from '@/components/user/ClickableUserName';
 
 interface SystemStats {
   users: {
@@ -88,10 +89,18 @@ export default function AdminDashboard() {
   const loadStats = async () => {
     try {
       setLoading(true);
+      console.log('Loading system stats...');
       const data = await analyticsApi.getSystemStats();
+      console.log('Received system stats:', data);
       setSystemStats(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load system stats:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
     } finally {
       setLoading(false);
     }
@@ -273,7 +282,14 @@ export default function AdminDashboard() {
                         {idx + 1}
                       </div>
                       <div>
-                        <div className="font-semibold">{user.name || user.email}</div>
+                        <div className="font-semibold">
+                          <ClickableUserName
+                            userId={user.id}
+                            name={user.name}
+                            email={user.email}
+                            className="text-text-white"
+                          />
+                        </div>
                         <div className="text-sm text-muted-text">Level {user.level}</div>
                       </div>
                     </div>
@@ -346,11 +362,16 @@ export default function AdminDashboard() {
                   key={activity.id}
                   className="bg-tech-grey border border-border-dark rounded-lg p-4 flex items-center justify-between"
                 >
-                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4">
                     <div className={`w-3 h-3 rounded-full ${activity.completed ? 'bg-green-400' : 'bg-yellow-400'}`} />
                     <div>
                       <div className="font-semibold">
-                        {activity.user.name || activity.user.email}
+                        <ClickableUserName
+                          userId={activity.user.id}
+                          name={activity.user.name}
+                          email={activity.user.email}
+                          className="text-text-white"
+                        />
                       </div>
                       <div className="text-sm text-muted-text">
                         {activity.workout.name}

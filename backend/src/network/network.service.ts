@@ -1,9 +1,15 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { ActivityService } from '../activity/activity.service';
 
 @Injectable()
 export class NetworkService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+    private activityService: ActivityService,
+  ) {}
 
   async searchUsers(query: string, currentUserId: string) {
     if (!query || query.trim().length < 2) {
@@ -12,7 +18,7 @@ export class NetworkService {
 
     const searchTerm = query.trim().toLowerCase();
 
-    // Search by email or name
+    // Search by email, name, or username
     const users = await this.prisma.user.findMany({
       where: {
         AND: [
@@ -21,6 +27,7 @@ export class NetworkService {
             OR: [
               { email: { contains: searchTerm, mode: 'insensitive' } },
               { name: { contains: searchTerm, mode: 'insensitive' } },
+              { username: { contains: searchTerm, mode: 'insensitive' } },
             ],
           },
         ],
@@ -29,6 +36,7 @@ export class NetworkService {
         id: true,
         email: true,
         name: true,
+        username: true,
         xp: true,
         level: true,
         networkCode: true,
@@ -37,6 +45,30 @@ export class NetworkService {
     });
 
     return users;
+  }
+
+  async searchByUsername(username: string, currentUserId: string) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        username: { equals: username, mode: 'insensitive' },
+        id: { not: currentUserId },
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        username: true,
+        xp: true,
+        level: true,
+        networkCode: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found with this username');
+    }
+
+    return user;
   }
 
   async searchByNetworkCode(networkCode: string, currentUserId: string) {
@@ -91,7 +123,7 @@ export class NetworkService {
     }
 
     // Create or update network request
-    return this.prisma.network.upsert({
+    const networkRequest = await this.prisma.network.upsert({
       where: {
         requesterId_addresseeId: {
           requesterId,
@@ -107,6 +139,31 @@ export class NetworkService {
         status: 'PENDING',
       },
     });
+
+    // Create notification for the addressee
+    await this.notificationsService.createNotification(
+      addresseeId,
+      'NETWORK_REQUEST',
+      networkRequest.id,
+    ).catch(() => {
+      // Don't fail if notification creation fails
+    });
+
+    // Log activity
+    const requester = await this.prisma.user.findUnique({
+      where: { id: requesterId },
+      select: { name: true, username: true },
+    });
+    const requesterName = requester?.username ? `@${requester.username}` : requester?.name || 'Someone';
+    
+    await this.activityService.createActivity(
+      requesterId,
+      'NETWORK_CONNECTED',
+      `${requesterName} sent a network request`,
+      { entityType: 'network', entityId: networkRequest.id },
+    ).catch(() => {});
+
+    return networkRequest;
   }
 
   async acceptNetworkRequest(userId: string, networkRequestId: string) {
@@ -122,10 +179,70 @@ export class NetworkService {
       throw new BadRequestException('You can only accept network requests sent to you');
     }
 
-    return this.prisma.network.update({
+    const updated = await this.prisma.network.update({
       where: { id: networkRequestId },
       data: { status: 'ACCEPTED' },
     });
+
+    // Create notification for the requester
+    await this.notificationsService.createNotification(
+      networkRequest.requesterId,
+      'NETWORK_ACCEPTED',
+      networkRequest.id,
+    ).catch(() => {
+      // Don't fail if notification creation fails
+    });
+
+    // Log activity
+    const addressee = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, username: true },
+    });
+    const requester = await this.prisma.user.findUnique({
+      where: { id: networkRequest.requesterId },
+      select: { name: true, username: true },
+    });
+    const addresseeName = addressee?.username ? `@${addressee.username}` : addressee?.name || 'Someone';
+    const requesterName = requester?.username ? `@${requester.username}` : requester?.name || 'Someone';
+    
+    await this.activityService.createActivity(
+      userId,
+      'NETWORK_CONNECTED',
+      `${addresseeName} connected with ${requesterName}`,
+      { entityType: 'network', entityId: networkRequest.id },
+    ).catch(() => {});
+
+    return updated;
+  }
+
+  async rejectNetworkRequest(userId: string, networkRequestId: string) {
+    const networkRequest = await this.prisma.network.findUnique({
+      where: { id: networkRequestId },
+    });
+
+    if (!networkRequest) {
+      throw new NotFoundException('Network request not found');
+    }
+
+    if (networkRequest.addresseeId !== userId) {
+      throw new BadRequestException('You can only reject network requests sent to you');
+    }
+
+    // Delete the network request (rejection means removing it)
+    await this.prisma.network.delete({
+      where: { id: networkRequestId },
+    });
+
+    // Create notification for the requester
+    await this.notificationsService.createNotification(
+      networkRequest.requesterId,
+      'NETWORK_REJECTED',
+      networkRequest.id,
+    ).catch(() => {
+      // Don't fail if notification creation fails
+    });
+
+    return { success: true };
   }
 
   async removeNetwork(userId: string, networkUserId: string) {
@@ -317,6 +434,135 @@ export class NetworkService {
       data: { networkCode: code },
       select: { networkCode: true },
     });
+  }
+
+  async getUserDirectory(
+    currentUserId: string,
+    options: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      minLevel?: number;
+      maxLevel?: number;
+    } = {},
+  ) {
+    const page = options.page || 1;
+    const limit = Math.min(options.limit || 20, 100); // Max 100 per page
+    const skip = (page - 1) * limit;
+
+    const where: any = {
+      id: { not: currentUserId },
+    };
+
+    // Search filter
+    if (options.search && options.search.trim().length > 0) {
+      const searchTerm = options.search.trim();
+      where.OR = [
+        { email: { contains: searchTerm, mode: 'insensitive' } },
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { username: { contains: searchTerm, mode: 'insensitive' } },
+      ];
+    }
+
+    // Level filters
+    if (options.minLevel !== undefined) {
+      where.level = { gte: options.minLevel };
+    }
+    if (options.maxLevel !== undefined) {
+      where.level = { ...where.level, lte: options.maxLevel };
+    }
+
+    // Get total count
+    const total = await this.prisma.user.count({ where });
+
+    // Get users
+    const users = await this.prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        username: true,
+        xp: true,
+        level: true,
+        networkCode: true,
+        createdAt: true,
+      },
+      orderBy: { level: 'desc' },
+      skip,
+      take: limit,
+    });
+
+    // Get connection status for each user
+    const userIds = users.map((u) => u.id);
+    const connections = await this.prisma.network.findMany({
+      where: {
+        OR: [
+          { requesterId: currentUserId, addresseeId: { in: userIds } },
+          { requesterId: { in: userIds }, addresseeId: currentUserId },
+        ],
+      },
+      select: {
+        requesterId: true,
+        addresseeId: true,
+        status: true,
+      },
+    });
+
+    const connectionMap = new Map();
+    connections.forEach((conn) => {
+      const otherUserId =
+        conn.requesterId === currentUserId
+          ? conn.addresseeId
+          : conn.requesterId;
+      connectionMap.set(otherUserId, conn.status);
+    });
+
+    return {
+      users: users.map((user) => ({
+        ...user,
+        connectionStatus: connectionMap.get(user.id) || null,
+      })),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async generateShareLink(userId: string, type: 'code' | 'user' = 'code') {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { networkCode: true, id: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (type === 'code' && !user.networkCode) {
+      // Generate code if it doesn't exist
+      const codeResult = await this.generateNetworkCode(userId);
+      return {
+        url: `/network/connect/${codeResult.networkCode}`,
+        code: codeResult.networkCode,
+      };
+    }
+
+    if (type === 'code') {
+      return {
+        url: `/network/connect/${user.networkCode}`,
+        code: user.networkCode,
+      };
+    }
+
+    // For user ID type
+    return {
+      url: `/network/connect/${user.id}`,
+      code: user.networkCode,
+    };
   }
 }
 

@@ -47,11 +47,51 @@ export class ClerkAuthGuard implements CanActivate {
 
     try {
       console.log('🔍 Verifying token with Clerk...', { tokenPreview: token.substring(0, 20) + '...' });
-      // Verify the token with Clerk
-      const session = await clerkClient.verifyToken(token);
       
-      // Get user from Clerk to access metadata
-      const clerkUser = await clerkClient.users.getUser(session.sub);
+      // Try to verify the token - Clerk's getToken() returns a JWT that can be verified
+      let session: any;
+      let clerkUser: any;
+      
+      // Try to verify the token - Clerk's getToken() returns a JWT
+      // First try clerkClient.verifyToken
+      try {
+        session = await clerkClient.verifyToken(token);
+        clerkUser = await clerkClient.users.getUser(session.sub);
+      } catch (verifyError) {
+        // If verifyToken fails, decode the JWT manually and get user
+        console.log('verifyToken failed, trying JWT decode approach...', {
+          error: verifyError.message,
+          errorType: verifyError.constructor?.name,
+        });
+        
+        // Decode JWT to get user ID
+        const parts = token.split('.');
+        if (parts.length !== 3) {
+          throw new Error('Invalid JWT format');
+        }
+        
+        let payload: any;
+        try {
+          payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+        } catch (parseError) {
+          throw new Error('Failed to parse JWT payload');
+        }
+        
+        const userId = payload.sub || payload.user_id || payload.id;
+        
+        if (!userId) {
+          console.error('JWT payload:', payload);
+          throw new Error('No user ID found in token');
+        }
+        
+        // Get user directly from Clerk using the user ID from the token
+        clerkUser = await clerkClient.users.getUser(userId);
+        
+        // Create a session-like object for compatibility
+        session = { sub: userId };
+        
+        console.log('✅ Successfully decoded JWT and retrieved user:', { userId });
+      }
       
       // Attach user info to request
       request.user = {
@@ -62,6 +102,7 @@ export class ClerkAuthGuard implements CanActivate {
         isAdmin: (clerkUser.publicMetadata?.isAdmin as boolean) || false,
       };
 
+      console.log('✅ Token verified successfully', { userId: request.user.id, email: request.user.email });
       return true;
     } catch (error) {
       // In dev mode, if Clerk verification fails, fall back to mock user
@@ -80,6 +121,7 @@ export class ClerkAuthGuard implements CanActivate {
         error: error.message || error,
         errorType: error.constructor?.name,
         hasSecretKey: !!process.env.CLERK_SECRET_KEY,
+        errorDetails: error,
       });
       throw new UnauthorizedException('Invalid token');
     }

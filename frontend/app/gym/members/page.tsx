@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { gymApi } from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+import { ClickableUserName } from '@/components/user/ClickableUserName';
 
 export default function GymMembersPage() {
   const { user, loading: authLoading } = useAuth();
@@ -120,7 +121,12 @@ export default function GymMembersPage() {
                   <tr key={member.id} className="border-b thin-border hover:bg-panel/50">
                     <td className="px-6 py-4">
                       <div className="font-medium text-text-white">
-                        {member.member.name || member.member.email}
+                        <ClickableUserName
+                          userId={member.memberId}
+                          name={member.member.name}
+                          email={member.member.email}
+                          className="text-text-white"
+                        />
                       </div>
                     </td>
                     <td className="px-6 py-4">

@@ -26,6 +26,7 @@ interface SectionEMOMProps {
 }
 
 export default function SectionEMOM({ title, note, blocks, workSec, restSec, rounds }: SectionEMOMProps) {
+  const { theme } = useTheme();
   const [activeStation, setActiveStation] = useState(0);
   const { speak } = useVoice();
 
@@ -77,6 +78,25 @@ export default function SectionEMOM({ title, note, blocks, workSec, restSec, rou
               )}
             </div>
             <div className="text-lg font-medium text-center mb-2">{block.exerciseName}</div>
+            {block.exerciseImageUrl && (
+              <div className="mb-2 rounded overflow-hidden mx-auto bg-transparent" style={{ aspectRatio: '1', maxHeight: '100px', width: '100px' }}>
+                <img
+                  src={block.exerciseImageUrl}
+                  alt={block.exerciseName}
+                  className="w-full h-full object-cover"
+                  style={{
+                    filter: theme === 'dark' 
+                      ? 'brightness(0) saturate(100%) invert(85%) sepia(100%) saturate(10000%) hue-rotate(30deg)' // Volt green (#ccff00) for dark mode
+                      : 'brightness(0) saturate(100%) invert(30%) sepia(100%) saturate(10000%) hue-rotate(200deg)', // Blue (#0066ff) for light mode
+                  }}
+                />
+              </div>
+            )}
+            {block.exerciseInstructions && (
+              <div className="mb-2 text-xs text-muted-text italic leading-relaxed text-center">
+                {block.exerciseInstructions}
+              </div>
+            )}
             {block.description && (
               <p className="text-sm text-muted-text text-center mb-2">{block.description}</p>
             )}
@@ -100,18 +120,18 @@ export default function SectionEMOM({ title, note, blocks, workSec, restSec, rou
             {(block.tierSilver || block.tierGold || block.tierBlack) && (
               <div className="mt-3 space-y-2">
                 {block.tierSilver && (
-                  <div className="text-xs bg-panel rounded p-2">
-                    <div className="text-muted-text">SILVER: {getTierDisplayValue(block.tierSilver, block.exerciseName)}</div>
+                  <div className="text-xs bg-panel rounded p-2 thin-border" style={{ borderColor: '#94a3b8', backgroundColor: 'rgba(148, 163, 184, 0.1)' }}>
+                    <div style={{ color: '#94a3b8', fontWeight: 'bold' }}>SILVER: {getTierDisplayValue(block.tierSilver, block.exerciseName, block)}</div>
                   </div>
                 )}
                 {block.tierGold && (
-                  <div className="text-xs bg-panel rounded p-2">
-                    <div className="text-muted-text">GOLD: {getTierDisplayValue(block.tierGold, block.exerciseName)}</div>
+                  <div className="text-xs bg-panel rounded p-2 thin-border" style={{ borderColor: '#fbbf24', backgroundColor: 'rgba(251, 191, 36, 0.1)' }}>
+                    <div style={{ color: '#fbbf24', fontWeight: 'bold' }}>GOLD: {getTierDisplayValue(block.tierGold, block.exerciseName, block)}</div>
                   </div>
                 )}
                 {block.tierBlack && (
-                  <div className="text-xs bg-panel border border-node-volt rounded p-2">
-                    <div className="text-node-volt">BLACK: {getTierDisplayValue(block.tierBlack, block.exerciseName)}</div>
+                  <div className="text-xs bg-panel border border-node-volt rounded p-2" style={{ backgroundColor: theme === 'dark' ? 'rgba(26, 26, 26, 0.8)' : 'rgba(31, 41, 55, 0.8)' }}>
+                    <div className="text-node-volt font-bold">BLACK: {getTierDisplayValue(block.tierBlack, block.exerciseName, block)}</div>
                   </div>
                 )}
               </div>

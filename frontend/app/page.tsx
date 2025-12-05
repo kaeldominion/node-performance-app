@@ -177,14 +177,6 @@ export default function LandingPage() {
             <a href="#hyrox" className="hover:text-node-volt transition-all duration-300 hover:scale-110">HYROX</a>
           </div>
           <div className="hidden md:flex items-center gap-4">
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg bg-panel/50 hover:bg-panel thin-border text-node-volt hover:text-node-volt/80 transition-colors flex items-center justify-center"
-              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-              aria-label="Toggle theme"
-            >
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
             {clerkLoaded && (
               isSignedIn ? (
                 <Link
@@ -202,6 +194,14 @@ export default function LandingPage() {
                 </Link>
               )
             )}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg bg-panel/50 hover:bg-panel thin-border text-node-volt hover:text-node-volt/80 transition-colors flex items-center justify-center"
+              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
           </div>
         </div>
       </nav>

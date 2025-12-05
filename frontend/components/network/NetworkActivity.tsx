@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { networkApi } from '@/lib/api';
 import { Icons } from '@/lib/iconMapping';
 import Link from 'next/link';
+import { ClickableUserName } from '@/components/user/ClickableUserName';
 
 interface NetworkActivity {
   id: string;
@@ -69,11 +70,20 @@ export function NetworkActivity() {
         >
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-node-volt/20 border border-node-volt flex items-center justify-center text-sm font-bold text-node-volt">
-                {networkUser.name?.charAt(0).toUpperCase() || networkUser.email.charAt(0).toUpperCase()}
-              </div>
+              <Link href={`/profile/${networkUser.id}`}>
+                <div className="w-10 h-10 rounded-full bg-node-volt/20 border border-node-volt flex items-center justify-center text-sm font-bold text-node-volt hover:bg-node-volt/30 transition-colors cursor-pointer">
+                  {networkUser.name?.charAt(0).toUpperCase() || networkUser.email.charAt(0).toUpperCase()}
+                </div>
+              </Link>
               <div>
-                <div className="font-medium text-text-white">{networkUser.name || networkUser.email}</div>
+                <div className="font-medium text-text-white">
+                  <ClickableUserName
+                    userId={networkUser.id}
+                    name={networkUser.name}
+                    email={networkUser.email}
+                    className="text-text-white"
+                  />
+                </div>
                 <div className="text-xs text-muted-text">
                   Level {networkUser.level} • {networkUser.xp.toLocaleString()} XP
                 </div>

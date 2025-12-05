@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { gymApi, workoutsApi } from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+import { ClickableUserName } from '@/components/user/ClickableUserName';
 
 export default function GymClassDetailPage() {
   const { user, loading: authLoading } = useAuth();
@@ -205,7 +206,16 @@ export default function GymClassDetailPage() {
                   {attendance.map((record) => (
                     <tr key={record.id} className="border-b thin-border">
                       <td className="px-6 py-4">
-                        {record.member?.name || record.member?.email || 'Unknown'}
+                        {record.member ? (
+                          <ClickableUserName
+                            userId={record.member.id}
+                            name={record.member.name}
+                            email={record.member.email}
+                            className="text-text-white"
+                          />
+                        ) : (
+                          'Unknown'
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <span

@@ -18,6 +18,7 @@ export default function AccountSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [formData, setFormData] = useState({
+    username: '',
     imageUrl: '',
     weight: '',
     height: '',
@@ -28,6 +29,7 @@ export default function AccountSettingsPage() {
     daysPerWeek: 3,
     notes: '',
   });
+  const [usernameError, setUsernameError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -50,6 +52,7 @@ export default function AccountSettingsPage() {
       const imageUrl = clerkUser?.imageUrl || profileData?.imageUrl || '';
       
       setFormData({
+        username: user?.username || '',
         imageUrl,
         weight: profileData?.weight?.toString() || '',
         height: profileData?.height?.toString() || '',
@@ -72,20 +75,48 @@ export default function AccountSettingsPage() {
     }
   };
 
+  const validateUsername = (username: string): string | null => {
+    if (!username) return null; // Username is optional
+    if (username.length < 3) return 'Username must be at least 3 characters';
+    if (username.length > 20) return 'Username must be at most 20 characters';
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) return 'Username can only contain letters, numbers, and underscores';
+    return null;
+  };
+
   const handleSave = async () => {
+    // Validate username
+    const usernameValidation = validateUsername(formData.username);
+    if (usernameValidation) {
+      setUsernameError(usernameValidation);
+      return;
+    }
+    setUsernameError(null);
+
     try {
       setSaving(true);
-      await userApi.updateProfile({
-        ...formData,
+      const updatePayload: any = {
+        trainingLevel: formData.trainingLevel,
+        username: formData.username || '', // Send empty string to clear, or value to set
         weight: formData.weight ? parseFloat(formData.weight) : undefined,
         height: formData.height ? parseFloat(formData.height) : undefined,
+        location: formData.location || undefined,
+        bio: formData.bio || undefined,
+        imageUrl: formData.imageUrl || undefined,
         daysPerWeek: formData.daysPerWeek || undefined,
         primaryGoal: formData.primaryGoal || undefined,
-      });
+        notes: formData.notes || undefined,
+      };
+      
+      await userApi.updateProfile(updatePayload);
       alert('Profile updated successfully!');
       await loadProfile();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Failed to update profile');
+      const errorMessage = error.response?.data?.message || 'Failed to update profile';
+      if (errorMessage.includes('username') || errorMessage.includes('unique')) {
+        setUsernameError('This username is already taken');
+      } else {
+        alert(errorMessage);
+      }
     } finally {
       setSaving(false);
     }
@@ -161,6 +192,33 @@ export default function AccountSettingsPage() {
             <div className="bg-panel thin-border rounded-lg p-6">
               <h2 className="text-lg font-heading font-bold mb-4">Personal Information</h2>
               <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-muted-text mb-2">
+                    Username
+                    <span className="text-xs text-muted-text ml-2">(optional, 3-20 characters, alphanumeric + underscore)</span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-text">@</span>
+                    <input
+                      type="text"
+                      value={formData.username}
+                      onChange={(e) => {
+                        const value = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+                        setFormData({ ...formData, username: value });
+                        setUsernameError(null);
+                      }}
+                      placeholder="username"
+                      maxLength={20}
+                      className="flex-1 bg-dark thin-border rounded-lg px-4 py-2 text-text-white focus:outline-none focus:border-node-volt"
+                    />
+                  </div>
+                  {usernameError && (
+                    <p className="text-sm text-red-500 mt-1">{usernameError}</p>
+                  )}
+                  <p className="text-xs text-muted-text mt-1">
+                    Your username will be visible to others in the network. Leave empty to hide.
+                  </p>
+                </div>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-muted-text mb-2">

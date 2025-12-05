@@ -7,8 +7,23 @@ export class AiService {
   private openai: OpenAI;
 
   constructor(private exercisesService: ExercisesService) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    
+    // Log API key status (without exposing the key)
+    if (!apiKey) {
+      console.error('❌ OPENAI_API_KEY is not set. AI workout generation will fail.');
+    } else {
+      console.log('✅ OPENAI_API_KEY is set:', {
+        hasKey: true,
+        keyLength: apiKey.length,
+        keyPrefix: apiKey.substring(0, 7) + '...',
+        keySuffix: '...' + apiKey.substring(apiKey.length - 4),
+      });
+    }
+    
     this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+      apiKey: apiKey || '', // Will fail with clear error if not set
+      timeout: 120000, // 120 seconds timeout for long requests
     });
   }
 
@@ -24,6 +39,16 @@ export class AiService {
     isHyrox?: boolean; // Flag for HYROX-style 90-minute conditioning workouts (single workouts only)
     includeHyrox?: boolean; // Flag to include HYROX sessions in multi-day programs
   }) {
+    console.log('🔧 generateWorkout called with params:', {
+      goal: params.goal,
+      trainingLevel: params.trainingLevel,
+      equipment: params.equipment,
+      availableMinutes: params.availableMinutes,
+      workoutType: params.workoutType,
+      hasOpenAIClient: !!this.openai,
+      apiKeySet: !!process.env.OPENAI_API_KEY,
+    });
+    
     // Pass archetype to the prompt (only for single workouts)
     // For multi-day programs, archetype will be randomly selected by AI based on goal
     const archetypeParam = (params.workoutType === 'single' && params.archetype) ? params.archetype : undefined;
@@ -61,7 +86,7 @@ You MUST respond with ONLY valid JSON that matches this exact schema:
 
 FOR SINGLE WORKOUTS:
 {
-  "name": "Workout Name (use NØDE naming: PR1ME // 01, FORGE // 02, ENGIN3 // 03, etc.)",
+  "name": "Generate a unique 3-4 word descriptive name based on the workout content (e.g., 'Strength Squat Wave', 'Hybrid EMOM Burpee', 'Circuit Rower AMRAP'). Do NOT use generic names like 'Workout Name' or NØDE codes like 'PR1ME // 01'. The name should describe the key exercises and format.",
   "displayCode": "Optional code like PR1ME-01 or ENGIN3-02",
   "archetype": "PR1ME" | "FORGE" | "ENGIN3" | "CIRCUIT_X" | "CAPAC1TY" | "FLOWSTATE" | null,
   "description": "Brief archetype description",
@@ -71,7 +96,7 @@ FOR MULTI-DAY PROGRAMS (4-day, 7-day, 4-week):
 {
   "workouts": [
     {
-      "name": "Workout Name",
+      "name": "Generate a unique 3-4 word descriptive name based on the workout content (e.g., 'Strength Squat Wave', 'Hybrid EMOM Burpee', 'Circuit Rower AMRAP'). Do NOT use generic names like 'Workout Name' or 'Day 1'. The name should describe the key exercises and format.",
       "displayCode": "Optional code",
       "dayIndex": 1 (REQUIRED for 4-day and 7-day programs),
       "weekIndex": 1 (REQUIRED for 4-week programs),
@@ -89,9 +114,9 @@ FOR MULTI-DAY PROGRAMS (4-day, 7-day, 4-week):
       "intervalWorkSec": 20 (REQUIRED for INTERVAL - work duration in seconds),
       "intervalRestSec": 100 (REQUIRED for INTERVAL - rest duration in seconds),
       "intervalRounds": 8 (REQUIRED for INTERVAL - number of rounds),
-      "rounds": 4 (OPTIONAL for FOR_TIME: number of rounds when format is "X:XX Cap × Y Rounds"),
-      "restBetweenRounds": 30 (OPTIONAL for FOR_TIME: rest duration in seconds between rounds),
-      "note": "REQUIRED for AMRAP/CIRCUIT/FOR_TIME sections - MUST include: 'Complete as many rounds as possible in [X:XX]. Rest [X] seconds between rounds if needed. Move through exercises in order: [exercise order].' Include pacing strategy, rest guidance, and round structure.",
+      "rounds": 4 (REQUIRED for SUPERSET sections - number of rounds to complete the superset pair, typically 4-6 rounds. OPTIONAL for FOR_TIME: number of rounds when format is "X:XX Cap × Y Rounds"),
+      "restBetweenRounds": 30 (REQUIRED for SUPERSET sections with rounds - rest duration in seconds between rounds (30-60s). OPTIONAL for FOR_TIME: rest duration in seconds between rounds),
+      "note": "REQUIRED for AMRAP/CIRCUIT/FOR_TIME/SUPERSET/CAPACITY sections - MUST include: 'Complete [X] rounds of the superset pair. Rest [X] seconds between rounds.' OR 'Complete as many rounds as possible in [X:XX]. Rest [X] seconds between rounds if needed. Move through exercises in order: [exercise order].' For AMRAP/CIRCUIT sections, MUST include tier-based round targets: 'Target rounds: SILVER [X-X] rounds, GOLD [X-X] rounds, BLACK [X-X] rounds' (e.g., 'Target rounds: SILVER 3-4 rounds, GOLD 4-5 rounds, BLACK 5-6 rounds'). For CAPACITY sections, MUST mention: 'Target number of rounds according to tier' or similar guidance about tier-based round targets. Include pacing strategy, rest guidance, and round structure.",
       "blocks": [
         {
           "label": "01",
@@ -158,6 +183,13 @@ CRITICAL: EVERY SECTION MUST HAVE A TIME - NO EXCEPTIONS:
 - COOLDOWN: REQUIRED durationSec: 300 seconds (5 min). HYROX: 300-600 seconds (5-10 min)
 - WAVE: REQUIRED durationSec: 600-1200 seconds (10-20 min) - total time for all waves
 - SUPERSET: REQUIRED durationSec: 600-900 seconds (10-15 min) - total time for superset block
+  * SUPERSET sections MUST have either:
+    a) "rounds" field (e.g., rounds: 4-6) with "restBetweenRounds" (30-60s) - complete X rounds of the superset pair
+    b) "note" field explaining AMRAP format (e.g., "Complete as many rounds as possible in 10:00. Rest 30s between rounds if needed.")
+  * A single superset pair (2 exercises × 8-10 reps) takes ~2-3 minutes, so you MUST include rounds or AMRAP format
+  * Example: 4 rounds × 2 exercises = ~8-12 minutes of work (fits 10:00 cap)
+  * Example: AMRAP 10:00 = complete as many rounds as possible in 10 minutes
+  * ⚠️ NEVER create a SUPERSET with only one round - it will not fill the time cap
 - AMRAP: REQUIRED durationSec: 480-1800 seconds (8-30 min) - countdown timer duration
 - FOR_TIME: REQUIRED durationSec: 600-3600 seconds (10-60 min) - time cap
 - CAPACITY: REQUIRED durationSec: 720-1800 seconds (12-30 min) - long conditioning block
@@ -400,9 +432,9 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
           }
         }
         
-        // Validate and map workouts with proper dayIndex/weekIndex
-        const validatedWorkouts = workouts.map((w: any, idx: number) => {
-          const validated = this.validateWorkoutSchema(w);
+        // Validate and map workouts with proper dayIndex/weekIndex, with review and retry
+        const validatedWorkouts = await Promise.all(workouts.map(async (w: any, idx: number) => {
+          let validated = this.validateWorkoutSchema(w);
           
           // Set dayIndex and weekIndex based on workout type
           if (workoutType === 'fourDay') {
@@ -421,25 +453,154 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
             validated.dayIndex = w.dayIndex || dayInWeek;
           }
           
-          return validated;
-        });
+          // Review each workout (but don't regenerate individual workouts in multi-day programs)
+          // Just log issues for now - full regeneration would be too expensive
+          try {
+            const reviewed = await this.reviewAndAdjustWorkout(validated, params);
+            return reviewed;
+          } catch (error: any) {
+            // For multi-day programs, log but don't fail - return the validated workout
+            console.warn(`⚠️  Workout ${idx + 1} has issues but continuing with program:`, error.message);
+            return validated;
+          }
+        }));
         
         return validatedWorkouts;
       }
 
       // Validate and return single workout
-      const validatedWorkout = this.validateWorkoutSchema(workoutJson);
+      let validatedWorkout = this.validateWorkoutSchema(workoutJson);
       
-      // Review and adjust workout if needed
-      const reviewedWorkout = await this.reviewAndAdjustWorkout(validatedWorkout, params);
+      // Review and adjust workout if needed (with retry logic for critical issues)
+      let reviewedWorkout: any;
+      let regenerationAttempts = 0;
+      const maxRegenerationAttempts = 2; // Allow up to 2 regenerations
+      
+      while (regenerationAttempts <= maxRegenerationAttempts) {
+        try {
+          reviewedWorkout = await this.reviewAndAdjustWorkout(validatedWorkout, params);
+          break; // Success - exit loop
+          } catch (error: any) {
+            if (error.message?.includes('CRITICAL_TIME_MISMATCH') || error.message?.includes('ADJUSTMENT_FAILED')) {
+              regenerationAttempts++;
+              
+              if (regenerationAttempts > maxRegenerationAttempts) {
+                console.error(`❌ Failed after ${maxRegenerationAttempts} regeneration attempts. Returning last valid workout.`);
+                // Return the last validated workout even if it has issues
+                reviewedWorkout = validatedWorkout;
+                break;
+              }
+              
+              console.log(`🔄 Regenerating workout (attempt ${regenerationAttempts}/${maxRegenerationAttempts}) due to: ${error.message}`);
+              
+              // Use the attached issues list if available, otherwise parse from error message
+              const criticalIssuesList = error.criticalIssues || 
+                error.message.replace('CRITICAL_TIME_MISMATCH: ', '').replace('ADJUSTMENT_FAILED: ', '').split('; ').filter((i: string) => i.trim());
+            
+            // Regenerate with specific guidance about the issues
+            const regenerationPrompt = `${userPrompt}
+
+CRITICAL: The previous workout generation had timing issues that must be fixed. Please regenerate the workout ensuring these issues are resolved:
+
+${criticalIssuesList.map((issue, idx) => `${idx + 1}. ${issue}`).join('\n')}
+
+SPECIFIC REQUIREMENTS FOR REGENERATION:
+- All section durations MUST match the actual work required
+- SUPERSET sections MUST have either:
+  * "rounds" field (4-6 rounds) with "restBetweenRounds" (30-60s), OR
+  * AMRAP format in "note" field (e.g., "Complete as many rounds as possible in [X:XX]")
+- A single superset pair (2 exercises) takes ~2-3 minutes
+- For a 10-minute SUPERSET section, you need 4-6 rounds (not just 1 round)
+- Estimated work time must align with section durationSec (±20% tolerance)
+- Total workout time must fit within ${params.availableMinutes} minutes
+
+Generate a completely new workout that properly addresses all timing issues.`;
+
+            const regenerationCompletion = await this.openai.chat.completions.create({
+              model: 'gpt-4o',
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: regenerationPrompt },
+              ],
+              response_format: { type: 'json_object' as const },
+              temperature: 0.7,
+            });
+
+            const regeneratedWorkoutJson = JSON.parse(
+              regenerationCompletion.choices[0].message.content || '{}',
+            );
+            
+            validatedWorkout = this.validateWorkoutSchema(regeneratedWorkoutJson);
+            // Loop will continue and try reviewAndAdjustWorkout again
+          } else {
+            // Non-regeneration error - throw it
+            throw error;
+          }
+        }
+      }
       
       // Extract and store new exercises from the generated workout
       await this.extractAndStoreExercises(reviewedWorkout, params.equipment);
       
       return reviewedWorkout;
-    } catch (error) {
-      console.error('OpenAI API error:', error);
-      throw new Error('Failed to generate workout');
+    } catch (error: any) {
+      // Log the exact error before processing
+      console.error('❌ Error in generateWorkout:', {
+        errorType: error?.constructor?.name,
+        errorMessage: error?.message,
+        errorStatus: error?.status,
+        errorCode: error?.code,
+        errorResponse: error?.response ? {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+        } : null,
+      });
+      console.error('OpenAI API error:', {
+        message: error?.message,
+        status: error?.status,
+        code: error?.code,
+        type: error?.type,
+        response: error?.response ? {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+        } : null,
+        stack: error?.stack,
+      });
+      
+      // Check if OpenAI API key is missing or invalid
+      if (error?.status === 401 || 
+          error?.response?.status === 401 ||
+          error?.message?.includes('Invalid API key') || 
+          error?.message?.includes('Incorrect API key') ||
+          error?.response?.data?.error?.code === 'invalid_api_key') {
+        throw new Error('OpenAI API key is missing or invalid. Please configure OPENAI_API_KEY in your environment variables.');
+      }
+      
+      // Check for rate limiting
+      if (error?.status === 429 || error?.message?.includes('rate limit')) {
+        throw new Error('OpenAI API rate limit exceeded. Please try again in a moment.');
+      }
+      
+      // Check for network/timeout errors
+      if (error?.code === 'ECONNABORTED' || error?.message?.includes('timeout') || error?.message?.includes('ETIMEDOUT')) {
+        throw new Error('Request timed out. The AI service is taking longer than expected. Please try again.');
+      }
+      
+      // Check for network errors
+      if (error?.code === 'ENOTFOUND' || error?.code === 'ECONNREFUSED' || error?.message?.includes('network')) {
+        throw new Error('Network error connecting to OpenAI. Please check your internet connection and try again.');
+      }
+      
+      // Check for API errors
+      if (error?.response?.data?.error?.message) {
+        throw new Error(`OpenAI API error: ${error.response.data.error.message}`);
+      }
+      
+      // Generic error with more context
+      const errorMessage = error?.message || 'Unknown error';
+      throw new Error(`Failed to generate workout: ${errorMessage}`);
     }
   }
   
@@ -802,7 +963,8 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
               inferredImpact = 'LOW';
             }
             
-            // Create basic exercise entry - will be enriched with instructions/variations later
+            // Create exercise entry - instructions and image will be generated automatically by exercisesService.create()
+            // Don't pass instructions: null - let the service generate it via AI
             await this.exercisesService.create({
               exerciseId,
               name: exerciseName,
@@ -817,13 +979,7 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
               indoorFriendly: true,
               aiGenerated: true,
               usageCount: 1,
-              instructions: null, // Will be generated later via AI enrichment
-              variations: null, // Will be generated later via AI enrichment
-              graphics: [],
-              videoUrl: null,
-              commonMistakes: [],
-              progressionTips: null,
-              regressionTips: null,
+              // Don't set instructions, imageUrl, or variations - let exercisesService.create() generate them via AI
             });
             
             console.log(`✅ Stored new AI-generated exercise: ${exerciseName} (category: ${inferredCategory}, pattern: ${inferredMovementPattern}, equipment: ${inferredEquipment.length > 0 ? inferredEquipment.join(', ') : 'bodyweight'})`);
@@ -1016,8 +1172,44 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
       adjustments.timeIncrease = Math.round((availableTime - totalTime) / 60);
     }
     
-    // Check tier progression (SILVER ≤ GOLD ≤ BLACK)
-    workout.sections.forEach((section: any, sectionIdx: number) => {
+      // Check section duration matches work required
+      workout.sections.forEach((section: any, sectionIdx: number) => {
+        // Validate SUPERSET sections have rounds or AMRAP format
+        if (section.type === 'SUPERSET') {
+          const hasRounds = section.rounds && section.rounds > 0;
+          const hasAMRAPNote = section.note && /AMRAP|as many rounds as possible/i.test(section.note);
+          
+          if (!hasRounds && !hasAMRAPNote) {
+            const issueMsg = `SUPERSET section "${section.title}" is missing rounds or AMRAP format. A single superset pair takes ~2-3 minutes, but section duration is ${Math.round(section.durationSec / 60)} minutes. Add "rounds" field (4-6 rounds) or use AMRAP format in "note" field.`;
+            issues.push(issueMsg);
+            adjustments[`section_${sectionIdx}_missing_rounds`] = true;
+          }
+          
+          // Estimate work time for superset
+          if (hasRounds && section.blocks && section.blocks.length >= 2) {
+            // Each round: 2 exercises × ~30-45s per exercise + 30-60s rest = ~2-3 min per round
+            const estimatedWorkTime = section.rounds * 2.5 * 60; // 2.5 min per round
+            const restTime = section.restBetweenRounds ? section.restBetweenRounds * (section.rounds - 1) : 0;
+            const totalEstimatedTime = estimatedWorkTime + restTime;
+            
+            if (section.durationSec && totalEstimatedTime > section.durationSec * 1.2) {
+              const issueMsg = `SUPERSET section "${section.title}": Estimated work time (${Math.round(totalEstimatedTime / 60)} min) exceeds duration (${Math.round(section.durationSec / 60)} min). Reduce rounds or increase duration.`;
+              issues.push(issueMsg);
+              adjustments[`section_${sectionIdx}_time_mismatch`] = true;
+            } else if (section.durationSec && totalEstimatedTime < section.durationSec * 0.5) {
+              const issueMsg = `SUPERSET section "${section.title}": Estimated work time (${Math.round(totalEstimatedTime / 60)} min) is much less than duration (${Math.round(section.durationSec / 60)} min). Add more rounds or reduce duration.`;
+              issues.push(issueMsg);
+              adjustments[`section_${sectionIdx}_time_mismatch`] = true;
+            }
+          } else if (!hasRounds && !hasAMRAPNote && section.blocks && section.blocks.length >= 2) {
+            // No rounds and no AMRAP - this is a critical issue
+            const issueMsg = `SUPERSET section "${section.title}": Has ${section.blocks.length} exercises but no rounds specified. With duration of ${Math.round(section.durationSec / 60)} minutes, this would only be ~2-3 minutes of work. MUST add "rounds" field (4-6 rounds) or AMRAP format.`;
+            issues.push(issueMsg);
+            adjustments[`section_${sectionIdx}_missing_rounds`] = true;
+          }
+        }
+      
+      // Check tier progression (SILVER ≤ GOLD ≤ BLACK)
       section.blocks?.forEach((block: any, blockIdx: number) => {
         const silver = block.tierSilver;
         const gold = block.tierGold;
@@ -1045,18 +1237,48 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
       });
     });
     
-    // If there are issues, ask AI to fix them
+    // If there are issues, determine if we need full regeneration or just adjustment
     if (issues.length > 0) {
-      console.log(`⚠️  Found ${issues.length} issues, requesting AI adjustments...`);
+      console.log(`⚠️  Found ${issues.length} issues, analyzing severity...`);
       console.log('Issues:', issues);
       
+      // Check for critical issues that require full regeneration
+      const criticalIssues = issues.filter(issue => 
+        issue.includes('time mismatch') || 
+        issue.includes('missing rounds') ||
+        issue.includes('exceeds duration') ||
+        issue.includes('much less than duration') ||
+        issue.includes('too long') ||
+        issue.includes('too short')
+      );
+      
+      if (criticalIssues.length > 0) {
+        console.log(`🔴 Found ${criticalIssues.length} CRITICAL time-related issues - triggering full regeneration...`);
+        console.log('Critical issues:', criticalIssues);
+        
+        // Create error with full context for regeneration
+        const error = new Error(`CRITICAL_TIME_MISMATCH: ${criticalIssues.join('; ')}`) as any;
+        error.criticalIssues = criticalIssues; // Attach full list for regeneration
+        error.allIssues = issues; // Also attach all issues for context
+        throw error;
+      }
+      
+      // For non-critical issues, try adjustment
+      console.log(`⚠️  Found ${issues.length} non-critical issues, attempting adjustment...`);
       try {
         const adjustedWorkout = await this.adjustWorkout(workout, issues, adjustments, params);
-        console.log('✅ Workout adjusted successfully');
-        return adjustedWorkout;
-      } catch (error) {
-        console.error('❌ Failed to adjust workout, returning original:', error);
-        return workout; // Return original if adjustment fails
+        
+        // Re-validate the adjusted workout
+        const revalidatedWorkout = await this.reviewAndAdjustWorkout(adjustedWorkout, params);
+        console.log('✅ Workout adjusted and re-validated successfully');
+        return revalidatedWorkout;
+      } catch (error: any) {
+        // If adjustment fails or reveals critical issues, trigger regeneration
+        if (error.message?.includes('CRITICAL_TIME_MISMATCH')) {
+          throw error; // Re-throw to trigger regeneration
+        }
+        console.error('❌ Failed to adjust workout, triggering regeneration:', error);
+        throw new Error(`ADJUSTMENT_FAILED: ${error.message || 'Unknown error'}`);
       }
     }
     
@@ -1480,6 +1702,60 @@ Each week should reflect its cycle in workout intensity, volume, and complexity.
         return 'DELOAD CYCLE: Recovery week with lower intensity. Focus on mobility, light movement, and active recovery.';
       default:
         return '';
+    }
+  }
+
+  /**
+   * Test OpenAI API connection and key validity
+   */
+  async testOpenAI(): Promise<{ success: boolean; message: string; details?: any }> {
+    try {
+      const apiKey = process.env.OPENAI_API_KEY;
+      
+      if (!apiKey) {
+        return {
+          success: false,
+          message: 'OPENAI_API_KEY is not set in environment variables',
+        };
+      }
+
+      // Make a simple API call to test the key
+      const testResponse = await this.openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: 'You are a test assistant.' },
+          { role: 'user', content: 'Say "test successful" if you can read this.' },
+        ],
+        max_tokens: 10,
+      });
+
+      return {
+        success: true,
+        message: 'OpenAI API key is valid and working',
+        details: {
+          model: testResponse.model,
+          response: testResponse.choices[0]?.message?.content,
+        },
+      };
+    } catch (error: any) {
+      console.error('OpenAI test error:', error);
+      
+      let message = 'OpenAI API test failed';
+      if (error?.status === 401 || error?.response?.status === 401) {
+        message = 'OpenAI API key is invalid or expired';
+      } else if (error?.message) {
+        message = `OpenAI API error: ${error.message}`;
+      }
+
+      return {
+        success: false,
+        message,
+        details: {
+          status: error?.status || error?.response?.status,
+          code: error?.code,
+          errorMessage: error?.message,
+        },
+      };
     }
   }
 }
