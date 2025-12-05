@@ -305,4 +305,89 @@ export class AnalyticsService {
       period: { start: startDate, end: new Date() },
     };
   }
+
+  // Leaderboard methods
+  async getLeaderboard(metric: 'sessions' | 'hours' | 'rpe' | 'streak' = 'sessions', limit: number = 50) {
+    const users = await this.prisma.user.findMany({
+      where: {
+        role: { in: ['HOME_USER', 'COACH'] }, // Only show regular users and coaches
+      },
+      include: {
+        sessionLogs: {
+          where: { completed: true },
+          orderBy: { startedAt: 'desc' },
+        },
+      },
+    });
+
+    const leaderboardData = await Promise.all(
+      users.map(async (user) => {
+        const sessions = user.sessionLogs;
+        const totalSessions = sessions.length;
+        const totalHours = sessions.reduce((sum, s) => sum + (s.durationSec || 0), 0) / 3600;
+        const avgRPE = sessions.length > 0
+          ? sessions.reduce((sum, s) => sum + (s.rpe || 0), 0) / sessions.length
+          : 0;
+
+        // Calculate streak
+        let streak = 0;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        for (let i = 0; i < 365; i++) {
+          const checkDate = new Date(today);
+          checkDate.setDate(checkDate.getDate() - i);
+          const dateStr = checkDate.toISOString().split('T')[0];
+          
+          const hasSession = sessions.some((s) => {
+            const sessionDate = new Date(s.startedAt).toISOString().split('T')[0];
+            return sessionDate === dateStr;
+          });
+          
+          if (hasSession) {
+            streak++;
+          } else if (i > 0) {
+            break;
+          }
+        }
+
+        let score = 0;
+        switch (metric) {
+          case 'sessions':
+            score = totalSessions;
+            break;
+          case 'hours':
+            score = totalHours;
+            break;
+          case 'rpe':
+            score = avgRPE;
+            break;
+          case 'streak':
+            score = streak;
+            break;
+        }
+
+        return {
+          userId: user.id,
+          name: user.name || user.email.split('@')[0],
+          email: user.email,
+          totalSessions,
+          totalHours: Math.round(totalHours * 10) / 10,
+          avgRPE: Math.round(avgRPE * 10) / 10,
+          streak,
+          score,
+        };
+      })
+    );
+
+    // Sort by score and return top N
+    return leaderboardData
+      .filter((entry) => entry.score > 0) // Only include users with activity
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map((entry, index) => ({
+        ...entry,
+        rank: index + 1,
+      }));
+  }
 }

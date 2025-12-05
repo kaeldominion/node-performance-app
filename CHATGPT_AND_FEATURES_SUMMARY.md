@@ -185,3 +185,4 @@ The ChatGPT integration is **fully functional** with all parameters:
 4. **Program Sharing**: Share generated programs with others
 5. **Progressive Overload Tracking**: Track load progression across weeks
 
+

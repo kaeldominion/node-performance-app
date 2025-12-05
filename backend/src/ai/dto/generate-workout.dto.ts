@@ -36,6 +36,6 @@ export class GenerateWorkoutDto {
 
   @IsOptional()
   @IsString()
-  workoutType?: 'single' | 'week' | 'month';
+  workoutType?: 'single' | 'week' | 'month' | 'fourDay';
 }
 

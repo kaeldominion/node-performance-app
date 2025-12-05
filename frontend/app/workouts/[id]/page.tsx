@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { workoutsApi, sessionsApi } from '@/lib/api';
-import { WorkoutDeckPlayer } from '@/components/workout/WorkoutDeckPlayer';
+import WorkoutDeckPlayer from '@/components/workout/WorkoutDeckPlayer';
+import Navbar from '@/components/Navbar';
+import Link from 'next/link';
 import SectionWarmup from '@/components/workout/SectionWarmup';
 import SectionEMOM from '@/components/workout/SectionEMOM';
 import SectionAMRAP from '@/components/workout/SectionAMRAP';
@@ -53,20 +55,22 @@ export default function WorkoutPlayerPage() {
   const [deckMode, setDeckMode] = useState(true);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/auth/login');
-      return;
-    }
-
-    if (user && workoutId) {
+    // Allow viewing shared workouts without login
+    if (workoutId) {
       loadWorkout();
-      startSession();
+      // Only start session if user is logged in
+      if (user && !workoutId.startsWith('share_')) {
+        startSession();
+      }
     }
   }, [user, authLoading, workoutId]);
 
   const loadWorkout = async () => {
     try {
-      const data = await workoutsApi.getById(workoutId);
+      // Check if it's a shareId (starts with 'share_') or regular ID
+      const data = workoutId.startsWith('share_')
+        ? await workoutsApi.getByShareId(workoutId)
+        : await workoutsApi.getById(workoutId);
       setWorkout(data);
     } catch (error) {
       console.error('Failed to load workout:', error);
@@ -122,18 +126,86 @@ export default function WorkoutPlayerPage() {
     );
   }
 
-  if (!user || !workout) {
-    return null;
+  if (!workout) {
+    return (
+      <div className="min-h-screen bg-deep-asphalt flex items-center justify-center">
+        <div className="text-muted-text">Workout not found</div>
+      </div>
+    );
   }
 
-  // Use deck mode by default
+  // If not logged in but workout exists (shared workout), show read-only view
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-deep-asphalt">
+        <Navbar />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                {workout.name}
+              </h1>
+              {workout.archetype && <ArchetypeBadge archetype={workout.archetype} />}
+            </div>
+            <Link
+              href="/auth/register"
+              className="bg-node-volt text-deep-asphalt font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
+            >
+              Sign Up to Train
+            </Link>
+          </div>
+          {/* Show workout preview */}
+          <div className="space-y-4">
+            {workout.sections.map((section: any, idx: number) => (
+              <div key={idx} className="bg-concrete-grey border border-border-dark rounded-lg p-6">
+                <h3 className="text-xl font-bold mb-2">{section.title}</h3>
+                <p className="text-muted-text text-sm mb-4">{section.type}</p>
+                {/* Section preview */}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Use deck mode by default for logged-in users
   if (deckMode) {
     return (
-      <WorkoutDeckPlayer
-        workout={workout}
-        sessionId={sessionId}
-        onComplete={handleCompleteWorkout}
-      />
+      <>
+        <WorkoutDeckPlayer
+          workout={workout}
+          sessionId={sessionId}
+          onWorkoutComplete={() => router.push('/')}
+        />
+        {/* Share Button - Fixed Position */}
+        {workout.shareId && (
+          <div className="fixed bottom-6 right-6 z-50">
+            <button
+              onClick={async () => {
+                const shareUrl = `${window.location.origin}/workouts/share_${workout.shareId}`;
+                try {
+                  await navigator.clipboard.writeText(shareUrl);
+                  alert('Workout link copied to clipboard!');
+                } catch (err) {
+                  // Fallback for older browsers
+                  const textArea = document.createElement('textarea');
+                  textArea.value = shareUrl;
+                  document.body.appendChild(textArea);
+                  textArea.select();
+                  document.execCommand('copy');
+                  document.body.removeChild(textArea);
+                  alert('Workout link copied to clipboard!');
+                }
+              }}
+              className="bg-node-volt text-deep-asphalt font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity shadow-lg flex items-center gap-2"
+              style={{ fontFamily: 'var(--font-space-grotesk)' }}
+            >
+              <span>📤</span> Share Workout
+            </button>
+          </div>
+        )}
+      </>
     );
   }
 

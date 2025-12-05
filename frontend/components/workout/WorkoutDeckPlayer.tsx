@@ -32,7 +32,8 @@ interface Workout {
 interface WorkoutDeckPlayerProps {
   workout: Workout;
   sessionId: string | null;
-  onComplete: (rpe: number, notes: string) => void;
+  onWorkoutComplete?: () => void;
+  onComplete?: (rpe: number, notes: string) => void; // Legacy support
 }
 
 export function WorkoutDeckPlayer({ workout, sessionId, onComplete }: WorkoutDeckPlayerProps) {

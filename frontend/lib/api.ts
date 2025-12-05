@@ -90,6 +90,10 @@ export const workoutsApi = {
     const response = await api.get(`/workouts/${id}`);
     return response.data;
   },
+  getByShareId: async (shareId: string) => {
+    const response = await api.get(`/workouts/share/${shareId}`);
+    return response.data;
+  },
   create: async (data: any) => {
     const response = await api.post('/workouts', data);
     return response.data;
@@ -125,7 +129,7 @@ export const aiApi = {
     availableMinutes: number;
     archetype?: string;
     sectionPreferences?: string[];
-    workoutType?: 'single' | 'week' | 'month';
+    workoutType?: 'single' | 'week' | 'month' | 'fourDay';
   }) => {
     const response = await api.post('/ai/generate-workout', data);
     return response.data;
@@ -201,6 +205,10 @@ export const analyticsApi = {
   },
   getClientTrends: async (clientId: string, days: number = 30) => {
     const response = await api.get(`/analytics/clients/${clientId}/trends?days=${days}`);
+    return response.data;
+  },
+  getLeaderboard: async (metric: 'sessions' | 'hours' | 'rpe' | 'streak' = 'sessions', limit: number = 50) => {
+    const response = await api.get(`/analytics/leaderboard?metric=${metric}&limit=${limit}`);
     return response.data;
   },
 };

@@ -10,6 +10,11 @@ export class WorkoutsController {
     return this.workoutsService.findOne(id);
   }
 
+  @Get('share/:shareId')
+  async findByShareId(@Param('shareId') shareId: string) {
+    return this.workoutsService.findByShareId(shareId);
+  }
+
   @Post()
   async create(@Body() createWorkoutDto: any) {
     return this.workoutsService.create(createWorkoutDto);

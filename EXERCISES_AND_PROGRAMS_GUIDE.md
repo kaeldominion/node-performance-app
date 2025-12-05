@@ -180,3 +180,4 @@ Currently:
 3. `backend/src/programs/programs.controller.ts` - Add auth guards
 4. `backend/src/programs/programs.service.ts` - Add user/coach filtering
 
+

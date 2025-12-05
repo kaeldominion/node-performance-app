@@ -148,12 +148,12 @@ Ensure each workout time fits within ${params.availableMinutes} minutes.`;
       );
 
       // Handle different workout types
-      if (workoutType === 'week' || workoutType === 'month') {
-        // For week/month, expect workouts array in response
+      if (workoutType === 'week' || workoutType === 'month' || workoutType === 'fourDay') {
+        // For week/month/fourDay, expect workouts array in response
         const workouts = workoutJson.workouts || (Array.isArray(workoutJson) ? workoutJson : [workoutJson]);
         return workouts.map((w: any, idx: number) => ({
           ...this.validateWorkoutSchema(w),
-          dayIndex: workoutType === 'week' ? idx + 1 : undefined,
+          dayIndex: (workoutType === 'week' || workoutType === 'fourDay') ? idx + 1 : undefined,
           weekIndex: workoutType === 'month' ? Math.floor(idx / 5) + 1 : undefined,
         }));
       }
@@ -316,6 +316,23 @@ Use these patterns and exercise names when generating workouts.`;
 
   private getWorkoutTypeGuidance(workoutType: string): string {
     switch (workoutType) {
+      case 'fourDay':
+        return `Generate a 4-DAY PROGRAM (4 workouts). Return JSON with this structure:
+{
+  "workouts": [
+    { "name": "Day 1", "dayIndex": 1, ...workout structure... },
+    { "name": "Day 2", "dayIndex": 2, ...workout structure... },
+    { "name": "Day 3", "dayIndex": 3, ...workout structure... },
+    { "name": "Day 4", "dayIndex": 4, ...workout structure... }
+  ]
+}
+- Day 1: Load (higher intensity/volume) - Strength or Hybrid focus
+- Day 2: Active Recovery or Engine - Lower intensity, aerobic focus
+- Day 3: Load (higher intensity/volume) - Different stimulus than Day 1
+- Day 4: Active Recovery or FLOWSTATE - Mobility, recovery, light movement
+
+Perfect for athletes with limited time. Maintains intensity while respecting recovery.`;
+      
       case 'week':
         return `Generate a 1-WEEK PROGRAM (7 workouts). Return JSON with this structure:
 {

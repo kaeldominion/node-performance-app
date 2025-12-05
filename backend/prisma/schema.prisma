@@ -207,6 +207,7 @@ model Workout {
   dayIndex    Int?
   archetype   WorkoutArchetype?
   description String? // Archetype-specific description
+  shareId     String?  @unique // For shareable workouts
 
   sections   WorkoutSection[]
   sessions   SessionLog[]

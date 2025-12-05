@@ -38,7 +38,7 @@ export default function WorkoutBuilderPage() {
     availableMinutes: 45,
     archetype: '' as string | undefined,
     sectionPreferences: ['WARMUP', 'EMOM', 'AMRAP', 'FINISHER', 'COOLDOWN'],
-    workoutType: 'single' as 'single' | 'week' | 'month', // New: single, 1-week, 4-week
+    workoutType: 'single' as 'single' | 'week' | 'month' | 'fourDay', // single, 7-day, 4-day, 4-week
   });
 
   const handleEquipmentToggle = (equipment: string) => {
@@ -189,27 +189,35 @@ export default function WorkoutBuilderPage() {
 
             {/* Workout Type */}
             <div>
-              <label className="block text-sm font-medium mb-2">Workout Type</label>
-              <div className="grid grid-cols-3 gap-2">
+              <label className="block text-sm font-medium mb-2">Program Type</label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
-                  { value: 'single', label: 'Single Workout', desc: 'One-off session' },
-                  { value: 'week', label: '1-Week Program', desc: '7 days with load/deload' },
-                  { value: 'month', label: '4-Week Program', desc: 'Progressive 4-week cycle' },
+                  { value: 'single', label: '1-Off', desc: 'Single workout session', icon: '💪' },
+                  { value: 'fourDay', label: '4-Day', desc: '4 workouts per week', icon: '📅' },
+                  { value: 'week', label: '7-Day', desc: 'Full week with deload', icon: '📆' },
+                  { value: 'month', label: '4-Week', desc: 'Progressive cycle', icon: '🗓️' },
                 ].map((type) => (
                   <button
                     key={type.value}
                     onClick={() => setFormData({ ...formData, workoutType: type.value as any })}
-                    className={`px-4 py-3 rounded border transition-colors text-left ${
+                    className={`px-4 py-4 rounded-lg border-2 transition-all text-left ${
                       formData.workoutType === type.value
-                        ? 'bg-node-volt text-dark border-node-volt'
-                        : 'bg-panel thin-border text-text-white hover:border-node-volt'
+                        ? 'bg-node-volt text-dark border-node-volt shadow-lg shadow-node-volt/30'
+                        : 'bg-panel thin-border text-text-white hover:border-node-volt hover:bg-tech-grey'
                     }`}
                   >
-                    <div className="font-bold">{type.label}</div>
+                    <div className="text-2xl mb-2">{type.icon}</div>
+                    <div className="font-bold text-lg mb-1">{type.label}</div>
                     <div className="text-xs opacity-80">{type.desc}</div>
                   </button>
                 ))}
               </div>
+              <p className="text-xs text-muted-text mt-2">
+                {formData.workoutType === 'single' && 'Perfect for a quick, effective training session.'}
+                {formData.workoutType === 'fourDay' && '3 training days + 1 active recovery. Maintains intensity while respecting recovery.'}
+                {formData.workoutType === 'week' && 'Load → Active Recovery → Load → Active Recovery → Load → Deload → Rest.'}
+                {formData.workoutType === 'month' && 'BASE → LOAD → INTENSIFY → DELOAD. Full periodization cycle.'}
+              </p>
             </div>
 
             {/* Archetype */}

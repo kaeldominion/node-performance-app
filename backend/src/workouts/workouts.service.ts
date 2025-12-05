@@ -41,12 +41,52 @@ export class WorkoutsService {
     };
   }
 
+  async findByShareId(shareId: string) {
+    const workout = await this.prisma.workout.findUnique({
+      where: { shareId },
+      include: {
+        sections: {
+          orderBy: { order: 'asc' },
+          include: {
+            blocks: {
+              orderBy: { order: 'asc' },
+              include: {
+                tierPrescriptions: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!workout) return null;
+
+    // Transform tierPrescriptions array to tierSilver, tierGold, tierBlack
+    return {
+      ...workout,
+      sections: workout.sections.map((section) => ({
+        ...section,
+        blocks: section.blocks.map((block) => ({
+          ...block,
+          tierSilver: block.tierPrescriptions.find((t) => t.tier === 'SILVER') || null,
+          tierGold: block.tierPrescriptions.find((t) => t.tier === 'GOLD') || null,
+          tierBlack: block.tierPrescriptions.find((t) => t.tier === 'BLACK') || null,
+          tierPrescriptions: undefined,
+        })),
+      })),
+    };
+  }
+
   async create(createWorkoutDto: any) {
     const { sections, ...workoutData } = createWorkoutDto;
+
+    // Generate shareId if not provided
+    const shareId = workoutData.shareId || `share_${Math.random().toString(36).substring(2, 15)}`;
 
     const workout = await this.prisma.workout.create({
       data: {
         ...workoutData,
+        shareId,
         sections: {
           create: sections.map((section: any) => ({
             ...section,

@@ -1,9 +1,8 @@
 import { Controller, Get, Query, UseGuards, Request, Param } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
-import { ClerkAuthGuard } from '../auth/clerk.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('analytics')
-@UseGuards(ClerkAuthGuard)
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
@@ -21,6 +20,7 @@ export class AnalyticsController {
   }
 
   @Get('strength')
+  @UseGuards(JwtAuthGuard)
   async getStrengthProgress(
     @Request() req,
     @Query('exercise') exercise?: string,
@@ -29,11 +29,13 @@ export class AnalyticsController {
   }
 
   @Get('engine')
+  @UseGuards(JwtAuthGuard)
   async getEngineProgress(@Request() req) {
     return this.analyticsService.getEngineProgress(req.user.id);
   }
 
   @Get('weekly')
+  @UseGuards(JwtAuthGuard)
   async getWeeklySummary(
     @Request() req,
     @Query('weekStart') weekStart?: string,
@@ -45,6 +47,7 @@ export class AnalyticsController {
   }
 
   @Get('monthly')
+  @UseGuards(JwtAuthGuard)
   async getMonthlySummary(
     @Request() req,
     @Query('month') month?: string,
@@ -58,6 +61,7 @@ export class AnalyticsController {
   }
 
   @Get('trends')
+  @UseGuards(JwtAuthGuard)
   async getTrends(
     @Request() req,
     @Query('days') days?: string,
@@ -67,6 +71,7 @@ export class AnalyticsController {
 
   // Coach endpoints to view client analytics
   @Get('clients/:clientId/stats')
+  @UseGuards(JwtAuthGuard)
   async getClientStats(
     @Request() req,
     @Param('clientId') clientId: string,
@@ -81,11 +86,25 @@ export class AnalyticsController {
   }
 
   @Get('clients/:clientId/trends')
+  @UseGuards(JwtAuthGuard)
   async getClientTrends(
     @Request() req,
     @Param('clientId') clientId: string,
     @Query('days') days?: string,
   ) {
     return this.analyticsService.getTrends(clientId, days ? parseInt(days) : 30);
+  }
+
+  // Leaderboard endpoints (public, no auth required)
+  @Get('leaderboard')
+  async getLeaderboard(
+    @Query('metric') metric?: 'sessions' | 'hours' | 'rpe' | 'streak',
+    @Query('limit') limit?: string,
+  ) {
+    // Public endpoint - no auth required
+    return this.analyticsService.getLeaderboard(
+      metric || 'sessions',
+      limit ? parseInt(limit) : 50,
+    );
   }
 }
