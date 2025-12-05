@@ -505,8 +505,8 @@ export default function HyroxAIBuilderPage() {
             </div>
             
             {/* Right Side - iPhone Container */}
-            <div className="flex justify-center lg:justify-end">
-              <div className="relative scale-75 origin-right">
+            <div className="flex justify-center">
+              <div className="relative scale-75">
                 {/* iPhone Frame */}
                 <div className="relative bg-zinc-900 rounded-[3rem] p-2 shadow-2xl">
                   {/* Notch */}
