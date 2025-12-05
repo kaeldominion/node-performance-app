@@ -228,7 +228,7 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [isGenerating, isReviewing, error, startTime, phaseStartTime, currentPhase]);
+  }, [isGenerating, isReviewing, error, startTime, phaseStartTime, currentPhase, soundsPlayed]);
 
   // Error state
   useEffect(() => {
