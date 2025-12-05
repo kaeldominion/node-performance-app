@@ -28,7 +28,7 @@ export function useAuth(): AuthContextType {
   
   // Debug: Log user status
   useEffect(() => {
-    console.log('👤 Clerk User Status:', {
+    console.log('Clerk User Status:', {
       isLoaded: clerkLoaded,
       hasUser: !!clerkUser,
       userId: clerkUser?.id,
@@ -41,30 +41,30 @@ export function useAuth(): AuthContextType {
   // Update API token when Clerk user changes
   useEffect(() => {
     const updateToken = async () => {
-      console.log('🔄 Token update effect triggered', { 
+      console.log('Token update effect triggered', { 
         hasClerkUser: !!clerkUser, 
         clerkUserId: clerkUser?.id,
         isLoaded: clerkLoaded,
       });
       
       if (!clerkLoaded) {
-        console.log('⏳ Clerk not loaded yet, waiting...');
+        console.log('Clerk not loaded yet, waiting...');
         return;
       }
       
       if (clerkUser) {
         try {
-          console.log('🔍 Attempting to get token from Clerk...', { userId: clerkUser.id });
+          console.log('Attempting to get token from Clerk...', { userId: clerkUser.id });
           // Get token from Clerk - try with and without template
           let token = await getToken();
           
           // If no token, try with template
           if (!token) {
-            console.log('⚠️ No token without template, trying with template...');
+            console.log('No token without template, trying with template...');
             token = await getToken({ template: 'default' }).catch(() => null);
           }
           
-          console.log('📦 Token received from Clerk:', { 
+          console.log('Token received from Clerk:', { 
             hasToken: !!token, 
             tokenLength: token?.length,
             tokenPreview: token ? token.substring(0, 30) + '...' : null,
@@ -72,13 +72,13 @@ export function useAuth(): AuthContextType {
           
           if (token) {
             setApiToken(token);
-            console.log('✅ Token set for API requests');
+            console.log('Token set for API requests');
           } else {
-            console.warn('⚠️ No token received from Clerk (token is null/undefined)');
+            console.warn('No token received from Clerk (token is null/undefined)');
             setApiToken(null);
           }
               } catch (error) {
-                console.error('❌ Failed to get Clerk token:', {
+                console.error('Failed to get Clerk token:', {
                   error,
                   errorMessage: error instanceof Error ? error.message : String(error),
                   errorStack: error instanceof Error ? error.stack : undefined,
@@ -86,7 +86,7 @@ export function useAuth(): AuthContextType {
                 setApiToken(null);
               }
       } else {
-        console.log('👤 No Clerk user, clearing token');
+        console.log('No Clerk user, clearing token');
         setApiToken(null);
       }
     };
@@ -121,30 +121,58 @@ export function useAuth(): AuthContextType {
       setLoading(true);
       
       // Ensure token is retrieved and set before making API call
-      console.log('🔄 fetchUserData: Ensuring token is available...');
+      console.log('fetchUserData: Ensuring token is available...');
       try {
         // Get token directly from Clerk
         const token = await getToken();
         if (token) {
-          console.log('✅ Got token in fetchUserData, setting it...');
+          console.log('Got token in fetchUserData, setting it...');
           setApiToken(token);
           // Small delay to ensure token is set in the interceptor
           await new Promise(resolve => setTimeout(resolve, 50));
         } else {
-          console.error('❌ No token available from Clerk in fetchUserData');
+          console.error('No token available from Clerk in fetchUserData');
         }
       } catch (error) {
-        console.error('❌ Failed to get token in fetchUserData:', error);
+        console.error('Failed to get token in fetchUserData:', error);
       }
       
       try {
-        console.log('📞 Making API call to /me...');
+        console.log('Making API call to /me...');
         const userData = await userApi.getMe();
-        console.log('✅ API call successful, user data received');
+        console.log('API call successful, user data received:', { userId: userData?.id, email: userData?.email });
         setDbUser(userData);
-      } catch (error) {
-        console.error('❌ Failed to fetch user data:', error);
+      } catch (error: any) {
+        console.error('Failed to fetch user data:', {
+          error,
+          errorMessage: error?.message,
+          errorResponse: error?.response?.data,
+          status: error?.response?.status,
+        });
+        
+        // If it's a 401, the token might not be valid yet - wait and retry once
+        if (error?.response?.status === 401) {
+          console.log('Got 401, waiting 500ms and retrying...');
+          await new Promise(resolve => setTimeout(resolve, 500));
+          try {
+            // Try to get token again
+            const retryToken = await getToken();
+            if (retryToken) {
+              setApiToken(retryToken);
+              await new Promise(resolve => setTimeout(resolve, 100));
+              const userData = await userApi.getMe();
+              console.log('Retry successful, user data received');
+              setDbUser(userData);
+              setLoading(false);
+              return;
+            }
+          } catch (retryError) {
+            console.error('Retry also failed:', retryError);
+          }
+        }
+        
         // Fallback to Clerk user data if API fails
+        console.log('Using fallback Clerk user data');
         setDbUser({
           id: clerkUser.id,
           email: clerkUser.emailAddresses[0]?.emailAddress || '',
