@@ -55,7 +55,7 @@ export default function SubscriptionPage() {
               FREE Plan
             </div>
             <p className="text-muted-text text-sm">
-              Your current subscription tier
+              Your current subscription tier. Upgrade options coming soon.
             </p>
           </div>
         </div>
