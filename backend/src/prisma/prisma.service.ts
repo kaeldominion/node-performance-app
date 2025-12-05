@@ -91,48 +91,39 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       // Directly update the _prisma_migrations table
       if (action === 'applied') {
         // First, ensure the migration changes are actually applied
-        // Check if INTERVAL enum exists
-        const enumCheck = await this.$queryRaw`
-          SELECT 1 FROM pg_enum 
-          WHERE enumtypid = 'SectionType'::regtype 
-          AND enumlabel = 'INTERVAL'
-        `;
-        
-        if (!enumCheck || (Array.isArray(enumCheck) && enumCheck.length === 0)) {
-          // Add INTERVAL enum value
-          await this.$executeRaw`
-            DO $$ 
-            BEGIN
-              IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumtypid = 'SectionType'::regtype AND enumlabel = 'INTERVAL') THEN
-                ALTER TYPE "SectionType" ADD VALUE 'INTERVAL';
-              END IF;
-            END $$;
-          `;
-        }
+        // Add INTERVAL enum value if it doesn't exist
+        await this.$executeRawUnsafe(`
+          DO $$ 
+          BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumtypid = 'SectionType'::regtype AND enumlabel = 'INTERVAL') THEN
+              ALTER TYPE "SectionType" ADD VALUE 'INTERVAL';
+            END IF;
+          END $$;
+        `);
         
         // Ensure interval fields exist
-        await this.$executeRaw`
+        await this.$executeRawUnsafe(`
           ALTER TABLE "workout_sections" 
           ADD COLUMN IF NOT EXISTS "intervalWorkSec" INTEGER,
           ADD COLUMN IF NOT EXISTS "intervalRestSec" INTEGER,
           ADD COLUMN IF NOT EXISTS "intervalRounds" INTEGER;
-        `;
+        `);
         
         // Mark migration as applied
-        await this.$executeRaw`
+        await this.$executeRawUnsafe(`
           UPDATE "_prisma_migrations" 
           SET finished_at = NOW(), 
               applied_steps_count = 1
-          WHERE migration_name = ${migrationName} 
+          WHERE migration_name = $1 
             AND finished_at IS NULL;
-        `;
+        `, migrationName);
       } else {
         // Mark as rolled back
-        await this.$executeRaw`
+        await this.$executeRawUnsafe(`
           UPDATE "_prisma_migrations" 
           SET rolled_back_at = NOW()
-          WHERE migration_name = ${migrationName};
-        `;
+          WHERE migration_name = $1;
+        `, migrationName);
       }
       
       return { message: `Migration ${migrationName} marked as ${action}` };
