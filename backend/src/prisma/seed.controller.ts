@@ -32,5 +32,10 @@ export class SeedController {
       sample,
     };
   }
+
+  @Post('migrate')
+  async runMigrations() {
+    return this.prisma.runMigrations();
+  }
 }
 

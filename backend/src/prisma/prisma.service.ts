@@ -62,5 +62,28 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       };
     }
   }
+
+  async runMigrations() {
+    try {
+      const { execSync } = require('child_process');
+      
+      execSync('npx prisma migrate deploy', { 
+        stdio: 'pipe',
+        env: process.env,
+        cwd: process.cwd()
+      });
+      
+      return { 
+        message: 'Migrations applied successfully',
+        success: true
+      };
+    } catch (error: any) {
+      return { 
+        error: true, 
+        message: `Migration failed: ${error.message}`,
+        details: error.stdout?.toString() || error.stderr?.toString() || error.stack || ''
+      };
+    }
+  }
 }
 
