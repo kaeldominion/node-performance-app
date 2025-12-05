@@ -49,9 +49,9 @@ fi
 echo "🔨 Generating Prisma client..."
 npx prisma generate
 
-# Run migrations
-echo "🗄️  Running database migrations..."
-npx prisma migrate deploy
+# Sync database schema (use db push for local dev - faster and simpler)
+echo "🗄️  Syncing database schema..."
+npx prisma db push --accept-data-loss
 
 # Seed database (optional - uncomment if you want to seed)
 # echo "🌱 Seeding database..."
