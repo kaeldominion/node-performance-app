@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
-import { ArrowLeft, CreditCard, Sparkles } from 'lucide-react';
+import { ArrowLeft, Sparkles } from 'lucide-react';
 
 export default function SubscriptionPage() {
   const { user, loading: authLoading } = useAuth();
@@ -16,7 +16,7 @@ export default function SubscriptionPage() {
       router.push('/auth/login');
       return;
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, router]);
 
   if (authLoading) {
     return (
@@ -55,7 +55,7 @@ export default function SubscriptionPage() {
               FREE Plan
             </div>
             <p className="text-muted-text text-sm">
-              Your current subscription tier. Upgrade options coming soon.
+              Your current subscription tier
             </p>
           </div>
         </div>
@@ -63,4 +63,3 @@ export default function SubscriptionPage() {
     </div>
   );
 }
-
