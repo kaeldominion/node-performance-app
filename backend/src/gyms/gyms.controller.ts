@@ -63,6 +63,12 @@ export class GymsController {
     return this.gymsService.createClass(profile.id, createDto);
   }
 
+  @Post('classes/bulk')
+  async bulkCreateClasses(@Request() req, @Body() body: { classes: Array<CreateGymClassDto> }) {
+    const profile = await this.gymsService.getProfile(req.user.id);
+    return this.gymsService.bulkCreateClasses(profile.id, body.classes);
+  }
+
   @Get('classes')
   async getClasses(
     @Request() req,

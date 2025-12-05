@@ -39,6 +39,7 @@ export default function WorkoutBuilderPage() {
     archetype: '' as string | undefined,
     sectionPreferences: ['WARMUP', 'EMOM', 'AMRAP', 'FINISHER', 'COOLDOWN'],
     workoutType: 'single' as 'single' | 'week' | 'month' | 'fourDay', // single, 7-day, 4-day, 4-week
+    cycle: 'BASE' as 'BASE' | 'LOAD' | 'INTENSIFY' | 'DELOAD' | undefined, // Cycle for multi-day programs
   });
 
   const handleEquipmentToggle = (equipment: string) => {
@@ -219,6 +220,34 @@ export default function WorkoutBuilderPage() {
                 {formData.workoutType === 'month' && 'BASE → LOAD → INTENSIFY → DELOAD. Full periodization cycle.'}
               </p>
             </div>
+
+            {/* Cycle Selection (for multi-day programs) */}
+            {formData.workoutType !== 'single' && (
+              <div>
+                <label className="block text-sm font-medium mb-2">Training Cycle</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { value: 'BASE', desc: 'Establish baseline' },
+                    { value: 'LOAD', desc: 'Increase volume' },
+                    { value: 'INTENSIFY', desc: 'Peak intensity' },
+                    { value: 'DELOAD', desc: 'Recovery week' },
+                  ].map((cycle) => (
+                    <button
+                      key={cycle.value}
+                      onClick={() => setFormData({ ...formData, cycle: cycle.value as any })}
+                      className={`px-4 py-3 rounded border transition-colors text-left ${
+                        formData.cycle === cycle.value
+                          ? 'bg-node-volt text-dark border-node-volt'
+                          : 'bg-panel thin-border text-text-white hover:border-node-volt'
+                      }`}
+                    >
+                      <div className="font-bold">{cycle.value}</div>
+                      <div className="text-xs opacity-80">{cycle.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Archetype */}
             <div>

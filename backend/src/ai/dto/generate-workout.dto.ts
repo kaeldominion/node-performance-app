@@ -37,5 +37,9 @@ export class GenerateWorkoutDto {
   @IsOptional()
   @IsString()
   workoutType?: 'single' | 'week' | 'month' | 'fourDay';
+
+  @IsOptional()
+  @IsEnum(['BASE', 'LOAD', 'INTENSIFY', 'DELOAD'])
+  cycle?: 'BASE' | 'LOAD' | 'INTENSIFY' | 'DELOAD';
 }
 

@@ -130,6 +130,7 @@ export const aiApi = {
     archetype?: string;
     sectionPreferences?: string[];
     workoutType?: 'single' | 'week' | 'month' | 'fourDay';
+    cycle?: 'BASE' | 'LOAD' | 'INTENSIFY' | 'DELOAD';
   }) => {
     const response = await api.post('/ai/generate-workout', data);
     return response.data;

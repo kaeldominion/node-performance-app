@@ -305,6 +305,41 @@ export class GymsService {
     });
   }
 
+  async bulkCreateClasses(gymId: string, classes: Array<{
+    name: string;
+    scheduledAt: string;
+    workoutId?: string;
+    maxCapacity?: number;
+    duration?: number;
+  }>) {
+    const gym = await this.prisma.gymProfile.findUnique({
+      where: { id: gymId },
+    });
+
+    if (!gym) {
+      throw new NotFoundException('Gym not found');
+    }
+
+    // Create all classes in a transaction
+    return this.prisma.$transaction(
+      classes.map((classData) =>
+        this.prisma.gymClass.create({
+          data: {
+            gymId,
+            name: classData.name,
+            workoutId: classData.workoutId,
+            scheduledAt: new Date(classData.scheduledAt),
+            duration: classData.duration,
+            capacity: classData.maxCapacity,
+          },
+          include: {
+            workout: true,
+          },
+        })
+      )
+    );
+  }
+
   // Attendance Management
   async getClassAttendance(classId: string) {
     return this.prisma.gymClassAttendance.findMany({

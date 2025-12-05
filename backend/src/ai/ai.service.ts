@@ -19,7 +19,8 @@ export class AiService {
     availableMinutes: number;
     sectionPreferences?: string[];
     archetype?: string;
-    workoutType?: 'single' | 'week' | 'month'; // New: single workout, 1-week program, 4-week program
+    workoutType?: 'single' | 'week' | 'month' | 'fourDay';
+    cycle?: 'BASE' | 'LOAD' | 'INTENSIFY' | 'DELOAD';
   }) {
     // Pass archetype to the prompt
     const archetypeParam = params.archetype || undefined;
@@ -314,7 +315,7 @@ REVL/HYROX REP SCHEME PATTERNS:
 Use these patterns and exercise names when generating workouts.`;
   }
 
-  private getWorkoutTypeGuidance(workoutType: string): string {
+  private getWorkoutTypeGuidance(workoutType: string, cycle: string = 'BASE'): string {
     switch (workoutType) {
       case 'fourDay':
         return `Generate a 4-DAY PROGRAM (4 workouts). Return JSON with this structure:
@@ -369,6 +370,21 @@ Progressive overload: Week 1 < Week 2 < Week 3 > Week 4.`;
       
       default:
         return 'Generate a SINGLE WORKOUT (one-off session).';
+    }
+  }
+
+  private getCycleGuidance(cycle: string): string {
+    switch (cycle) {
+      case 'BASE':
+        return 'BASE CYCLE: Establish baseline with moderate intensity and volume. Focus on movement quality and building foundation.';
+      case 'LOAD':
+        return 'LOAD CYCLE: Increase volume and intensity progressively. Challenge capacity while maintaining form.';
+      case 'INTENSIFY':
+        return 'INTENSIFY CYCLE: Peak intensity with lower volume. Maximum effort, high intensity work.';
+      case 'DELOAD':
+        return 'DELOAD CYCLE: Recovery week with lower intensity. Focus on mobility, light movement, and active recovery.';
+      default:
+        return '';
     }
   }
 }
