@@ -152,7 +152,7 @@ export default function WorkoutBuilderPage() {
   const handleSelectAll = () => {
     setFormData((prev) => ({
       ...prev,
-      equipment: EQUIPMENT_OPTIONS.map(eq => eq.value),
+      equipment: EQUIPMENT_OPTIONS,
     }));
   };
 
@@ -479,12 +479,6 @@ export default function WorkoutBuilderPage() {
                           : 'bg-panel thin-border text-text-white hover:border-node-volt'
                       }`}
                     >
-                      <Icon 
-                        name={cycle.icon} 
-                        size={18} 
-                        color={formData.cycle === cycle.value ? 'var(--dark)' : 'var(--muted-text)'} 
-                        className="opacity-70 flex-shrink-0"
-                      />
                       <div className="flex-1">
                         <div className="font-bold">{cycle.value}</div>
                         <div className="text-xs opacity-80">{cycle.desc}</div>

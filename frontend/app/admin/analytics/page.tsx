@@ -344,7 +344,7 @@ export default function AdminAnalyticsPage() {
         </div>
 
         {/* Level Up Modal Preview */}
-        {showLevelUpPreview && previewStats && (
+        {showLevelUpPreview && (
           <LevelUpModal
             level={previewLevel}
             levelName={`Level ${previewLevel}`}
