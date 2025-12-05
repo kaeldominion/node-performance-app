@@ -161,7 +161,30 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
         setProgress(15 + phaseProgress * 45); // 15% to 60%
       }
       // Phase 3: Reviewing (60% → 85%, ~12 seconds)
-      else if (isReviewing && currentPhase !== 'reviewing') {
+      // Only transition to reviewing if we've completed generating phase
+      else if (isReviewing && currentPhase === 'generating') {
+        // First, mark generating as complete
+        setSteps((prev) =>
+          prev.map((step) => {
+            if (step.id === 'generating') return { ...step, status: 'complete' as const };
+            return step;
+          })
+        );
+        // Then transition to reviewing
+        setTimeout(() => {
+          setSteps((prev) =>
+            prev.map((step) => {
+              if (step.id === 'reviewing') return { ...step, status: 'active' as const };
+              return step;
+            })
+          );
+          setCurrentPhase('reviewing');
+          setPhaseStartTime(Date.now());
+          setCurrentStepProgress(0);
+          playSound('step');
+        }, 300); // Small delay to show generating as complete first
+      } else if (isReviewing && currentPhase !== 'reviewing' && currentPhase !== 'generating') {
+        // If we're reviewing but haven't been through generating, mark generating as complete first
         setSteps((prev) =>
           prev.map((step) => {
             if (step.id === 'generating') return { ...step, status: 'complete' as const };
