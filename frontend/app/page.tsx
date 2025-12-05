@@ -4,13 +4,13 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
-import { workoutsApi, gamificationApi } from '@/lib/api';
+import { workoutsApi, gamificationApi, analyticsApi } from '@/lib/api';
 import { Logo } from '@/components/Logo';
 import { Icons } from '@/lib/iconMapping';
 import { GenerationTerminal } from '@/components/workout/GenerationTerminal';
 import { NetworkActivityFeed } from '@/components/landing/NetworkActivityFeed';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Moon, Sun, Calendar, BarChart3, Monitor } from 'lucide-react';
+import { Moon, Sun, Calendar, BarChart3, Monitor, ArrowUp, ArrowDown } from 'lucide-react';
 
 export default function LandingPage() {
   const { isSignedIn, isLoaded: clerkLoaded } = useUser();
@@ -22,6 +22,8 @@ export default function LandingPage() {
   const [scrollY, setScrollY] = useState(0);
   const [isVisible, setIsVisible] = useState<Record<string, boolean>>({ hero: true });
   const [xpStats, setXpStats] = useState<any>(null);
+  const [percentiles, setPercentiles] = useState<any>(null);
+  const [monthTrends, setMonthTrends] = useState<any>(null);
   const parallaxRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const platformRef = useRef<HTMLDivElement>(null);
@@ -65,7 +67,7 @@ export default function LandingPage() {
       return;
     }
 
-    // Load XP stats if signed in
+    // Load XP stats and percentiles if signed in
     if (isSignedIn) {
       const loadXpStats = async () => {
         try {
@@ -76,6 +78,26 @@ export default function LandingPage() {
         }
       };
       loadXpStats();
+
+      const loadPercentiles = async () => {
+        try {
+          const percentilesData = await analyticsApi.getPercentiles();
+          setPercentiles(percentilesData);
+        } catch (err) {
+          console.error('Failed to load percentiles:', err);
+        }
+      };
+      loadPercentiles();
+
+      const loadMonthTrends = async () => {
+        try {
+          const trendsData = await analyticsApi.getMonthTrends();
+          setMonthTrends(trendsData);
+        } catch (err) {
+          console.error('Failed to load month trends:', err);
+        }
+      };
+      loadMonthTrends();
     }
 
     // Use Clerk's isSignedIn as source of truth - redirect if signed in
@@ -239,9 +261,12 @@ export default function LandingPage() {
             <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-heading font-bold leading-[0.95] tracking-tight drop-shadow-2xl mb-6">
               BUILDING INFRASTRUCTURE FOR HUMAN <span className="text-node-volt animate-glow">OPTIMIZATION.</span>
             </h1>
-            <p className="text-text-white text-base sm:text-lg max-w-lg border-l-2 border-node-volt/60 pl-[30px] font-body leading-[2.2] mb-10">
-              A brutalist training stack for strength, engine, and recovery. Cinematic player, deep analytics, and AI-built sessions.
-            </p>
+            <div className="flex items-start gap-6 mb-10">
+              <div className="w-[2px] self-stretch bg-node-volt flex-shrink-0"></div>
+              <p className="text-text-white text-base sm:text-lg max-w-lg font-body leading-[2.2]">
+                A brutalist training stack for strength, engine, and recovery. Cinematic player, deep analytics, and AI-built sessions.
+              </p>
+            </div>
             <div className="flex flex-col sm:flex-row gap-4">
             <Link
               href="/auth/register"
@@ -521,16 +546,76 @@ export default function LandingPage() {
             </p>
             <div className="grid sm:grid-cols-2 gap-4">
               {[
-                { label: 'Completion', value: '92%' },
-                { label: 'Avg RPE', value: '7.8' },
-                { label: 'Sessions/Wk', value: '4.2' },
-                { label: 'PRs This Cycle', value: '12' },
-              ].map((stat) => (
-                <div key={stat.label} className="p-4 thin-border bg-panel/80">
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-text font-heading">{stat.label}</p>
-                  <p className="text-2xl font-heading font-bold text-text-white">{stat.value}</p>
-                </div>
-              ))}
+                { 
+                  label: 'Completion', 
+                  value: '92%',
+                  percentileKey: 'completionRate',
+                  trendKey: 'completionRate',
+                  demoPercentile: 5,
+                  demoTrend: 12,
+                },
+                { 
+                  label: 'Avg RPE', 
+                  value: '7.8',
+                  percentileKey: 'avgRPE',
+                  trendKey: 'avgRPE',
+                  demoPercentile: 12,
+                  demoTrend: -5,
+                },
+                { 
+                  label: 'Sessions/Wk', 
+                  value: '4.2',
+                  percentileKey: 'sessionsPerWeek',
+                  trendKey: 'sessionsPerWeek',
+                  demoPercentile: 8,
+                  demoTrend: 18,
+                },
+                { 
+                  label: 'PRs This Cycle', 
+                  value: '12',
+                  percentileKey: 'prCount',
+                  trendKey: 'prCount',
+                  demoPercentile: 15,
+                  demoTrend: 25,
+                },
+              ].map((stat) => {
+                const percentile = percentiles?.[stat.percentileKey] ?? stat.demoPercentile;
+                const trend = monthTrends?.[stat.trendKey] ?? stat.demoTrend;
+                const isPositive = trend !== null && trend > 0;
+                const isNegative = trend !== null && trend < 0;
+                
+                return (
+                  <div key={stat.label} className="p-4 thin-border bg-panel/80">
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-text font-heading">{stat.label}</p>
+                    <p className="text-2xl font-heading font-bold text-text-white mb-2">{stat.value}</p>
+                    {percentile !== null && (
+                      <p className="text-sm font-heading font-bold text-node-volt mb-2">
+                        Top {percentile}% of NØDE NETWORK
+                      </p>
+                    )}
+                    {trend !== null && (
+                      <div className="flex items-center gap-1.5 text-sm font-heading font-bold">
+                        {isPositive && (
+                          <>
+                            <ArrowUp size={14} className="text-node-volt" />
+                            <span className="text-node-volt">+{Math.abs(trend)}%</span>
+                          </>
+                        )}
+                        {isNegative && (
+                          <>
+                            <ArrowDown size={14} className="text-node-volt" />
+                            <span className="text-node-volt">{trend}%</span>
+                          </>
+                        )}
+                        {!isPositive && !isNegative && trend === 0 && (
+                          <span className="text-muted-text">No change</span>
+                        )}
+                        <span className="text-muted-text text-xs ml-1">vs last month</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
           <div 
