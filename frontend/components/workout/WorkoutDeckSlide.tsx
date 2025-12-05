@@ -199,8 +199,13 @@ export function WorkoutDeckSlide({
                   {block.description && (
                     <p className="text-muted-text text-xl mb-4">{block.description}</p>
                   )}
-                  {block.repScheme && (
+                  {block.repScheme && !shouldHideRepScheme(block) && (
                     <div className="text-2xl text-node-volt font-bold mb-4">{block.repScheme}</div>
+                  )}
+                  {isErgMachine(block.exerciseName) && shouldHideRepScheme(block) && (
+                    <div className="text-sm text-muted-text mb-4 italic">
+                      Choose your tier below for distance/calories
+                    </div>
                   )}
                   {block.tempo && (
                     <div className="text-lg text-muted-text mb-4">Tempo: <span className="text-node-volt font-semibold">{block.tempo}</span></div>
