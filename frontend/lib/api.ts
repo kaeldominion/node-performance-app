@@ -12,14 +12,14 @@ const api = axios.create({
 let currentToken: string | null = null;
 
 export const setApiToken = (token: string | null) => {
-  console.log('🔧 setApiToken called:', { 
+  console.log('setApiToken called:', { 
     hasToken: !!token, 
     tokenLength: token?.length,
     tokenPreview: token ? token.substring(0, 30) + '...' : null,
     currentTokenBefore: currentToken ? currentToken.substring(0, 20) + '...' : null,
   });
   currentToken = token;
-  console.log('✅ currentToken updated:', { 
+  console.log('currentToken updated:', { 
     hasToken: !!currentToken,
     tokenLength: currentToken?.length,
   });
@@ -34,7 +34,7 @@ api.interceptors.request.use((config) => {
       const parts = currentToken.split('.');
       if (parts.length === 3) {
         const payload = JSON.parse(atob(parts[1]));
-        console.log('🔑 Sending request with token:', {
+        console.log('Sending request with token:', {
           url: config.url,
           method: config.method,
           tokenPreview: currentToken.substring(0, 30) + '...',
@@ -60,13 +60,27 @@ api.interceptors.request.use((config) => {
       });
     }
   } else {
-    console.error('❌ NO TOKEN AVAILABLE FOR REQUEST:', {
-      url: config.url,
-      method: config.method,
-      currentToken: currentToken,
-      tokenIsNull: currentToken === null,
-      tokenIsUndefined: currentToken === undefined,
-    });
+    // Check if this is a public endpoint that doesn't require authentication
+    const publicEndpoints = [
+      '/workouts/recommended',
+      '/workouts/share/',
+      '/exercises',
+    ];
+    
+    const isPublicEndpoint = publicEndpoints.some(endpoint => 
+      config.url?.includes(endpoint)
+    );
+    
+    if (!isPublicEndpoint) {
+      console.error('NO TOKEN AVAILABLE FOR REQUEST:', {
+        url: config.url,
+        method: config.method,
+        currentToken: currentToken,
+        tokenIsNull: currentToken === null,
+        tokenIsUndefined: currentToken === undefined,
+      });
+    }
+    // For public endpoints, continue without token
   }
   return config;
 });
@@ -76,7 +90,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     // Log error properties individually to avoid serialization issues
-    console.error('❌ API call failed');
+    console.error('API call failed');
     console.error('Error type:', typeof error);
     console.error('Error constructor:', error?.constructor?.name);
     console.error('Error message:', error?.message);
@@ -100,7 +114,7 @@ api.interceptors.response.use(
     // Also log in a more readable format
     if (error?.response) {
       // Server responded with error
-      console.error('❌ Server Error Response:', {
+      console.error('Server Error Response:', {
         status: error.response.status,
         statusText: error.response.statusText,
         data: error.response.data,
@@ -110,18 +124,18 @@ api.interceptors.response.use(
       });
       // Log the actual error message from server
       if (error.response.data?.message) {
-        console.error('📋 Server error message:', error.response.data.message);
+        console.error('Server error message:', error.response.data.message);
       }
     } else if (error?.request) {
       // Request made but no response (network error)
-      console.error('❌ Network Error - No response from server:', {
+      console.error('Network Error - No response from server:', {
         url: error.config?.url,
         method: error.config?.method,
         message: error.message,
       });
     } else {
       // Error setting up request
-      console.error('❌ Request Setup Error:', {
+      console.error('Request Setup Error:', {
         message: error?.message,
         error: String(error),
       });
@@ -161,8 +175,12 @@ export const userApi = {
     const response = await api.put('/me/profile', data);
     return response.data;
   },
-  getSchedule: async () => {
-    const response = await api.get('/me/programs/schedule');
+  getSchedule: async (startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    const queryString = params.toString();
+    const response = await api.get(`/me/programs/schedule${queryString ? `?${queryString}` : ''}`);
     return response.data;
   },
   startProgram: async (data: { programId: string; startDate: string }) => {
@@ -179,6 +197,18 @@ export const programsApi = {
   },
   getBySlug: async (slug: string) => {
     const response = await api.get(`/programs/${slug}`);
+    return response.data;
+  },
+  createWithWorkouts: async (data: {
+    name: string;
+    description?: string;
+    level?: string;
+    goal?: string;
+    durationWeeks?: number;
+    cycle?: string;
+    workouts: any[];
+  }) => {
+    const response = await api.post('/programs/create-with-workouts', data);
     return response.data;
   },
 };
