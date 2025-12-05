@@ -38,12 +38,14 @@ export class SeedController {
     return this.prisma.runMigrations();
   }
 
-  @Post('migrate/resolve/:migrationName')
+  @Post('migrate/resolve')
   async resolveMigration(
-    @Param('migrationName') migrationName: string,
-    @Body() body: { action?: 'applied' | 'rolled_back' }
+    @Body() body: { migrationName: string; action?: 'applied' | 'rolled_back' }
   ) {
-    const action = body.action || 'applied';
+    const { migrationName, action = 'applied' } = body;
+    if (!migrationName) {
+      return { error: true, message: 'migrationName is required in request body' };
+    }
     return this.prisma.resolveMigration(migrationName, action);
   }
 
