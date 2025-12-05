@@ -33,9 +33,17 @@ export function useAuth(): AuthContextType {
     const updateToken = async () => {
       if (clerkUser) {
         try {
+          // Get token from Clerk (no template needed)
           const token = await getToken();
-          setApiToken(token);
+          if (token) {
+            setApiToken(token);
+            console.log('✅ Token set for API requests');
+          } else {
+            console.warn('⚠️ No token received from Clerk');
+            setApiToken(null);
+          }
         } catch (error) {
+          console.error('❌ Failed to get Clerk token:', error);
           setApiToken(null);
         }
       } else {

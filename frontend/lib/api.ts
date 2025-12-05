@@ -27,7 +27,16 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('API call failed:', error.response?.data || error.message);
+    // Better error logging
+    const errorDetails = {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      url: error.config?.url,
+      method: error.config?.method,
+    };
+    console.error('API call failed:', errorDetails);
     return Promise.reject(error);
   },
 );
