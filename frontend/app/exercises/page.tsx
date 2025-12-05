@@ -49,10 +49,13 @@ export default function ExercisesPage() {
     try {
       setLoading(true);
       const data = await adminApi.getExercises();
-      setExercises(data);
-      setFilteredExercises(data);
+      console.log('Loaded exercises:', data?.length || 0);
+      setExercises(data || []);
+      setFilteredExercises(data || []);
     } catch (error) {
       console.error('Failed to load exercises:', error);
+      setExercises([]);
+      setFilteredExercises([]);
     } finally {
       setLoading(false);
     }

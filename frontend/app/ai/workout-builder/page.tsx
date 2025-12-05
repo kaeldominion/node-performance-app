@@ -1,14 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { aiApi, workoutsApi } from '@/lib/api';
 import Navbar from '@/components/Navbar';
+import Link from 'next/link';
 
 const TRAINING_LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'ELITE'];
 const TRAINING_GOALS = ['STRENGTH', 'HYPERTROPHY', 'HYBRID', 'CONDITIONING', 'FAT_LOSS', 'LONGEVITY'];
-const ARCHETYPES = ['PR1ME', 'FORGE', 'ENGIN3', 'CIRCUIT_X', 'CAPAC1TY', 'FLOWSTATE'];
+const ARCHETYPES = [
+  { code: 'PR1ME', name: 'PR1ME', icon: '💪', description: 'Primary Strength Day' },
+  { code: 'FORGE', name: 'FORGE', icon: '🔥', description: 'Strength Superset Day' },
+  { code: 'ENGIN3', name: 'ENGIN3', icon: '⚡', description: 'Hybrid EMOM Day' },
+  { code: 'CIRCUIT_X', name: 'CIRCUIT X', icon: '💥', description: 'Anaerobic / MetCon Day' },
+  { code: 'CAPAC1TY', name: 'CAPAC1TY', icon: '🌊', description: 'Long Engine Conditioning' },
+  { code: 'FLOWSTATE', name: 'FLOWSTATE', icon: '🧘', description: 'Deload, Movement & Mobility' },
+];
 const EQUIPMENT_OPTIONS = [
   'dumbbells',
   'kettlebell',
@@ -22,6 +30,19 @@ const EQUIPMENT_OPTIONS = [
   'jump rope',
   'sandbag',
   'bodyweight',
+];
+// Machine equipment (excluded from "Select All (No Machines)")
+const MACHINE_EQUIPMENT = [
+  'lat_pulldown_machine',
+  'leg_press',
+  'leg_extension_machine',
+  'leg_curl_machine',
+  'hip_abduction_machine',
+  'hip_adduction_machine',
+  'seated_calf_raise_machine',
+  'standing_calf_machine',
+  'cable_machine',
+  'ghd',
 ];
 
 export default function WorkoutBuilderPage() {
@@ -41,6 +62,33 @@ export default function WorkoutBuilderPage() {
     workoutType: 'single' as 'single' | 'week' | 'month' | 'fourDay', // single, 7-day, 4-day, 4-week
     cycle: 'BASE' as 'BASE' | 'LOAD' | 'INTENSIFY' | 'DELOAD' | undefined, // Cycle for multi-day programs
   });
+  const [showArchetypeInfo, setShowArchetypeInfo] = useState<string | null>(null);
+
+  // Load equipment from cookie on mount
+  useEffect(() => {
+    const savedEquipment = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('node_equipment='))
+      ?.split('=')[1];
+    if (savedEquipment) {
+      try {
+        const equipment = JSON.parse(decodeURIComponent(savedEquipment));
+        if (Array.isArray(equipment) && equipment.length > 0) {
+          setFormData(prev => ({ ...prev, equipment }));
+        }
+      } catch (e) {
+        console.error('Failed to parse saved equipment:', e);
+      }
+    }
+  }, []);
+
+  // Save equipment to cookie whenever it changes
+  useEffect(() => {
+    if (formData.equipment.length > 0) {
+      const cookieValue = encodeURIComponent(JSON.stringify(formData.equipment));
+      document.cookie = `node_equipment=${cookieValue}; path=/; max-age=${365 * 24 * 60 * 60}`; // 1 year
+    }
+  }, [formData.equipment]);
 
   const handleEquipmentToggle = (equipment: string) => {
     setFormData((prev) => ({
@@ -48,6 +96,31 @@ export default function WorkoutBuilderPage() {
       equipment: prev.equipment.includes(equipment)
         ? prev.equipment.filter((e) => e !== equipment)
         : [...prev.equipment, equipment],
+    }));
+  };
+
+  const handleSelectAll = () => {
+    setFormData((prev) => ({
+      ...prev,
+      equipment: [...EQUIPMENT_OPTIONS],
+    }));
+  };
+
+  const handleSelectAllNoMachines = () => {
+    // Select all equipment except machines, but keep ergs (rower, bike, erg)
+    const noMachineOptions = EQUIPMENT_OPTIONS.filter(
+      (eq) => !MACHINE_EQUIPMENT.some((machine) => eq.toLowerCase().includes(machine.toLowerCase()))
+    );
+    setFormData((prev) => ({
+      ...prev,
+      equipment: noMachineOptions,
+    }));
+  };
+
+  const handleClearEquipment = () => {
+    setFormData((prev) => ({
+      ...prev,
+      equipment: [],
     }));
   };
 
@@ -251,20 +324,56 @@ export default function WorkoutBuilderPage() {
 
             {/* Archetype */}
             <div>
-              <label className="block text-sm font-medium mb-2">NØDE Archetype (Optional)</label>
+              <label className="block text-sm font-medium mb-2">
+                NØDE Archetype (Optional)
+                <Link href="/theory" className="ml-2 text-xs text-node-volt hover:underline">
+                  Learn more →
+                </Link>
+              </label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
                 {ARCHETYPES.map((archetype) => (
-                  <button
-                    key={archetype}
-                    onClick={() => setFormData({ ...formData, archetype: formData.archetype === archetype ? undefined : archetype })}
-                    className={`px-4 py-2 rounded border transition-colors ${
-                      formData.archetype === archetype
-                        ? 'bg-node-volt text-dark border-node-volt'
-                        : 'bg-panel thin-border text-text-white hover:border-node-volt'
-                    }`}
-                  >
-                    {archetype}
-                  </button>
+                  <div key={archetype.code} className="relative">
+                    <button
+                      onClick={() => setFormData({ ...formData, archetype: formData.archetype === archetype.code ? undefined : archetype.code })}
+                      onMouseEnter={() => setShowArchetypeInfo(archetype.code)}
+                      onMouseLeave={() => setShowArchetypeInfo(null)}
+                      className={`w-full px-4 py-2 rounded border transition-colors relative ${
+                        formData.archetype === archetype.code
+                          ? 'bg-node-volt text-dark border-node-volt'
+                          : 'bg-panel thin-border text-text-white hover:border-node-volt'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold">{archetype.name}</span>
+                        <span className="text-lg">{archetype.icon}</span>
+                      </div>
+                    </button>
+                    {showArchetypeInfo === archetype.code && (
+                      <div className="absolute z-50 mt-2 p-4 bg-panel border border-node-volt rounded-lg shadow-xl min-w-[280px] max-w-sm">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-2xl">{archetype.icon}</span>
+                          <div>
+                            <div className="font-bold text-node-volt">{archetype.name}</div>
+                            <div className="text-xs text-muted-text">{archetype.description}</div>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-text mb-3">
+                          {archetype.code === 'PR1ME' && 'Primary strength day focusing on maximal strength and progressive overload.'}
+                          {archetype.code === 'FORGE' && 'Strength superset day for muscular balance and body armor.'}
+                          {archetype.code === 'ENGIN3' && 'Hybrid EMOM day for threshold capacity and aerobic power.'}
+                          {archetype.code === 'CIRCUIT_X' && 'Anaerobic MetCon day for fast conditioning and mixed modal capacity.'}
+                          {archetype.code === 'CAPAC1TY' && 'Long engine conditioning for aerobic base and pacing strategy.'}
+                          {archetype.code === 'FLOWSTATE' && 'Deload, movement & mobility for recovery and longevity.'}
+                        </p>
+                        <Link
+                          href="/theory"
+                          className="text-xs text-node-volt hover:underline flex items-center gap-1"
+                        >
+                          View full details →
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
               <button
@@ -277,7 +386,29 @@ export default function WorkoutBuilderPage() {
 
             {/* Equipment */}
             <div>
-              <label className="block text-sm font-medium mb-2">Available Equipment</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium">Available Equipment</label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSelectAll}
+                    className="text-xs px-3 py-1 bg-panel thin-border rounded hover:border-node-volt text-muted-text hover:text-text-white transition-colors"
+                  >
+                    Select All
+                  </button>
+                  <button
+                    onClick={handleSelectAllNoMachines}
+                    className="text-xs px-3 py-1 bg-panel thin-border rounded hover:border-node-volt text-muted-text hover:text-text-white transition-colors"
+                  >
+                    All (No Machines)
+                  </button>
+                  <button
+                    onClick={handleClearEquipment}
+                    className="text-xs px-3 py-1 bg-panel thin-border rounded hover:border-node-volt text-muted-text hover:text-text-white transition-colors"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {EQUIPMENT_OPTIONS.map((equipment) => (
                   <button
@@ -293,6 +424,11 @@ export default function WorkoutBuilderPage() {
                   </button>
                 ))}
               </div>
+              {formData.equipment.length > 0 && (
+                <p className="text-xs text-muted-text mt-2">
+                  {formData.equipment.length} equipment selected (saved to preferences)
+                </p>
+              )}
             </div>
 
             {/* Generate Button */}
