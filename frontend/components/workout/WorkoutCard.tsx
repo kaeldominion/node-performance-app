@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { workoutsApi, scheduleApi } from '@/lib/api';
 import { Icons } from '@/lib/iconMapping';
+import { copyToClipboard } from '@/lib/clipboard';
 import ArchetypeBadge from './ArchetypeBadge';
 
 // ScheduleWorkoutModal component (inline, same as in workouts page)
@@ -161,11 +162,11 @@ export function WorkoutCard({
     setMenuId(null);
     try {
       const shareData = await workoutsApi.generateShareLink(workout.id);
-      await navigator.clipboard.writeText(shareData.shareUrl);
+      await copyToClipboard(shareData.shareUrl);
       alert('Share link copied to clipboard!');
     } catch (error) {
       console.error('Failed to generate share link:', error);
-      alert('Failed to generate share link. Please try again.');
+      alert('Failed to copy share link. Please try again.');
     }
   };
 

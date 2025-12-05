@@ -7,6 +7,8 @@ import TierBadge from './TierBadge';
 import { Icons } from '@/lib/iconMapping';
 import { getTierDisplayValue, isHeavyLift } from './tierDisplayUtils';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { CollapsibleExerciseCard } from './CollapsibleExerciseCard';
 
 interface WorkoutDeckSlideProps {
   section: any;
@@ -28,6 +30,7 @@ export function WorkoutDeckSlide({
   isLast,
 }: WorkoutDeckSlideProps) {
   const { theme } = useTheme();
+  const { isMobile, isTablet } = useResponsiveLayout();
   const [selectedTier, setSelectedTier] = useState<'SILVER' | 'GOLD' | 'BLACK'>('GOLD');
   const [timerComplete, setTimerComplete] = useState(false);
 
@@ -117,68 +120,27 @@ export function WorkoutDeckSlide({
       case 'WARMUP':
       case 'COOLDOWN':
         return (
-          <div className="text-center space-y-8 max-w-4xl">
+          <div className={`text-center max-w-4xl w-full ${isMobile ? 'space-y-4' : 'space-y-6'}`}>
             {/* Timer for WARMUP/COOLDOWN */}
             {section.durationSec && (
-              <div className="mb-6">
+              <div className={isMobile ? 'mb-3' : 'mb-4'} style={{ flexShrink: 0 }}>
                 <WorkoutTimer
                   type="COUNTDOWN"
                   durationSec={section.durationSec}
                   onComplete={() => setTimerComplete(true)}
                 />
-                <div className="text-sm text-muted-text mt-2">
+                <div className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-text mt-2`}>
                   {section.type === 'WARMUP' ? 'Warmup Duration' : 'Cooldown Duration'}
                 </div>
               </div>
             )}
-            <div className="space-y-6">
+            <div className={`${isMobile ? 'space-y-3' : 'space-y-4'} w-full`}>
               {section.blocks.map((block: any, idx: number) => (
-                <div
+                <CollapsibleExerciseCard
                   key={`${section.id}-block-${block.id || idx}`}
-                  className="bg-panel/50 backdrop-blur-sm thin-border rounded-lg p-8"
-                >
-                  <div className="flex items-center justify-center gap-4 mb-4">
-                    {block.label && (
-                      <span className="text-node-volt font-mono text-3xl font-bold">
-                        {block.label}
-                      </span>
-                    )}
-                    <h3 className="text-4xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                      {block.exerciseName}
-                    </h3>
-                  </div>
-                  {block.exerciseImageUrl && (
-                    <div className="mb-4 rounded-lg overflow-hidden max-w-md mx-auto bg-transparent" style={{ aspectRatio: '1', maxHeight: '200px' }}>
-                      <img
-                        src={block.exerciseImageUrl}
-                        alt={block.exerciseName}
-                        className="w-full h-full object-cover"
-                        style={{
-                          filter: theme === 'dark' 
-                            ? 'brightness(0) saturate(100%) invert(85%) sepia(100%) saturate(10000%) hue-rotate(30deg)' // Volt green (#ccff00) for dark mode
-                            : 'brightness(0) saturate(100%) invert(30%) sepia(100%) saturate(10000%) hue-rotate(200deg)', // Blue (#0066ff) for light mode
-                        }}
-                      />
-                    </div>
-                  )}
-                  {block.exerciseInstructions && (
-                    <div className="mb-4 text-base text-muted-text italic leading-relaxed max-w-2xl mx-auto">
-                      {block.exerciseInstructions}
-                    </div>
-                  )}
-                  {block.description && (
-                    <p className="text-muted-text text-xl mb-4">{block.description}</p>
-                  )}
-                  {block.repScheme && !shouldHideRepScheme(block) && (
-                    <div className="text-2xl text-node-volt font-bold">{block.repScheme}</div>
-                  )}
-                  {shouldUseTierBasedValues(block) && shouldHideRepScheme(block) && (
-                    <div className="text-sm text-muted-text mb-4 italic">
-                      Choose your tier below for distance/calories/reps
-                    </div>
-                  )}
-                  {renderTierPrescriptions(block)}
-                </div>
+                  block={block}
+                  compact={false}
+                />
               ))}
             </div>
           </div>
@@ -186,41 +148,23 @@ export function WorkoutDeckSlide({
 
       case 'EMOM':
         return (
-          <div className="text-center space-y-8 max-w-6xl">
-            <WorkoutTimer
-              type="EMOM"
-              workSec={section.emomWorkSec || 45}
-              restSec={section.emomRestSec || 15}
-              rounds={section.emomRounds || 12}
-              onComplete={() => setTimerComplete(true)}
-            />
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className={`text-center max-w-6xl w-full ${isMobile ? 'space-y-4' : 'space-y-6'}`}>
+            <div style={{ flexShrink: 0 }}>
+              <WorkoutTimer
+                type="EMOM"
+                workSec={section.emomWorkSec || 45}
+                restSec={section.emomRestSec || 15}
+                rounds={section.emomRounds || 12}
+                onComplete={() => setTimerComplete(true)}
+              />
+            </div>
+            <div className={`grid ${isMobile ? 'grid-cols-2 gap-2' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3'}`}>
               {section.blocks.map((block: any, idx: number) => (
-                <div
+                <CollapsibleExerciseCard
                   key={`${section.id}-block-${block.id || idx}`}
-                  className="bg-panel/50 backdrop-blur-sm border-2 thin-border rounded-lg p-6 hover:border-node-volt transition-colors"
-                >
-                  {block.label && (
-                    <div className="text-node-volt font-mono text-2xl font-bold mb-2">
-                      {block.label}
-                    </div>
-                  )}
-                  <h4 className="text-2xl font-bold mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                    {block.exerciseName}
-                  </h4>
-                  {block.description && (
-                    <p className="text-muted-text text-sm mb-3">{block.description}</p>
-                  )}
-                  {block.repScheme && !shouldHideRepScheme(block) && (
-                    <div className="text-xl text-node-volt font-bold mb-3">{block.repScheme}</div>
-                  )}
-                  {isErgMachine(block.exerciseName) && shouldHideRepScheme(block) && (
-                    <div className="text-sm text-muted-text mb-3 italic">
-                      Choose your tier below for distance/calories
-                    </div>
-                  )}
-                  {renderTierPrescriptions(block)}
-                </div>
+                  block={block}
+                  compact={true}
+                />
               ))}
             </div>
           </div>
@@ -229,30 +173,31 @@ export function WorkoutDeckSlide({
       case 'AMRAP':
       case 'CIRCUIT':
       case 'FOR_TIME':
+        const [showInstructions, setShowInstructions] = useState(!isMobile);
         return (
-          <div className="text-center space-y-8 max-w-5xl">
+          <div className={`text-center max-w-5xl w-full ${isMobile ? 'space-y-3' : 'space-y-4'}`}>
             {/* Timer */}
-            <div className="space-y-4">
+            <div className={isMobile ? 'space-y-2' : 'space-y-3'} style={{ flexShrink: 0 }}>
               <WorkoutTimer
                 type="COUNTDOWN"
                 durationSec={section.durationSec || 720}
                 onComplete={() => setTimerComplete(true)}
               />
               {/* Duration and Rounds Display */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-panel/50 backdrop-blur-sm thin-border rounded-lg px-6 py-3">
-                  <div className="text-muted-text text-sm mb-1">Duration</div>
-                  <div className="text-2xl font-bold text-node-volt">
+              <div className={`grid grid-cols-2 ${isMobile ? 'gap-2' : 'gap-3'}`}>
+                <div className={`bg-panel/50 backdrop-blur-sm thin-border rounded-lg ${isMobile ? 'px-3 py-2' : 'px-6 py-3'}`}>
+                  <div className={`text-muted-text ${isMobile ? 'text-xs' : 'text-sm'} mb-1`}>Duration</div>
+                  <div className={`font-bold text-node-volt ${isMobile ? 'text-lg' : 'text-2xl'}`}>
                     {Math.floor((section.durationSec || 720) / 60)}:{(section.durationSec || 720) % 60 < 10 ? '0' : ''}{(section.durationSec || 720) % 60}
                   </div>
                 </div>
                 {section.rounds && (
-                  <div className="bg-panel/50 backdrop-blur-sm thin-border rounded-lg px-6 py-3">
-                    <div className="text-muted-text text-sm mb-1">Rounds</div>
-                    <div className="text-2xl font-bold text-node-volt">
+                  <div className={`bg-panel/50 backdrop-blur-sm thin-border rounded-lg ${isMobile ? 'px-3 py-2' : 'px-6 py-3'}`}>
+                    <div className={`text-muted-text ${isMobile ? 'text-xs' : 'text-sm'} mb-1`}>Rounds</div>
+                    <div className={`font-bold text-node-volt ${isMobile ? 'text-lg' : 'text-2xl'}`}>
                       {section.rounds}
                     </div>
-                    {section.restBetweenRounds && (
+                    {section.restBetweenRounds && !isMobile && (
                       <div className="text-xs text-muted-text mt-1">
                         Rest {section.restBetweenRounds}s between rounds
                       </div>
@@ -262,77 +207,50 @@ export function WorkoutDeckSlide({
               </div>
             </div>
 
-            {/* Instructions Box */}
+            {/* Instructions Box - Collapsible on Mobile */}
             {section.note && (
-              <div className="bg-node-volt/10 border-2 border-node-volt rounded-lg p-6 text-left">
-                <div className="text-node-volt font-bold text-lg mb-2 flex items-center gap-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                  <Icons.PROGRAMS size={20} /> Instructions
-                </div>
-                <p className="text-text-white text-lg leading-relaxed whitespace-pre-line">{section.note}</p>
+              <div className={`bg-node-volt/10 border-2 border-node-volt rounded-lg ${isMobile ? 'p-3' : 'p-4'} text-left`} style={{ flexShrink: 0 }}>
+                <button
+                  onClick={() => setShowInstructions(!showInstructions)}
+                  className="w-full flex items-center justify-between"
+                >
+                  <div className="text-node-volt font-bold flex items-center gap-2" style={{ 
+                    fontFamily: 'var(--font-space-grotesk)',
+                    fontSize: isMobile ? '0.875rem' : '1rem',
+                  }}>
+                    <Icons.PROGRAMS size={isMobile ? 16 : 20} /> Instructions
+                  </div>
+                  {isMobile && (
+                    <Icons.CHEVRON_DOWN 
+                      size={16} 
+                      className={`text-node-volt transition-transform ${showInstructions ? 'rotate-180' : ''}`}
+                    />
+                  )}
+                </button>
+                {(!isMobile || showInstructions) && (
+                  <p className={`text-text-white leading-relaxed whitespace-pre-line mt-2 ${isMobile ? 'text-sm' : 'text-base'}`}>
+                    {section.note}
+                  </p>
+                )}
               </div>
             )}
 
             {/* Exercise Blocks */}
-            <div className="space-y-6">
-              <div className="text-muted-text text-sm mb-4">
-                {section.rounds 
-                  ? `Complete ${section.rounds} rounds. Rest ${section.restBetweenRounds || 30}s between rounds.`
-                  : 'Complete exercises in order, then repeat until time expires'
-                }
-              </div>
-              {section.blocks.map((block: any, idx: number) => (
-                <div
-                  key={`${section.id}-block-${block.id || idx}`}
-                  className="bg-panel/50 backdrop-blur-sm thin-border rounded-lg p-8 border-l-4 border-node-volt"
-                >
-                  <div className="flex items-center justify-center gap-4 mb-4">
-                    {block.label && (
-                      <span className="text-node-volt font-mono text-3xl font-bold">
-                        {block.label}
-                      </span>
-                    )}
-                    <h3 className="text-4xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                      {block.exerciseName}
-                    </h3>
-                  </div>
-                  {block.exerciseImageUrl && (
-                    <div className="mb-4 rounded-lg overflow-hidden max-w-md mx-auto bg-transparent" style={{ aspectRatio: '1', maxHeight: '200px' }}>
-                      <img
-                        src={block.exerciseImageUrl}
-                        alt={block.exerciseName}
-                        className="w-full h-full object-cover"
-                        style={{
-                          filter: theme === 'dark' 
-                            ? 'brightness(0) saturate(100%) invert(85%) sepia(100%) saturate(10000%) hue-rotate(30deg)' // Volt green (#ccff00) for dark mode
-                            : 'brightness(0) saturate(100%) invert(30%) sepia(100%) saturate(10000%) hue-rotate(200deg)', // Blue (#0066ff) for light mode
-                        }}
-                      />
-                    </div>
-                  )}
-                  {block.exerciseInstructions && (
-                    <div className="mb-4 text-base text-muted-text italic leading-relaxed max-w-2xl mx-auto">
-                      {block.exerciseInstructions}
-                    </div>
-                  )}
-                  {block.description && (
-                    <p className="text-muted-text text-xl mb-4">{block.description}</p>
-                  )}
-                  {block.repScheme && !shouldHideRepScheme(block) && (
-                    <div className="text-2xl text-node-volt font-bold mb-4">{block.repScheme}</div>
-                  )}
-                  {shouldUseTierBasedValues(block) && shouldHideRepScheme(block) && (
-                    <div className="text-sm text-muted-text mb-4 italic">
-                      Choose your tier below for distance/calories/reps
-                    </div>
-                  )}
-                  {block.tempo && (
-                    <div className="text-lg text-muted-text mb-4">Tempo: <span className="text-node-volt font-semibold">{block.tempo}</span></div>
-                  )}
-                  {block.loadPercentage && (
-                    <div className="text-lg text-muted-text mb-4">Load: <span className="text-node-volt font-semibold">{block.loadPercentage}</span></div>
-                  )}
-                  {renderTierPrescriptions(block)}
+            <div className={`${isMobile ? 'space-y-3' : 'space-y-4'} w-full`} style={{ flex: '1 1 auto', minHeight: 0, overflow: 'hidden' }}>
+              {!isMobile && (
+                <div className="text-muted-text text-sm mb-2">
+                  {section.rounds 
+                    ? `Complete ${section.rounds} rounds. Rest ${section.restBetweenRounds || 30}s between rounds.`
+                    : 'Complete exercises in order, then repeat until time expires'
+                  }
                 </div>
+              )}
+              {section.blocks.map((block: any, idx: number) => (
+                <CollapsibleExerciseCard
+                  key={`${section.id}-block-${block.id || idx}`}
+                  block={block}
+                  compact={false}
+                />
               ))}
             </div>
           </div>
@@ -340,142 +258,80 @@ export function WorkoutDeckSlide({
 
       case 'INTERVAL':
         return (
-          <div className="text-center space-y-8 max-w-5xl">
-            <WorkoutTimer
-              type="INTERVAL"
-              workSec={section.intervalWorkSec || 20}
-              restSec={section.intervalRestSec || 100}
-              rounds={section.intervalRounds || 8}
-              onComplete={() => setTimerComplete(true)}
-            />
-            <div className="space-y-6">
+          <div className={`text-center max-w-5xl w-full ${isMobile ? 'space-y-3' : 'space-y-4'}`}>
+            <div style={{ flexShrink: 0 }}>
+              <WorkoutTimer
+                type="INTERVAL"
+                workSec={section.intervalWorkSec || 20}
+                restSec={section.intervalRestSec || 100}
+                rounds={section.intervalRounds || 8}
+                onComplete={() => setTimerComplete(true)}
+              />
+            </div>
+            <div className={`${isMobile ? 'space-y-3' : 'space-y-4'} w-full`} style={{ flex: '1 1 auto', minHeight: 0, overflow: 'hidden' }}>
               {section.blocks.map((block: any, idx: number) => (
-                <div
+                <CollapsibleExerciseCard
                   key={`${section.id}-block-${block.id || idx}`}
-                  className="bg-panel/50 backdrop-blur-sm thin-border rounded-lg p-8 border-l-4 border-node-volt"
-                >
-                  <div className="flex items-center justify-center gap-4 mb-4">
-                    <h3 className="text-4xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                      {block.exerciseName}
-                    </h3>
-                  </div>
-                  {block.exerciseImageUrl && (
-                    <div className="mb-4 rounded-lg overflow-hidden max-w-md mx-auto bg-transparent" style={{ aspectRatio: '1', maxHeight: '200px' }}>
-                      <img
-                        src={block.exerciseImageUrl}
-                        alt={block.exerciseName}
-                        className="w-full h-full object-cover"
-                        style={{
-                          filter: theme === 'dark' 
-                            ? 'brightness(0) saturate(100%) invert(85%) sepia(100%) saturate(10000%) hue-rotate(30deg)' // Volt green (#ccff00) for dark mode
-                            : 'brightness(0) saturate(100%) invert(30%) sepia(100%) saturate(10000%) hue-rotate(200deg)', // Blue (#0066ff) for light mode
-                        }}
-                      />
-                    </div>
-                  )}
-                  {block.exerciseInstructions && (
-                    <div className="mb-4 text-base text-muted-text italic leading-relaxed max-w-2xl mx-auto">
-                      {block.exerciseInstructions}
-                    </div>
-                  )}
-                  {block.description && (
-                    <p className="text-muted-text text-xl mb-4">{block.description}</p>
-                  )}
-                  <div className="text-lg text-node-volt font-bold mb-4">
-                    {section.intervalWorkSec}s MAX EFFORT / {section.intervalRestSec}s REST
-                  </div>
-                  {block.repScheme && !shouldHideRepScheme(block) && (
-                    <div className="text-2xl text-node-volt font-bold mb-4">{block.repScheme}</div>
-                  )}
-                  {shouldUseTierBasedValues(block) && shouldHideRepScheme(block) && (
-                    <div className="text-sm text-muted-text mb-4 italic">
-                      Choose your tier below for distance/calories/reps
-                    </div>
-                  )}
-                  {renderTierPrescriptions(block)}
-                </div>
+                  block={{
+                    ...block,
+                    description: block.description || `${section.intervalWorkSec}s MAX EFFORT / ${section.intervalRestSec}s REST`,
+                  }}
+                  compact={false}
+                />
               ))}
             </div>
           </div>
         );
 
       case 'WAVE':
+        const [showWaveInstructions, setShowWaveInstructions] = useState(!isMobile);
         return (
-          <div className="text-center space-y-8 max-w-5xl">
+          <div className={`text-center max-w-5xl w-full ${isMobile ? 'space-y-3' : 'space-y-4'}`}>
             {/* Timer for WAVE */}
             {section.durationSec && (
-              <div className="mb-6">
+              <div className={isMobile ? 'mb-3' : 'mb-4'} style={{ flexShrink: 0 }}>
                 <WorkoutTimer
                   type="COUNTDOWN"
                   durationSec={section.durationSec}
                   onComplete={() => setTimerComplete(true)}
                 />
-                <div className="text-sm text-muted-text mt-2">Wave Duration</div>
+                <div className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-text mt-2`}>Wave Duration</div>
               </div>
             )}
-            {/* Instructions Box */}
+            {/* Instructions Box - Collapsible on Mobile */}
             {section.note && (
-              <div className="bg-node-volt/10 border-2 border-node-volt rounded-lg p-6 text-left mb-6">
-                <div className="text-node-volt font-bold text-lg mb-2 flex items-center gap-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                  <Icons.PROGRAMS size={20} /> Wave Structure
-                </div>
-                <p className="text-text-white text-lg leading-relaxed whitespace-pre-line">{section.note}</p>
+              <div className={`bg-node-volt/10 border-2 border-node-volt rounded-lg ${isMobile ? 'p-3' : 'p-4'} text-left`} style={{ flexShrink: 0 }}>
+                <button
+                  onClick={() => setShowWaveInstructions(!showWaveInstructions)}
+                  className="w-full flex items-center justify-between"
+                >
+                  <div className="text-node-volt font-bold flex items-center gap-2" style={{ 
+                    fontFamily: 'var(--font-space-grotesk)',
+                    fontSize: isMobile ? '0.875rem' : '1rem',
+                  }}>
+                    <Icons.PROGRAMS size={isMobile ? 16 : 20} /> Wave Structure
+                  </div>
+                  {isMobile && (
+                    <Icons.CHEVRON_DOWN 
+                      size={16} 
+                      className={`text-node-volt transition-transform ${showWaveInstructions ? 'rotate-180' : ''}`}
+                    />
+                  )}
+                </button>
+                {(!isMobile || showWaveInstructions) && (
+                  <p className={`text-text-white leading-relaxed whitespace-pre-line mt-2 ${isMobile ? 'text-sm' : 'text-base'}`}>
+                    {section.note}
+                  </p>
+                )}
               </div>
             )}
-            <div className="space-y-6">
+            <div className={`${isMobile ? 'space-y-3' : 'space-y-4'} w-full`} style={{ flex: '1 1 auto', minHeight: 0, overflow: 'hidden' }}>
               {section.blocks.map((block: any, idx: number) => (
-                <div
+                <CollapsibleExerciseCard
                   key={`${section.id}-block-${block.id || idx}`}
-                  className="bg-panel/50 backdrop-blur-sm thin-border rounded-lg p-8"
-                >
-                  <div className="flex items-center justify-center gap-4 mb-4">
-                    {block.label && (
-                      <span className="text-node-volt font-mono text-3xl font-bold">
-                        {block.label}
-                      </span>
-                    )}
-                    <h3 className="text-4xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                      {block.exerciseName}
-                    </h3>
-                  </div>
-                  {block.exerciseImageUrl && (
-                    <div className="mb-4 rounded-lg overflow-hidden max-w-md mx-auto bg-transparent" style={{ aspectRatio: '1', maxHeight: '200px' }}>
-                      <img
-                        src={block.exerciseImageUrl}
-                        alt={block.exerciseName}
-                        className="w-full h-full object-cover"
-                        style={{
-                          filter: theme === 'dark' 
-                            ? 'brightness(0) saturate(100%) invert(85%) sepia(100%) saturate(10000%) hue-rotate(30deg)' // Volt green (#ccff00) for dark mode
-                            : 'brightness(0) saturate(100%) invert(30%) sepia(100%) saturate(10000%) hue-rotate(200deg)', // Blue (#0066ff) for light mode
-                        }}
-                      />
-                    </div>
-                  )}
-                  {block.exerciseInstructions && (
-                    <div className="mb-4 text-base text-muted-text italic leading-relaxed max-w-2xl mx-auto">
-                      {block.exerciseInstructions}
-                    </div>
-                  )}
-                  {block.description && (
-                    <p className="text-muted-text text-xl mb-4">{block.description}</p>
-                  )}
-                  {block.repScheme && !shouldHideRepScheme(block) && (
-                    <div className="text-2xl text-node-volt font-bold mb-4">{block.repScheme}</div>
-                  )}
-                  {shouldUseTierBasedValues(block) && shouldHideRepScheme(block) && (
-                    <div className="text-sm text-muted-text mb-4 italic">
-                      Choose your tier below for distance/calories/reps
-                    </div>
-                  )}
-                  {block.tempo && (
-                    <div className="text-lg text-muted-text mb-4">Tempo: <span className="text-node-volt font-semibold">{block.tempo}</span></div>
-                  )}
-                  {block.loadPercentage && (
-                    <div className="text-lg text-muted-text mb-4">Load: <span className="text-node-volt font-semibold">{block.loadPercentage}</span></div>
-                  )}
-                  {renderTierPrescriptions(block)}
-                </div>
+                  block={block}
+                  compact={false}
+                />
               ))}
             </div>
           </div>
@@ -486,64 +342,63 @@ export function WorkoutDeckSlide({
         for (let i = 0; i < section.blocks.length; i += 2) {
           pairs.push(section.blocks.slice(i, i + 2));
         }
+        const [showSupersetInstructions, setShowSupersetInstructions] = useState(!isMobile);
         return (
-          <div className="text-center space-y-8 max-w-6xl">
+          <div className={`text-center max-w-6xl w-full ${isMobile ? 'space-y-3' : 'space-y-4'}`}>
             {/* Timer for SUPERSET */}
             {section.durationSec && (
-              <div className="mb-6">
+              <div className={isMobile ? 'mb-3' : 'mb-4'} style={{ flexShrink: 0 }}>
                 <WorkoutTimer
                   type="COUNTDOWN"
                   durationSec={section.durationSec}
                   onComplete={() => setTimerComplete(true)}
                 />
-                <div className="text-sm text-muted-text mt-2">Superset Duration</div>
+                <div className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-text mt-2`}>Superset Duration</div>
               </div>
             )}
-            {/* Instructions Box */}
+            {/* Instructions Box - Collapsible on Mobile */}
             {section.note && (
-              <div className="bg-node-volt/10 border-2 border-node-volt rounded-lg p-6 text-left mb-6">
-                <div className="text-node-volt font-bold text-lg mb-2 flex items-center gap-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                  <Icons.PROGRAMS size={20} /> Superset Instructions
-                </div>
-                <p className="text-text-white text-lg leading-relaxed whitespace-pre-line">{section.note}</p>
+              <div className={`bg-node-volt/10 border-2 border-node-volt rounded-lg ${isMobile ? 'p-3' : 'p-4'} text-left`} style={{ flexShrink: 0 }}>
+                <button
+                  onClick={() => setShowSupersetInstructions(!showSupersetInstructions)}
+                  className="w-full flex items-center justify-between"
+                >
+                  <div className="text-node-volt font-bold flex items-center gap-2" style={{ 
+                    fontFamily: 'var(--font-space-grotesk)',
+                    fontSize: isMobile ? '0.875rem' : '1rem',
+                  }}>
+                    <Icons.PROGRAMS size={isMobile ? 16 : 20} /> Superset Instructions
+                  </div>
+                  {isMobile && (
+                    <Icons.CHEVRON_DOWN 
+                      size={16} 
+                      className={`text-node-volt transition-transform ${showSupersetInstructions ? 'rotate-180' : ''}`}
+                    />
+                  )}
+                </button>
+                {(!isMobile || showSupersetInstructions) && (
+                  <p className={`text-text-white leading-relaxed whitespace-pre-line mt-2 ${isMobile ? 'text-sm' : 'text-base'}`}>
+                    {section.note}
+                  </p>
+                )}
               </div>
             )}
-            <div className="space-y-8">
+            <div className={`${isMobile ? 'space-y-3' : 'space-y-4'} w-full`} style={{ flex: '1 1 auto', minHeight: 0, overflow: 'hidden' }}>
               {pairs.map((pair, pairIdx) => (
                 <div
                   key={pairIdx}
-                  className="bg-panel/50 backdrop-blur-sm border-2 border-node-volt rounded-lg p-8"
+                  className={`bg-panel/50 backdrop-blur-sm border-2 border-node-volt rounded-lg ${isMobile ? 'p-3' : 'p-4'}`}
                 >
-                  <div className="grid grid-cols-2 gap-8">
+                  <div className={`grid grid-cols-2 ${isMobile ? 'gap-3' : 'gap-4'}`}>
                     {pair.map((block, idx) => (
-                      <div key={`${section.id}-block-${block.id || idx}`} className="bg-panel/50 thin-border rounded-lg p-6">
-                        <div className="text-center mb-4">
-                          <span className="text-node-volt font-mono text-3xl font-bold">
-                            {block.label || (idx === 0 ? 'A' : 'B')}
-                          </span>
-                        </div>
-                        <h4 className="text-3xl font-bold mb-3" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                          {block.exerciseName}
-                        </h4>
-                        {block.description && (
-                          <p className="text-muted-text mb-3">{block.description}</p>
-                        )}
-                        {block.repScheme && !shouldHideRepScheme(block) && (
-                          <div className="text-xl text-node-volt font-bold mb-3">{block.repScheme}</div>
-                        )}
-                        {isErgMachine(block.exerciseName) && shouldHideRepScheme(block) && (
-                          <div className="text-xs text-muted-text mb-3 italic">
-                            Choose tier for distance/cal
-                          </div>
-                        )}
-                        {block.tempo && (
-                          <div className="text-sm text-muted-text mb-3">Tempo: <span className="text-node-volt font-semibold">{block.tempo}</span></div>
-                        )}
-                        {block.loadPercentage && (
-                          <div className="text-sm text-muted-text mb-3">Load: <span className="text-node-volt font-semibold">{block.loadPercentage}</span></div>
-                        )}
-                        {renderTierPrescriptions(block)}
-                      </div>
+                      <CollapsibleExerciseCard
+                        key={`${section.id}-block-${block.id || idx}`}
+                        block={{
+                          ...block,
+                          label: block.label || (idx === 0 ? 'A' : 'B'),
+                        }}
+                        compact={true}
+                      />
                     ))}
                   </div>
                 </div>
@@ -590,24 +445,41 @@ export function WorkoutDeckSlide({
   };
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center space-y-12 animate-fadeIn">
+    <div className="w-full h-full flex flex-col items-center justify-center animate-fadeIn" style={{ 
+      gap: isMobile ? '0.75rem' : '1rem',
+      padding: isMobile ? '0.5rem' : '1rem',
+      maxHeight: '100%',
+      overflow: 'hidden',
+    }}>
       {/* Section Header */}
-      <div className="text-center space-y-4">
-        <div className="flex items-center justify-center gap-3">
-          <h1 className="text-6xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)', letterSpacing: '-0.02em' }}>
+      <div className="text-center" style={{ flexShrink: 0 }}>
+        <div className="flex items-center justify-center gap-2 flex-wrap">
+          <h1 
+            className="font-bold" 
+            style={{ 
+              fontFamily: 'var(--font-space-grotesk)', 
+              letterSpacing: '-0.02em',
+              fontSize: isMobile ? '1.5rem' : isTablet ? '2.5rem' : '3rem',
+              lineHeight: 1.1,
+            }}
+          >
             {section.title}
           </h1>
           {workout.archetype && (
-            <ArchetypeBadge archetype={workout.archetype} size="lg" />
+            <ArchetypeBadge archetype={workout.archetype} size={isMobile ? 'sm' : 'lg'} />
           )}
         </div>
-        {section.note && (
-          <p className="text-muted-text text-2xl max-w-3xl mx-auto italic">{section.note}</p>
+        {section.note && !isMobile && (
+          <p className={`text-muted-text max-w-3xl mx-auto italic mt-2 ${isMobile ? 'text-sm' : 'text-lg'}`}>
+            {section.note}
+          </p>
         )}
       </div>
 
-      {/* Section Content */}
-      <div className="w-full">{renderSectionContent()}</div>
+      {/* Section Content - Scrollable only if needed, but try to fit */}
+      <div className="w-full flex-1" style={{ minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        {renderSectionContent()}
+      </div>
 
       {/* Navigation */}
       <div className="flex items-center gap-4">

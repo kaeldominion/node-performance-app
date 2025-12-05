@@ -7,6 +7,7 @@ import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 import { workoutsApi, programsApi, scheduleApi } from '@/lib/api';
 import { Icons } from '@/lib/iconMapping';
+import { copyToClipboard } from '@/lib/clipboard';
 import ArchetypeBadge from '@/components/workout/ArchetypeBadge';
 import { WorkoutScheduler } from '@/components/schedule/WorkoutScheduler';
 import { Calendar } from 'lucide-react';
@@ -652,11 +653,11 @@ export default function WorkoutsPage() {
                                     setOpenMenuId(null);
                                     try {
                                       const shareData = await workoutsApi.generateShareLink(workout.id);
-                                      await navigator.clipboard.writeText(shareData.shareUrl);
+                                      await copyToClipboard(shareData.shareUrl);
                                       alert('Share link copied to clipboard!');
                                     } catch (error) {
                                       console.error('Failed to generate share link:', error);
-                                      alert('Failed to generate share link. Please try again.');
+                                      alert('Failed to copy share link. Please try again.');
                                     }
                                   }}
                                   className="w-full text-left px-4 py-2 hover:bg-dark transition-colors flex items-center gap-2 text-sm"

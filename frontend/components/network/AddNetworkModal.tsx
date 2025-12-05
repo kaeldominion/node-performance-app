@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { networkApi } from '@/lib/api';
 import { Icons } from '@/lib/iconMapping';
+import { copyToClipboard } from '@/lib/clipboard';
 import { ClickableUserName } from '@/components/user/ClickableUserName';
 import Link from 'next/link';
 import { ShowQRCodeModal } from './ShowQRCodeModal';
@@ -337,9 +338,14 @@ export function AddNetworkModal({ onClose, onNetworkAdded, currentUserNetworkCod
                     <div className="text-2xl font-bold text-node-volt font-mono">{networkCode}</div>
                   </div>
                   <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(networkCode);
-                      alert('Network code copied to clipboard!');
+                    onClick={async () => {
+                      try {
+                        await copyToClipboard(networkCode);
+                        alert('Network code copied to clipboard!');
+                      } catch (error) {
+                        console.error('Failed to copy network code:', error);
+                        alert('Failed to copy network code. Please try again.');
+                      }
                     }}
                     className="text-node-volt hover:underline text-sm"
                   >

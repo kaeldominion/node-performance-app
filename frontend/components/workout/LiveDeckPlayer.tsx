@@ -12,6 +12,7 @@ import { Logo } from '@/components/Logo';
 import { DeckTimer } from './DeckTimer';
 import { StationIndicator } from './StationIndicator';
 import { ExerciseCard } from './ExerciseCard';
+import { CollapsibleExerciseCard } from './CollapsibleExerciseCard';
 import { RatingModal } from './RatingModal';
 import { ParticipantManager } from './ParticipantManager';
 import { AudioControls } from './AudioControls';
@@ -351,11 +352,12 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
               }}
             >
               {currentSection.blocks?.map((block: any, idx: number) => (
-                <ExerciseCard
+                <CollapsibleExerciseCard
                   key={`${currentSection.id}-block-${block.id || idx}`}
                   block={block}
                   isActive={idx === activeStation}
                   sectionColor={sectionColor}
+                  compact={true}
                 />
               ))}
             </div>
@@ -426,10 +428,11 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
               }}
             >
               {currentSection.blocks?.map((block: any, idx: number) => (
-                <ExerciseCard 
+                <CollapsibleExerciseCard 
                   key={`${currentSection.id}-block-${block.id || idx}`} 
                   block={block}
                   sectionColor={sectionColor}
+                  compact={true}
                 />
               ))}
             </div>
@@ -462,10 +465,11 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
               }}
             >
               {currentSection.blocks?.map((block: any, idx: number) => (
-                <ExerciseCard 
+                <CollapsibleExerciseCard 
                   key={`${currentSection.id}-block-${block.id || idx}`} 
                   block={block}
                   sectionColor={sectionColor}
+                  compact={true}
                 />
               ))}
             </div>
@@ -795,29 +799,36 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
           height: '100vh',
         }}
       >
-        <div className="w-full h-full max-w-7xl flex flex-col items-center justify-center" style={{ maxHeight: 'calc(100vh - 180px)' }}>
+        <div className="w-full h-full max-w-7xl flex flex-col items-center justify-center" style={{ 
+          maxHeight: 'calc(100vh - 180px)',
+          gap: isMobile ? '0.5rem' : '0.75rem',
+        }}>
           {/* Section Title - Brutalist */}
-          <div className="text-center mb-4" style={{ flexShrink: 0 }}>
+          <div className="text-center" style={{ flexShrink: 0 }}>
             <h1
-              className="font-bold uppercase tracking-wider mb-2"
+              className="font-bold uppercase tracking-wider mb-1"
               style={{
                 fontFamily: 'var(--font-space-grotesk)',
                 color: 'var(--node-volt)',
-                fontSize: isMobile ? '1.5rem' : isTablet ? '2rem' : '2.5rem',
+                fontSize: isMobile ? '1.25rem' : isTablet ? '1.75rem' : '2rem',
                 lineHeight: 1.1,
               }}
             >
               {currentSection.title}
             </h1>
-            {currentSection.note && (
+            {currentSection.note && !isMobile && (
               <p className="text-text-white text-xs uppercase tracking-wider max-w-2xl mx-auto">
                 {currentSection.note}
               </p>
             )}
           </div>
 
-          {/* Section Content - Fits in viewport */}
-          <div className="flex flex-col items-center justify-center w-full flex-1" style={{ minHeight: 0, overflow: 'hidden' }}>
+          {/* Section Content - Fits in viewport, no scrolling */}
+          <div className="flex flex-col items-center justify-center w-full flex-1" style={{ 
+            minHeight: 0, 
+            maxHeight: '100%',
+            overflow: 'hidden',
+          }}>
             {renderSectionContent()}
           </div>
         </div>

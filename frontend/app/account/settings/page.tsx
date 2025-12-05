@@ -55,7 +55,7 @@ export default function AccountSettingsPage() {
       const imageUrl = clerkUser?.imageUrl || profileData?.imageUrl || '';
       
       setFormData({
-        username: userData?.username || user?.username || '',
+        username: userData?.username || '',
         imageUrl,
         weight: profileData?.weight?.toString() || '',
         height: profileData?.height?.toString() || '',

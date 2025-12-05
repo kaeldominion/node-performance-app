@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { networkApi } from '@/lib/api';
 import { Icons } from '@/lib/iconMapping';
+import { copyToClipboard } from '@/lib/clipboard';
 import dynamic from 'next/dynamic';
 
 const QRCodeSVG = dynamic(() => import('qrcode.react').then((mod) => mod.QRCodeSVG), {
@@ -61,9 +62,14 @@ export function ShowQRCodeModal({ onClose, currentUserNetworkCode }: ShowQRCodeM
                 <div className="text-2xl font-bold text-node-volt font-mono">{networkCode}</div>
               </div>
               <button
-                onClick={() => {
-                  navigator.clipboard.writeText(networkCode);
-                  alert('Network code copied to clipboard!');
+                onClick={async () => {
+                  try {
+                    await copyToClipboard(networkCode);
+                    alert('Network code copied to clipboard!');
+                  } catch (error) {
+                    console.error('Failed to copy network code:', error);
+                    alert('Failed to copy network code. Please try again.');
+                  }
                 }}
                 className="text-node-volt hover:underline text-sm font-medium"
               >

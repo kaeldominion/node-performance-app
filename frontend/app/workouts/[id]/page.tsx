@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { workoutsApi, sessionsApi } from '@/lib/api';
+import { copyToClipboard } from '@/lib/clipboard';
 import { WorkoutDeckPlayerV2 } from '@/components/workout/WorkoutDeckPlayerV2';
 import { LiveDeckPlayer } from '@/components/workout/LiveDeckPlayer';
 import Navbar from '@/components/Navbar';
@@ -256,17 +257,11 @@ export default function WorkoutPlayerPage() {
               onClick={async () => {
                 const shareUrl = `${window.location.origin}/workouts/share_${workout.shareId}`;
                 try {
-                  await navigator.clipboard.writeText(shareUrl);
+                  await copyToClipboard(shareUrl);
                   alert('Workout link copied to clipboard!');
                 } catch (err) {
-                  // Fallback for older browsers
-                  const textArea = document.createElement('textarea');
-                  textArea.value = shareUrl;
-                  document.body.appendChild(textArea);
-                  textArea.select();
-                  document.execCommand('copy');
-                  document.body.removeChild(textArea);
-                  alert('Workout link copied to clipboard!');
+                  console.error('Failed to copy link:', err);
+                  alert('Failed to copy link. Please try again.');
                 }
               }}
               className="bg-node-volt text-deep-asphalt font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity shadow-lg flex items-center gap-2"
