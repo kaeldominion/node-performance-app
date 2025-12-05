@@ -28,20 +28,60 @@ export class AiService {
     
     // Get exercises from database and filter by available equipment
     const allExercises = await this.exercisesService.findAll();
-    const availableExercises = allExercises.filter((ex) =>
-      params.equipment.some((eq) =>
-        ex.equipment.some((e) => e.toLowerCase().includes(eq.toLowerCase())),
-      ) || ex.equipment.length === 0, // Include bodyweight exercises
+    const hasRunningRoute = params.equipment.some((eq) => 
+      eq.toLowerCase().includes('running') || eq.toLowerCase().includes('route') || eq.toLowerCase().includes('outdoor')
     );
+    
+    const availableExercises = allExercises.filter((ex) => {
+      // Always include bodyweight exercises
+      if (ex.equipment.length === 0) return true;
+      
+      // Include running exercises if running route is available
+      if (hasRunningRoute && (
+        ex.name.toLowerCase().includes('run') || 
+        ex.name.toLowerCase().includes('sprint') ||
+        ex.equipment.some((e) => e.toLowerCase().includes('run') || e.toLowerCase().includes('route'))
+      )) {
+        return true;
+      }
+      
+      // Match equipment
+      return params.equipment.some((eq) =>
+        ex.equipment.some((e) => e.toLowerCase().includes(eq.toLowerCase())),
+      );
+    });
 
-    // Format exercises for prompt
+    // Format exercises for prompt with detailed metadata
     const exerciseList = availableExercises
       .map((ex) => {
-        const equipmentStr = ex.equipment.join(', ');
+        const equipmentStr = ex.equipment.join(', ') || 'bodyweight';
         const archetypesStr = ex.suitableArchetypes.join(', ');
-        return `- ${ex.name} (${ex.category}, ${ex.movementPattern}, Equipment: ${equipmentStr || 'bodyweight'}, Archetypes: ${archetypesStr})`;
+        const primaryMuscles = ex.primaryMuscles.join(', ') || 'N/A';
+        const secondaryMuscles = ex.secondaryMuscles?.join(', ') || '';
+        const space = ex.space || 'N/A';
+        const impact = ex.impactLevel || 'N/A';
+        const typicalUse = ex.typicalUse?.join(', ') || 'N/A';
+        const notes = ex.notes || '';
+        
+        // Format tier prescriptions if available
+        let tierInfo = '';
+        if (ex.tiers && ex.tiers.length > 0) {
+          const tierPrescriptions = ex.tiers.map((tier: any) => {
+            const reps = tier.typicalReps ? ` ${tier.typicalReps} reps` : '';
+            const desc = tier.description ? ` (${tier.description})` : '';
+            return `${tier.tier}:${reps}${desc}`;
+          }).join(' | ');
+          tierInfo = ` | Tiers: ${tierPrescriptions}`;
+        }
+        
+        return `- ${ex.name}
+  Category: ${ex.category} | Pattern: ${ex.movementPattern}
+  Equipment: ${equipmentStr} | Space: ${space} | Impact: ${impact}
+  Muscles: ${primaryMuscles}${secondaryMuscles ? ` (secondary: ${secondaryMuscles})` : ''}
+  Typical Use: ${typicalUse} | Archetypes: ${archetypesStr}${tierInfo}
+  ${notes ? `Notes: ${notes}` : ''}`;
       })
-      .join('\n');
+      .join('\n\n');
 
     // REVL and Hyrox workout examples
     const workoutExamples = this.getWorkoutExamples();
@@ -111,11 +151,45 @@ Section Types by Archetype:
 - CAPAC1TY: WARMUP → CAPACITY (12-20 min long block) → COOLDOWN
 - FLOWSTATE: WARMUP → FLOW (tempo work, KB flows, slow EMOMs) → COOLDOWN
 
-Design workouts that are challenging, progressive, and aligned with the user's goals and equipment.`;
+TIME MANAGEMENT GUIDELINES:
+- WARMUP: 5-10 minutes (movement prep, activation, light cardio)
+- COOLDOWN: 5 minutes (mobility, stretching, breathing)
+- Main work sections should fit within remaining time
+- EMOM calculations: (workSec + restSec) × rounds = total time (e.g., 45s+15s × 12 = 12:00)
+- AMRAP/FOR_TIME: Duration should be realistic for training level
+  * BEGINNER: 8-12 min AMRAPs, 15-20 min FOR_TIME caps
+  * INTERMEDIATE: 10-15 min AMRAPs, 20-30 min FOR_TIME caps
+  * ADVANCED: 12-20 min AMRAPs, 30-45 min FOR_TIME caps
+  * ELITE: 15-25 min AMRAPs, 45-60 min FOR_TIME caps
+- Total workout time = WARMUP + Main Work + FINISHER (optional) + COOLDOWN
+- Always leave 2-3 minutes buffer for transitions
+
+TIER PRESCRIPTION GUIDELINES:
+- SILVER (Beginner/Intermediate): Focus on mechanics, lighter loads, steady pace, completion goal
+- GOLD (Advanced): Standard RX weights, challenging pace, requires established strength base
+- BLACK (Elite): Competition standard, heavy loading, high intensity, failure is likely
+- Use exercise tier prescriptions from the database when available, otherwise estimate based on:
+  * Training level
+  * Exercise complexity
+  * Movement pattern
+  * Typical use (CONDITIONING exercises = higher reps, FINISHER = max effort)
+
+REALISTIC WORKOUT DESIGN:
+- Ensure workouts are challenging but achievable within the time limit
+- Consider equipment transitions and setup time
+- Balance intensity with volume based on training level
+- Progressive difficulty: BASE < LOAD < INTENSIFY > DELOAD
+- Running distances: 100m, 200m, 400m, 800m, 1km are common. Only include if "running route" is in equipment.
+- Avoid unrealistic rep schemes or distances that would exceed time limits
+- Match exercise selection to available equipment and space requirements
+
+Design workouts that are challenging, progressive, realistic, and aligned with the user's goals, equipment, and time constraints.`;
 
     const workoutType = params.workoutType || 'single';
     const cycle = params.cycle || 'BASE';
     const workoutTypeGuidance = this.getWorkoutTypeGuidance(workoutType, cycle);
+    
+    const cycleGuidance = this.getCycleGuidance(cycle);
     
     const userPrompt = `Generate ${workoutTypeGuidance} with these parameters:
 - Goal: ${params.goal}
@@ -124,10 +198,24 @@ Design workouts that are challenging, progressive, and aligned with the user's g
 - Available Time: ${params.availableMinutes} minutes per session
 ${archetypeParam ? `- Archetype: ${archetypeParam} (follow archetype structure exactly)` : ''}
 - Preferred Sections: ${params.sectionPreferences?.join(', ') || 'Auto-select based on archetype'}
+${cycleGuidance ? `- Cycle: ${cycle} - ${cycleGuidance}` : ''}
 
 ${workoutTypeGuidance}
 
-Ensure each workout time fits within ${params.availableMinutes} minutes.`;
+CRITICAL TIME CONSTRAINTS:
+- Total workout must fit within ${params.availableMinutes} minutes
+- WARMUP: 5-10 minutes
+- COOLDOWN: 5 minutes
+- Main work sections: ${params.availableMinutes - 15} minutes maximum (accounting for warmup/cooldown)
+- If generating multiple workouts, each must independently fit within ${params.availableMinutes} minutes
+
+EQUIPMENT NOTES:
+${hasRunningRoute ? '- Running route available: You may include running distances (100m, 200m, 400m, 800m, 1km) in workouts' : '- NO running route available: Do NOT include running exercises or distances'}
+- Only use exercises that match the available equipment list
+- Use exercise tier prescriptions from the database when provided
+- Ensure all exercises are realistic for the training level and equipment available
+
+Generate workouts that are effective, time-appropriate, challenging but achievable, and properly structured.`;
 
     try {
       // For week/month, we need an array response

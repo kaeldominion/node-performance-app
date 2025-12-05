@@ -29,6 +29,7 @@ const EQUIPMENT_OPTIONS = [
   'box',
   'jump rope',
   'sandbag',
+  'running route',
   'bodyweight',
 ];
 
