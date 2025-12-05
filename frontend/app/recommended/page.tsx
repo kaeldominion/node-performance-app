@@ -126,7 +126,7 @@ export default function RecommendedPage() {
             {programs.length > 0 && (
               <section className="mb-16">
                 <h2 className="text-3xl font-heading font-bold mb-8 flex items-center gap-3">
-                  <Icons.Program className="w-8 h-8 text-node-volt" />
+                  <Icons.PROGRAMS className="w-8 h-8 text-node-volt" />
                   Training Programs
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
