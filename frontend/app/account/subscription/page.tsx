@@ -54,7 +54,7 @@ export default function SubscriptionPage() {
             <div className="text-node-volt font-heading font-bold text-xl mb-2">
               FREE Plan
             </div>
-            <p className="text-muted-text text-sm mb-0">
+            <p className="text-muted-text text-sm">
               Your current subscription tier
             </p>
           </div>
