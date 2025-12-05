@@ -260,9 +260,6 @@ Design workouts that are challenging, progressive, realistic, and aligned with t
     // For multi-day programs, don't use archetype - let AI randomly select based on goal
     const shouldUseArchetype = workoutType === 'single' && !isHyrox && archetypeParam;
     
-    // For multi-day programs, don't use archetype - let AI randomly select based on goal
-    const shouldUseArchetype = workoutType === 'single' && !isHyrox && archetypeParam;
-    
     const userPrompt = `Generate ${workoutTypeGuidance} with these parameters:
 ${isHyrox ? `
 - Workout Type: HYROX-style 90-minute conditioning session

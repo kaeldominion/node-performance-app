@@ -214,7 +214,7 @@ export class NetworkService {
           },
         },
       },
-      orderBy: { performedAt: 'desc' },
+      orderBy: { startedAt: 'desc' },
       take: 50, // Get last 50 sessions from all network connections
     });
 
@@ -246,7 +246,7 @@ export class NetworkService {
       where: {
         userId: { in: networkUserIds },
         completed: true,
-        performedAt: { gte: sevenDaysAgo },
+        startedAt: { gte: sevenDaysAgo },
       },
       _count: {
         id: true,
@@ -267,7 +267,7 @@ export class NetworkService {
         .map((s) => ({
           workoutName: s.workout.name,
           workoutId: s.workout.id,
-          performedAt: s.performedAt,
+          performedAt: s.startedAt,
           rpe: s.rpe,
           durationSec: s.durationSec,
         })),

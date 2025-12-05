@@ -176,6 +176,8 @@ export class ProgramsService {
     return this.prisma.program.create({
       data: {
         ...programData,
+        level: programData.level as any, // Cast to TrainingLevel enum
+        goal: programData.goal as any, // Cast to TrainingGoal enum
         slug,
         workouts: {
           create: workouts.map((workout) => {
@@ -211,7 +213,6 @@ export class ProgramsService {
       include: {
         workouts: {
           orderBy: [
-            { weekIndex: 'asc' },
             { dayIndex: 'asc' },
           ],
         },
