@@ -307,6 +307,141 @@ export class AnalyticsService {
   }
 
   // Leaderboard methods
+  async getSystemStats() {
+    // Total users
+    const totalUsers = await this.prisma.user.count();
+    const activeUsers = await this.prisma.user.count({
+      where: {
+        sessions: {
+          some: {
+            startedAt: {
+              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
+            },
+          },
+        },
+      },
+    });
+
+    // Total workouts
+    const totalWorkouts = await this.prisma.workout.count();
+    const recommendedWorkouts = await this.prisma.workout.count({
+      where: { isRecommended: true },
+    });
+
+    // Total sessions
+    const totalSessions = await this.prisma.sessionLog.count();
+    const completedSessions = await this.prisma.sessionLog.count({
+      where: { completed: true },
+    });
+    const sessionsLast30Days = await this.prisma.sessionLog.count({
+      where: {
+        startedAt: {
+          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        },
+      },
+    });
+
+    // Total exercises
+    const totalExercises = await this.prisma.exercise.count();
+    const aiGeneratedExercises = await this.prisma.exercise.count({
+      where: { aiGenerated: true },
+    });
+
+    // Gamification stats
+    const usersWithXP = await this.prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        xp: true,
+        level: true,
+      },
+      orderBy: { xp: 'desc' },
+      take: 10,
+    });
+
+    const totalXP = await this.prisma.user.aggregate({
+      _sum: { xp: true },
+    });
+
+    const avgLevel = await this.prisma.user.aggregate({
+      _avg: { level: true },
+    });
+
+    // Recent activity (last 24 hours)
+    const recentSessions = await this.prisma.sessionLog.findMany({
+      where: {
+        startedAt: {
+          gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        workout: {
+          select: {
+            id: true,
+            name: true,
+            archetype: true,
+          },
+        },
+      },
+      orderBy: { startedAt: 'desc' },
+      take: 20,
+    });
+
+    // Workout generation stats (AI workouts)
+    const aiWorkouts = await this.prisma.workout.count({
+      where: {
+        programId: null, // Standalone workouts (likely AI-generated)
+      },
+    });
+
+    // User roles breakdown
+    const roleBreakdown = await this.prisma.user.groupBy({
+      by: ['role'],
+      _count: true,
+    });
+
+    return {
+      users: {
+        total: totalUsers,
+        active: activeUsers,
+        inactive: totalUsers - activeUsers,
+        roleBreakdown: roleBreakdown.reduce((acc, item) => {
+          acc[item.role] = item._count;
+          return acc;
+        }, {} as Record<string, number>),
+      },
+      workouts: {
+        total: totalWorkouts,
+        recommended: recommendedWorkouts,
+        aiGenerated: aiWorkouts,
+      },
+      sessions: {
+        total: totalSessions,
+        completed: completedSessions,
+        completionRate: totalSessions > 0 ? (completedSessions / totalSessions) * 100 : 0,
+        last30Days: sessionsLast30Days,
+      },
+      exercises: {
+        total: totalExercises,
+        aiGenerated: aiGeneratedExercises,
+      },
+      gamification: {
+        totalXP: totalXP._sum.xp || 0,
+        avgLevel: Math.round((avgLevel._avg.level || 1) * 10) / 10,
+        topUsers: usersWithXP,
+      },
+      recentActivity: recentSessions,
+    };
+  }
+
   async getLeaderboard(metric: 'sessions' | 'hours' | 'rpe' | 'streak' = 'sessions', limit: number = 50) {
     const users = await this.prisma.user.findMany({
       where: {

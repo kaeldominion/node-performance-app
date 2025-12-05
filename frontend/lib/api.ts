@@ -280,6 +280,10 @@ export const analyticsApi = {
     const response = await api.get(`/analytics/stats?${params.toString()}`);
     return response.data;
   },
+  getSystemStats: async () => {
+    const response = await api.get('/analytics/admin/system');
+    return response.data;
+  },
   getStrengthProgress: async (exercise?: string) => {
     const params = exercise ? `?exercise=${exercise}` : '';
     const response = await api.get(`/analytics/strength${params}`);

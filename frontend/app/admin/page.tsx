@@ -78,17 +78,17 @@ export default function AdminDashboard() {
             >
               Manage Workouts
             </Link>
+            <Link
+              href="/admin/analytics"
+              className="bg-node-volt text-dark font-bold py-3 px-6 rounded hover:opacity-90 transition-opacity text-center"
+            >
+              System Analytics
+            </Link>
             <button
               disabled
               className="bg-panel text-muted-text font-bold py-3 px-6 rounded opacity-50 cursor-not-allowed text-center"
             >
               Manage Users (Coming Soon)
-            </button>
-            <button
-              disabled
-              className="bg-panel text-muted-text font-bold py-3 px-6 rounded opacity-50 cursor-not-allowed text-center"
-            >
-              App Settings (Coming Soon)
             </button>
           </div>
         </div>
