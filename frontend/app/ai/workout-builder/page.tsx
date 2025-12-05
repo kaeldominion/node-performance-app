@@ -127,6 +127,7 @@ export default function WorkoutBuilderPage() {
     setLoading(true);
     setError('');
     setGeneratedWorkout(null);
+    setShowWorkout(false);
 
     try {
       // Determine if this is a HYROX workout
@@ -614,6 +615,10 @@ export default function WorkoutBuilderPage() {
               isGenerating={loading}
               isReviewing={reviewing}
               error={error || null}
+              onShutdownComplete={() => {
+                // Show workout after terminal shutdown animation completes
+                setShowWorkout(true);
+              }}
             />
           </div>
         )}
