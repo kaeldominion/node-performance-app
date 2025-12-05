@@ -17,11 +17,12 @@ type TerminalStep = {
 
 export function GenerationTerminal({ isGenerating, isReviewing, error }: GenerationTerminalProps) {
   const [steps, setSteps] = useState<TerminalStep[]>([
-    { id: 'input', label: 'User input received', status: 'complete' },
+    { id: 'input', label: 'User input received ✓', status: 'complete' },
     { id: 'connecting', label: 'Connecting to NØDE AI systems...', status: 'pending' },
-    { id: 'generating', label: 'Generating workout structure...', status: 'pending' },
-    { id: 'reviewing', label: 'Running workout review & system check...', status: 'pending' },
-    { id: 'complete', label: 'Workout ready', status: 'pending' },
+    { id: 'generating', label: 'Generating workout structure & exercise selection...', status: 'pending' },
+    { id: 'reviewing', label: 'Running workout review & feasibility check...', status: 'pending' },
+    { id: 'optimizing', label: 'Optimizing tier progression & timing...', status: 'pending' },
+    { id: 'complete', label: 'Workout ready for deployment', status: 'pending' },
   ]);
 
   useEffect(() => {
@@ -44,11 +45,12 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
         })
       );
     } else if (!isGenerating && !isReviewing && !error) {
-      // Complete
+      // Complete - mark all steps as complete
       setSteps((prev) =>
         prev.map((step) => {
-          if (step.id === 'reviewing') return { ...step, status: 'complete' as const };
-          if (step.id === 'complete') return { ...step, status: 'complete' as const };
+          if (step.status === 'active' || step.status === 'pending') {
+            return { ...step, status: 'complete' as const };
+          }
           return step;
         })
       );
@@ -76,7 +78,12 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
           <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
           <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
         </div>
-        <div className="text-node-volt/60 text-xs ml-2">NØDE // AI Workout Generator</div>
+        <div className="text-node-volt/60 text-xs ml-2 font-mono">
+          NØDE OS // AI Workout Generator v2.0
+        </div>
+        <div className="ml-auto text-node-volt/40 text-xs font-mono">
+          {new Date().toLocaleTimeString()}
+        </div>
       </div>
 
       {/* Terminal content */}
@@ -143,14 +150,15 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
       </div>
 
       {/* Terminal footer */}
-      <div className="mt-4 pt-3 border-t border-node-volt/10 text-xs text-node-volt/40">
-        <div className="flex items-center gap-2">
+      <div className="mt-4 pt-3 border-t border-node-volt/10 text-xs text-node-volt/40 font-mono">
+        <div className="flex items-center gap-2 flex-wrap">
           <span>NØDE OS v2.0</span>
           <span>•</span>
           <span>AI Engine: GPT-4o</span>
           <span>•</span>
-          <span className={isGenerating || isReviewing ? 'animate-pulse' : ''}>
-            {isGenerating || isReviewing ? 'Processing...' : 'Ready'}
+          <span>Status:</span>
+          <span className={`${isGenerating || isReviewing ? 'text-node-volt animate-pulse' : 'text-green-400'}`}>
+            {isGenerating || isReviewing ? 'PROCESSING' : error ? 'ERROR' : 'READY'}
           </span>
         </div>
       </div>
