@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Pass-through middleware - Clerk middleware causes Vercel edge runtime errors
+// Pass-through proxy - Clerk middleware causes Vercel edge runtime errors
 // Auth protection handled in components via useAuth hook
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   return NextResponse.next();
 }
 
