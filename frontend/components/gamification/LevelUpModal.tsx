@@ -5,10 +5,21 @@ import { createPortal } from 'react-dom';
 
 interface LevelUpModalProps {
   level: number;
+  levelName?: string;
+  nextLevel?: number;
+  nextLevelName?: string;
+  xpToNextLevel?: number;
   onClose: () => void;
 }
 
-export function LevelUpModal({ level, onClose }: LevelUpModalProps) {
+export function LevelUpModal({ 
+  level, 
+  levelName, 
+  nextLevel, 
+  nextLevelName, 
+  xpToNextLevel,
+  onClose 
+}: LevelUpModalProps) {
   const [mounted, setMounted] = useState(false);
   const [show, setShow] = useState(true);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
@@ -92,12 +103,29 @@ export function LevelUpModal({ level, onClose }: LevelUpModalProps) {
           <h2 className="text-4xl font-heading font-bold text-node-volt mb-2">
             LEVEL UP!
           </h2>
-          <div className="text-8xl font-heading font-bold text-text-white mb-4">
+          <div className="text-8xl font-heading font-bold text-text-white mb-2">
             {level}
           </div>
-          <p className="text-muted-text text-lg mb-6">
-            You've reached level <span className="text-node-volt font-bold">{level}</span>!
+          {levelName && (
+            <div className="text-2xl font-heading font-bold text-node-volt mb-4">
+              {levelName}
+            </div>
+          )}
+          <p className="text-muted-text text-lg mb-4">
+            You've reached level <span className="text-node-volt font-bold">{level}</span>
+            {levelName && <span className="text-node-volt"> • {levelName}</span>}!
           </p>
+          {nextLevel && nextLevelName && xpToNextLevel && xpToNextLevel > 0 && (
+            <div className="bg-node-volt/10 border border-node-volt/30 rounded-lg p-4 mb-6">
+              <div className="text-sm text-muted-text mb-1">Next Level Available</div>
+              <div className="text-lg font-semibold text-node-volt mb-1">
+                Level {nextLevel} • {nextLevelName}
+              </div>
+              <div className="text-xs text-muted-text">
+                {xpToNextLevel.toLocaleString()} XP to go
+              </div>
+            </div>
+          )}
           <button
             onClick={() => {
               setShow(false);

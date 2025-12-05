@@ -80,9 +80,13 @@ export function XPDisplay({ userId, className = '' }: XPDisplayProps) {
         </div>
       </div>
 
-      {showLevelUp && newLevel && (
+      {showLevelUp && newLevel && stats && (
         <LevelUpModal
           level={newLevel}
+          levelName={stats.levelName}
+          nextLevel={stats.nextLevel}
+          nextLevelName={stats.nextLevelName}
+          xpToNextLevel={stats.xpToNextLevel}
           onClose={() => {
             setShowLevelUp(false);
             setNewLevel(null);
