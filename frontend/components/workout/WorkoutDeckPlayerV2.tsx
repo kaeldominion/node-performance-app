@@ -122,8 +122,6 @@ function SectionTimer({
         } ${flashClass}`}
         style={{
           backgroundColor: 'var(--card-bg, rgba(var(--panel-rgb), 0.5))',
-        }}
-        style={{
           boxShadow: isLowTime ? `0 0 30px ${timerColor}40` : undefined,
         }}
       >
