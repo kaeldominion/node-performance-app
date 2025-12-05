@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import { Icons } from '@/lib/iconMapping';
-import { Users, Zap, Target, TrendingUp, Clock, Trophy, Activity, Calendar, MapPin, X } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Users, Zap, Target, TrendingUp, Clock, Trophy, Activity, Calendar, MapPin, X, Sun, Moon } from 'lucide-react';
 
 interface HyroxRace {
   name: string;
@@ -16,6 +17,7 @@ interface HyroxRace {
 
 export default function HyroxAIBuilderPage() {
   const router = useRouter();
+  const { theme, toggleTheme } = useTheme();
   const [terminalStep, setTerminalStep] = useState(0);
   const [isAnimating, setIsAnimating] = useState(true);
   const [scrollY, setScrollY] = useState(0);
@@ -212,12 +214,22 @@ export default function HyroxAIBuilderPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 border-b thin-border bg-dark/95 backdrop-blur-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <Logo className="text-xl transition-transform hover:scale-105" />
-          <Link
-            href="/"
-            className="px-5 py-2 thin-border border-node-volt text-node-volt font-heading font-bold text-xs uppercase tracking-[0.2em] hover:bg-node-volt hover:text-dark transition-colors"
-          >
-            Back to Home
-          </Link>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg bg-panel/50 hover:bg-panel thin-border text-node-volt hover:text-node-volt/80 transition-colors flex items-center justify-center"
+              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+            <Link
+              href="/"
+              className="px-5 py-2 thin-border border-node-volt text-node-volt font-heading font-bold text-xs uppercase tracking-[0.2em] hover:bg-node-volt hover:text-dark transition-colors"
+            >
+              Back to Home
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -489,37 +501,60 @@ export default function HyroxAIBuilderPage() {
               clear tier prescriptions (Silver, Gold, Black) and smooth transitions between exercises.
             </p>
             
-            <div className="bg-panel/50 thin-border rounded-lg p-8">
-              <div className="bg-dark/80 thin-border rounded-lg p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <div className="text-node-volt font-mono text-3xl font-bold mb-2">HX-001</div>
-                    <h3 className="text-2xl font-heading font-bold">HYROX Race Prep</h3>
-                  </div>
-                  <div className="px-4 py-2 bg-node-volt/20 text-node-volt text-xs font-bold uppercase">
-                    HYROX MODE
-                  </div>
-                </div>
-                
-                {/* Deck Slide Preview */}
-                <div className="bg-panel/50 thin-border rounded-lg p-8 text-center">
-                  <div className="text-6xl font-heading font-bold mb-4 text-node-volt">01</div>
-                  <h4 className="text-3xl font-heading font-bold mb-6">1KM RUN</h4>
-                  <div className="grid grid-cols-3 gap-4 mb-6">
-                    <div className="bg-zinc-800 thin-border rounded p-4">
-                      <div className="text-xs text-muted-text mb-1">SILVER</div>
-                      <div className="text-xl font-bold">8:00</div>
+            {/* iPhone Container */}
+            <div className="flex justify-center">
+              <div className="relative">
+                {/* iPhone Frame */}
+                <div className="relative bg-zinc-900 rounded-[3rem] p-2 shadow-2xl">
+                  {/* Notch */}
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-zinc-900 rounded-b-2xl z-10"></div>
+                  
+                  {/* Screen */}
+                  <div className="w-[375px] h-[812px] bg-dark-contrast rounded-[2.5rem] overflow-hidden relative">
+                    {/* Status Bar */}
+                    <div className="absolute top-0 left-0 right-0 h-12 flex items-center justify-between px-6 pt-2 z-20">
+                      <div className="text-white text-xs font-bold">9:41</div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-4 h-2 border border-white rounded-sm"></div>
+                        <div className="w-1 h-1 bg-white rounded-full"></div>
+                      </div>
                     </div>
-                    <div className="bg-node-volt/20 thin-border border-node-volt rounded p-4">
-                      <div className="text-xs text-node-volt mb-1">GOLD</div>
-                      <div className="text-xl font-bold text-node-volt">7:30</div>
-                    </div>
-                    <div className="bg-zinc-900 thin-border rounded p-4">
-                      <div className="text-xs text-muted-text mb-1">BLACK</div>
-                      <div className="text-xl font-bold">7:00</div>
+                    
+                    {/* Deck Content */}
+                    <div className="h-full flex flex-col pt-12">
+                      {/* Header */}
+                      <div className="px-6 pt-4 pb-2 flex items-center justify-between">
+                        <div>
+                          <div className="text-node-volt font-mono text-2xl font-bold">HX-001</div>
+                          <h3 className="text-lg font-heading font-bold text-white">HYROX Race Prep</h3>
+                        </div>
+                        <div className="px-3 py-1 bg-node-volt/20 text-node-volt text-[10px] font-bold uppercase rounded">
+                          HYROX MODE
+                        </div>
+                      </div>
+                      
+                      {/* Deck Slide Preview */}
+                      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-12">
+                        <div className="text-7xl font-heading font-bold mb-6 text-node-volt">01</div>
+                        <h4 className="text-4xl font-heading font-bold mb-8 text-white">1KM RUN</h4>
+                        <div className="grid grid-cols-3 gap-3 w-full mb-8">
+                          <div className="bg-zinc-800/80 thin-border rounded-lg p-4">
+                            <div className="text-[10px] text-zinc-400 mb-1 uppercase font-heading">SILVER</div>
+                            <div className="text-2xl font-bold text-white">8:00</div>
+                          </div>
+                          <div className="bg-node-volt/20 thin-border border-node-volt rounded-lg p-4">
+                            <div className="text-[10px] text-node-volt mb-1 uppercase font-heading font-bold">GOLD</div>
+                            <div className="text-2xl font-bold text-node-volt">7:30</div>
+                          </div>
+                          <div className="bg-zinc-900/80 thin-border rounded-lg p-4">
+                            <div className="text-[10px] text-zinc-400 mb-1 uppercase font-heading">BLACK</div>
+                            <div className="text-2xl font-bold text-white">7:00</div>
+                          </div>
+                        </div>
+                        <div className="text-sm text-zinc-400">Next: 1000m Ski Erg</div>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-sm text-muted-text">Next: 1000m Ski Erg</div>
                 </div>
               </div>
             </div>
