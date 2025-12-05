@@ -485,24 +485,27 @@ export default function HyroxAIBuilderPage() {
         <div className="absolute inset-0 grid-overlay opacity-15" />
         <div className="relative z-10 max-w-7xl mx-auto w-full">
           <div 
-            className={`transition-all duration-1000 ${
+            className={`grid lg:grid-cols-2 gap-12 items-center transition-all duration-1000 ${
               isVisible['deck-player'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
             }`}
           >
-            <div className="flex items-center gap-3 mb-12">
-              <Icons.SESSIONS size={32} className="text-node-volt animate-pulse-slow" />
-              <span className="text-node-volt uppercase tracking-[0.25em] text-xs font-heading">Deck Player</span>
+            {/* Left Side - Text Content */}
+            <div>
+              <div className="flex items-center gap-3 mb-6">
+                <Icons.SESSIONS size={32} className="text-node-volt animate-pulse-slow" />
+                <span className="text-node-volt uppercase tracking-[0.25em] text-xs font-heading">Deck Player</span>
+              </div>
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold mb-6">
+                Cinematic Training Experience
+              </h2>
+              <p className="text-muted-text font-body text-lg leading-relaxed">
+                Experience your HYROX workouts in cinematic deck mode. Full-screen, distraction-free training with 
+                clear tier prescriptions (Silver, Gold, Black) and smooth transitions between exercises.
+              </p>
             </div>
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold mb-8">
-              Cinematic Training Experience
-            </h2>
-            <p className="text-muted-text font-body text-lg leading-relaxed mb-12 max-w-2xl">
-              Experience your HYROX workouts in cinematic deck mode. Full-screen, distraction-free training with 
-              clear tier prescriptions (Silver, Gold, Black) and smooth transitions between exercises.
-            </p>
             
-            {/* iPhone Container */}
-            <div className="flex justify-center">
+            {/* Right Side - iPhone Container */}
+            <div className="flex justify-center lg:justify-end">
               <div className="relative">
                 {/* iPhone Frame */}
                 <div className="relative bg-zinc-900 rounded-[3rem] p-2 shadow-2xl">
