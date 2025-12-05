@@ -706,7 +706,7 @@ export default function LandingPage() {
       {/* Scheduler Section */}
       <section 
         id="scheduler" 
-        className="relative min-h-screen flex items-center py-32 bg-dark/80 backdrop-blur-sm border-t thin-border px-4 sm:px-6 lg:px-8 z-10"
+        className="relative min-h-screen flex items-center py-32 bg-transparent border-t thin-border px-4 sm:px-6 lg:px-8 z-10"
         data-animate
       >
         <div className="absolute inset-0 grid-overlay opacity-15" />
@@ -1002,7 +1002,9 @@ export default function LandingPage() {
               isVisible.cta ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
             }`}
           >
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold mb-8">Access the NØDE</h2>
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold mb-8">
+              ACCESS <span className="text-node-volt">NØDE</span> OS
+            </h2>
             <p className="text-muted-text font-body text-lg leading-[2.2] mb-12">
               Train with brutalist clarity. Volt highlights. Cinematic player. Analytics and AI built for lifters and coaches.
             </p>
