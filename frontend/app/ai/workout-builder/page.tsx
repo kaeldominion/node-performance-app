@@ -285,7 +285,6 @@ Browse Recommended
                         : 'bg-panel thin-border text-text-white hover:border-node-volt hover:bg-tech-grey'
                     }`}
                   >
-                    <div className="text-2xl mb-2">⏱️</div>
                     <div className="font-bold text-lg mb-1">Standard</div>
                     <div className="text-xs opacity-80">50-60 minutes</div>
                     <div className="text-xs opacity-60 mt-1">Standard NØDE workout</div>
