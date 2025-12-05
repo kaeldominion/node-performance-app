@@ -291,8 +291,14 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onShutdow
         }
       }
 
-      // Continue animation if still processing or shutting down
-      if ((isGenerating || isReviewing || currentPhase === 'complete' || currentPhase === 'shutting-down') && currentPhase !== null) {
+      // Continue animation if still processing, shutting down, or in any active phase
+      if (currentPhase !== null && (
+        isGenerating || 
+        isReviewing || 
+        currentPhase === 'optimizing' || 
+        currentPhase === 'complete' || 
+        currentPhase === 'shutting-down'
+      )) {
         animationFrameId = requestAnimationFrame(updateProgress);
       }
     };
