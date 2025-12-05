@@ -114,7 +114,8 @@ Section Types by Archetype:
 Design workouts that are challenging, progressive, and aligned with the user's goals and equipment.`;
 
     const workoutType = params.workoutType || 'single';
-    const workoutTypeGuidance = this.getWorkoutTypeGuidance(workoutType);
+    const cycle = params.cycle || 'BASE';
+    const workoutTypeGuidance = this.getWorkoutTypeGuidance(workoutType, cycle);
     
     const userPrompt = `Generate ${workoutTypeGuidance} with these parameters:
 - Goal: ${params.goal}
