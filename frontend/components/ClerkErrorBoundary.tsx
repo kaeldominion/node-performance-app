@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, ReactNode, Component, ErrorInfo, ReactElement } from 'react';
+import { ReactNode, Component, ErrorInfo } from 'react';
 import { ClerkProvider } from '@clerk/nextjs';
 import { ClerkErrorScreen } from './ClerkErrorScreen';
 
@@ -60,17 +60,11 @@ class ClerkErrorBoundaryClass extends Component<
 }
 
 export function ClerkErrorBoundary({ children, fallback }: ClerkErrorBoundaryProps) {
-  const [clerkKey, setClerkKey] = useState<string | null>(null);
-  const [clerkInitError, setClerkInitError] = useState(false);
+  // Get Clerk key synchronously - environment variables are available at build time
+  const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '';
   const isDevMode = process.env.NODE_ENV === 'development' || 
                     process.env.NEXT_PUBLIC_DEV_MODE === 'true';
   const isProduction = process.env.NODE_ENV === 'production';
-
-  useEffect(() => {
-    // Get Clerk key
-    const key = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '';
-    setClerkKey(key);
-  }, []);
 
   // If no Clerk key, render without ClerkProvider
   if (!clerkKey) {
@@ -78,11 +72,6 @@ export function ClerkErrorBoundary({ children, fallback }: ClerkErrorBoundaryPro
       console.log('🔧 DEV MODE: No Clerk key, rendering without ClerkProvider');
     }
     return <>{children}</>;
-  }
-
-  // If Clerk initialization failed, show error screen in production
-  if (clerkInitError && isProduction) {
-    return <ClerkErrorScreen onRetry={() => window.location.reload()} />;
   }
 
   // Always try to render ClerkProvider, let error boundary catch failures
