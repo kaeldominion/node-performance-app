@@ -7,6 +7,7 @@ import { aiApi, workoutsApi, programsApi, userApi } from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 import { GenerationTerminal } from '@/components/workout/GenerationTerminal';
+import { Icon } from '@/components/icons';
 
 const TRAINING_GOALS = ['STRENGTH', 'HYPERTROPHY', 'HYBRID', 'CONDITIONING', 'FAT_LOSS', 'LONGEVITY'];
 const ARCHETYPES = [
@@ -732,7 +733,7 @@ Browse Recommended
 
                 <div className="space-y-6">
                   {generatedWorkout.sections?.map((section: any, idx: number) => (
-                <div
+                    <div
                   key={idx}
                   className="bg-panel/50 thin-border rounded-lg p-6 border-l-4"
                   style={{ borderLeftColor: section.type === 'EMOM' ? '#ccff00' : section.type === 'AMRAP' ? '#ccff00' : 'transparent' }}
