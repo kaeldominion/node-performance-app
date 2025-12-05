@@ -52,7 +52,7 @@ export default function SubscriptionPage() {
           </p>
           <div className="bg-panel thin-border rounded-lg p-8 max-w-md mx-auto">
             <div className="text-node-volt font-heading font-bold text-xl mb-2">
-              {user.subscriptionTier || 'FREE'} Plan
+              FREE Plan
             </div>
             <p className="text-muted-text text-sm">
               Your current subscription tier
