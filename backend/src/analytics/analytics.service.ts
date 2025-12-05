@@ -313,7 +313,7 @@ export class AnalyticsService {
         role: { in: ['HOME_USER', 'COACH'] }, // Only show regular users and coaches
       },
       include: {
-        sessionLogs: {
+        sessions: {
           where: { completed: true },
           orderBy: { startedAt: 'desc' },
         },
@@ -322,7 +322,7 @@ export class AnalyticsService {
 
     const leaderboardData = await Promise.all(
       users.map(async (user) => {
-        const sessions = user.sessionLogs;
+        const sessions = user.sessions;
         const totalSessions = sessions.length;
         const totalHours = sessions.reduce((sum, s) => sum + (s.durationSec || 0), 0) / 3600;
         const avgRPE = sessions.length > 0

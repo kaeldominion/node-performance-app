@@ -42,7 +42,7 @@ export class WorkoutsService {
   }
 
   async findByShareId(shareId: string) {
-    const workout = await this.prisma.workout.findUnique({
+    const workout = await this.prisma.workout.findFirst({
       where: { shareId },
       include: {
         sections: {
