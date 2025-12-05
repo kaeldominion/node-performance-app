@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import { Icons } from '@/lib/iconMapping';
-import { Users, Zap, Target, TrendingUp, Clock, Trophy, Activity, Calendar, MapPin } from 'lucide-react';
+import { Users, Zap, Target, TrendingUp, Clock, Trophy, Activity, Calendar, MapPin, X } from 'lucide-react';
 
 interface HyroxRace {
   name: string;
@@ -14,12 +15,50 @@ interface HyroxRace {
 }
 
 export default function HyroxAIBuilderPage() {
+  const router = useRouter();
   const [terminalStep, setTerminalStep] = useState(0);
   const [isAnimating, setIsAnimating] = useState(true);
   const [scrollY, setScrollY] = useState(0);
   const [isVisible, setIsVisible] = useState<Record<string, boolean>>({});
   const [upcomingRaces, setUpcomingRaces] = useState<HyroxRace[]>([]);
   const [loadingRaces, setLoadingRaces] = useState(true);
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false);
+  const [formData, setFormData] = useState({
+    equipment: [] as string[],
+    trainingLevel: 'INTERMEDIATE' as 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'ELITE',
+  });
+
+  const HYROX_EQUIPMENT = [
+    'rower',
+    'ski_erg',
+    'bike_erg',
+    'air_bike',
+    'dumbbells',
+    'kettlebell',
+    'sandbag',
+    'pull-up bar',
+    'running route',
+  ];
+
+  const handleGenerate = () => {
+    if (formData.equipment.length === 0) {
+      alert('Please select at least one piece of equipment');
+      return;
+    }
+    setShowSignupPrompt(true);
+  };
+
+  const handleSignupAndRedirect = () => {
+    // Build URL with form data as query params
+    const params = new URLSearchParams({
+      goal: 'CONDITIONING',
+      workoutType: 'single',
+      workoutDuration: 'hyrox',
+      trainingLevel: formData.trainingLevel,
+      equipment: formData.equipment.join(','),
+    });
+    router.push(`/auth/register?redirect=/ai/workout-builder?${params.toString()}`);
+  };
 
   // Parallax scroll effect
   useEffect(() => {
@@ -203,7 +242,7 @@ export default function HyroxAIBuilderPage() {
             <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-heading font-bold leading-[0.95] tracking-tight drop-shadow-2xl mb-6">
               AI-Powered <span className="text-node-volt animate-glow">HYROX</span> Training
             </h1>
-            <p className="text-text-white text-base sm:text-lg max-w-lg border-l-2 border-node-volt/60 pl-[30px] font-body leading-[2.2] mb-10">
+            <p className="text-text-white text-base sm:text-lg max-w-lg border-l-2 border-node-volt/60 pl-[30px] font-body leading-relaxed mb-10">
               Generate personalized HYROX workouts tailored to your equipment, fitness level, and race goals. 
               Race-specific training that prepares you for competition day.
             </p>
@@ -247,7 +286,7 @@ export default function HyroxAIBuilderPage() {
               <h2 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold mb-6">
                 Are You Ready for <span className="text-node-volt">{nextRace.name}</span>?
               </h2>
-              <p className="text-muted-text font-body text-lg leading-[2.2] mb-8 max-w-2xl mx-auto">
+              <p className="text-muted-text font-body text-lg leading-relaxed mb-8 max-w-2xl mx-auto">
                 {nextRace.daysUntil} days until race day. Start your personalized HYROX training program today 
                 and arrive at the start line fully prepared.
               </p>
@@ -319,31 +358,72 @@ export default function HyroxAIBuilderPage() {
               <h2 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold mb-6">
                 Sessions in Seconds
               </h2>
-              <p className="text-muted-text font-body text-lg leading-[2.2] mb-8">
-                Choose an archetype, set equipment and time, and let the builder create balanced work with clear prescriptions.
+              <p className="text-muted-text font-body text-lg leading-relaxed mb-8">
+                Choose your equipment and training level, then let the AI create a personalized HYROX workout tailored to your needs.
               </p>
-              <div className="bg-panel/50 thin-border rounded-lg p-8">
-                <div className="space-y-4 animate-pulse">
-                  <div className="bg-panel/80 thin-border rounded p-4">
-                    <div className="h-4 bg-node-volt/20 rounded w-3/4 mb-2"></div>
-                    <div className="h-8 bg-dark/50 rounded"></div>
+              <div className="bg-panel/50 thin-border rounded-lg p-6">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleGenerate();
+                  }}
+                  className="space-y-6"
+                >
+                  {/* Training Level */}
+                  <div>
+                    <label className="block text-sm font-heading font-bold mb-3 text-node-volt uppercase tracking-[0.1em]">
+                      Training Level
+                    </label>
+                    <select
+                      value={formData.trainingLevel}
+                      onChange={(e) => setFormData(prev => ({ ...prev, trainingLevel: e.target.value as any }))}
+                      className="w-full bg-dark/80 thin-border rounded px-4 py-3 text-text-white font-body focus:border-node-volt focus:ring-2 focus:ring-node-volt/20 transition-all"
+                    >
+                      <option value="BEGINNER">Beginner</option>
+                      <option value="INTERMEDIATE">Intermediate</option>
+                      <option value="ADVANCED">Advanced</option>
+                      <option value="ELITE">Elite</option>
+                    </select>
                   </div>
-                  <div className="bg-panel/80 thin-border rounded p-4">
-                    <div className="h-4 bg-node-volt/20 rounded w-2/3 mb-2"></div>
-                    <div className="h-8 bg-dark/50 rounded"></div>
-                  </div>
-                  <div className="bg-panel/80 thin-border rounded p-4">
-                    <div className="h-4 bg-node-volt/20 rounded w-1/2 mb-2"></div>
-                    <div className="flex gap-2">
-                      <div className="h-6 bg-node-volt/30 rounded w-16"></div>
-                      <div className="h-6 bg-node-volt/30 rounded w-16"></div>
-                      <div className="h-6 bg-node-volt/30 rounded w-16"></div>
+
+                  {/* Equipment Selection */}
+                  <div>
+                    <label className="block text-sm font-heading font-bold mb-3 text-node-volt uppercase tracking-[0.1em]">
+                      Equipment Available
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {HYROX_EQUIPMENT.map((eq) => (
+                        <button
+                          key={eq}
+                          type="button"
+                          onClick={() => {
+                            setFormData(prev => ({
+                              ...prev,
+                              equipment: prev.equipment.includes(eq)
+                                ? prev.equipment.filter(e => e !== eq)
+                                : [...prev.equipment, eq]
+                            }));
+                          }}
+                          className={`px-3 py-2 text-sm font-body rounded thin-border transition-all ${
+                            formData.equipment.includes(eq)
+                              ? 'bg-node-volt text-black border-node-volt font-bold'
+                              : 'bg-panel/50 text-text-white border-border hover:border-node-volt/50'
+                          }`}
+                        >
+                          {eq.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                  <div className="bg-node-volt text-black font-heading font-bold text-center py-3 rounded uppercase tracking-wider">
-                    Generate Workout
-                  </div>
-                </div>
+
+                  <button
+                    type="submit"
+                    className="w-full bg-node-volt text-black font-heading font-bold py-3 rounded uppercase tracking-wider hover:bg-text-white transition-all duration-300"
+                    style={{ color: '#000000' }}
+                  >
+                    Generate HYROX Workout
+                  </button>
+                </form>
               </div>
             </div>
 
@@ -404,7 +484,7 @@ export default function HyroxAIBuilderPage() {
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold mb-8">
               Cinematic Training Experience
             </h2>
-            <p className="text-muted-text font-body text-lg leading-[2.2] mb-12 max-w-2xl">
+            <p className="text-muted-text font-body text-lg leading-relaxed mb-12 max-w-2xl">
               Experience your HYROX workouts in cinematic deck mode. Full-screen, distraction-free training with 
               clear tier prescriptions (Silver, Gold, Black) and smooth transitions between exercises.
             </p>
@@ -467,7 +547,7 @@ export default function HyroxAIBuilderPage() {
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold mb-6">
               Train Together. Compete. Elevate.
             </h2>
-            <p className="text-muted-text font-body text-lg leading-[2.2] mb-8">
+            <p className="text-muted-text font-body text-lg leading-relaxed mb-8">
               Stay motivated and accountable through NØDE's powerful network features. Connect with training partners, 
               see real-time activity, and compete together—whether you're training in the same gym or remotely across the world.
             </p>
@@ -656,7 +736,7 @@ export default function HyroxAIBuilderPage() {
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold mb-8">
               Ready to Transform Your <span className="text-node-volt">HYROX</span> Training?
             </h2>
-            <p className="text-muted-text font-body text-lg leading-[2.2] mb-12">
+            <p className="text-muted-text font-body text-lg leading-relaxed mb-12">
               Join NØDE and start generating personalized HYROX workouts today. Train smarter, compete harder, perform better.
             </p>
           </div>
@@ -681,6 +761,41 @@ export default function HyroxAIBuilderPage() {
           </div>
         </div>
       </section>
+
+      {/* Signup Prompt Modal */}
+      {showSignupPrompt && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-panel thin-border rounded-lg max-w-md w-full p-8 space-y-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-2xl font-heading font-bold">Ready to Generate Your Workout?</h3>
+              <button
+                onClick={() => setShowSignupPrompt(false)}
+                className="p-2 hover:bg-panel/50 rounded transition-colors"
+              >
+                <X size={20} className="text-muted-text" />
+              </button>
+            </div>
+            <p className="text-muted-text leading-relaxed">
+              Sign up for NØDE to generate your personalized HYROX workout. Your form selections will be saved and you'll be redirected to the AI builder.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <button
+                onClick={handleSignupAndRedirect}
+                className="flex-1 px-6 py-3 bg-node-volt text-black font-heading font-bold uppercase tracking-[0.2em] hover:bg-text-white transition-all duration-300"
+                style={{ color: '#000000' }}
+              >
+                Sign Up & Generate
+              </button>
+              <button
+                onClick={() => setShowSignupPrompt(false)}
+                className="px-6 py-3 thin-border border-text-white/30 text-text-white font-heading font-bold uppercase tracking-[0.2em] hover:border-node-volt hover:text-node-volt transition-all duration-300"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
