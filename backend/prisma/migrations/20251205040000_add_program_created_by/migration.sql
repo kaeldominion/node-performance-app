@@ -11,10 +11,13 @@ BEGIN
     END IF;
 END $$;
 
--- AddForeignKey (only if it doesn't exist)
+-- AddForeignKey (only if coach_profiles table exists and constraint doesn't exist)
 DO $$
 BEGIN
-    IF NOT EXISTS (
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_name = 'coach_profiles'
+    ) AND NOT EXISTS (
         SELECT 1 FROM pg_constraint 
         WHERE conname = 'programs_coachId_fkey'
     ) THEN
