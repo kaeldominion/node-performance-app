@@ -203,9 +203,38 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onShutdow
         const phaseProgress = Math.min(1, phaseElapsed / reviewDuration);
         setCurrentStepProgress(phaseProgress);
         setProgress(60 + phaseProgress * 25); // 60% to 85%
+        
+        // If review completes, transition to optimizing
+        if (phaseProgress >= 1) {
+          setSteps((prev) =>
+            prev.map((step) => {
+              if (step.id === 'reviewing') return { ...step, status: 'complete' as const };
+              if (step.id === 'optimizing') return { ...step, status: 'active' as const };
+              return step;
+            })
+          );
+          setCurrentPhase('optimizing');
+          setPhaseStartTime(Date.now());
+          setCurrentStepProgress(0);
+          playSound('step');
+        }
       }
       // Phase 4: Optimizing (85% → 95%, ~3 seconds)
-      else if (!isGenerating && !isReviewing && !error && currentPhase !== 'optimizing' && currentPhase !== 'complete') {
+      // Transition to optimizing when reviewing is done OR when both flags are false
+      else if (currentPhase === 'reviewing' && !isReviewing && !error) {
+        // Reviewing phase ended, transition to optimizing
+        setSteps((prev) =>
+          prev.map((step) => {
+            if (step.id === 'reviewing') return { ...step, status: 'complete' as const };
+            if (step.id === 'optimizing') return { ...step, status: 'active' as const };
+            return step;
+          })
+        );
+        setCurrentPhase('optimizing');
+        setPhaseStartTime(Date.now());
+        setCurrentStepProgress(0);
+        playSound('step');
+      } else if (!isGenerating && !isReviewing && !error && currentPhase !== 'optimizing' && currentPhase !== 'complete' && currentPhase !== 'shutting-down') {
         setSteps((prev) =>
           prev.map((step) => {
             if (step.id === 'reviewing') return { ...step, status: 'complete' as const };
@@ -370,18 +399,18 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onShutdow
                 <div className="ml-auto flex items-center gap-2">
                   <div className="w-16 h-1.5 bg-node-volt/10 rounded-full overflow-hidden border border-node-volt/20">
                     <div
-                      className="h-full bg-node-volt transition-all duration-300"
-                      style={{ width: `${currentStepProgress * 100}%` }}
+                      className="h-full bg-node-volt transition-all duration-300 ease-out"
+                      style={{ width: `${Math.max(0, Math.min(100, currentStepProgress * 100))}%` }}
                     />
                   </div>
                   <span className="text-node-volt/60 text-xs font-mono w-8 text-right">
-                    {Math.round(currentStepProgress * 100)}%
+                    {Math.round(Math.max(0, Math.min(100, currentStepProgress * 100)))}%
                   </span>
                 </div>
               )}
 
-              {/* Active cursor */}
-              {isActive && !currentStepProgress && (
+              {/* Active cursor - only show when step is active but has no progress yet */}
+              {isActive && currentStepProgress === 0 && (
                 <span className="text-node-volt animate-pulse ml-2">▊</span>
               )}
 
