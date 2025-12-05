@@ -507,7 +507,7 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
 
     return (
       <div className="fixed inset-0 bg-dark overflow-hidden flex items-center justify-center p-4 sm:p-6 md:p-8" style={{ fontFamily: 'var(--font-manrope)' }}>
-        <div className="bg-panel thin-border rounded-2xl max-w-5xl w-full h-[90vh] overflow-hidden flex flex-col p-6 sm:p-8 md:p-12">
+        <div className={`bg-panel thin-border rounded-2xl max-w-5xl w-full ${isMobile ? 'h-[95vh] overflow-y-auto' : 'h-[90vh] overflow-hidden'} flex flex-col p-4 sm:p-6 md:p-8`}>
           {/* NØDE Branding */}
           <div className="flex justify-center mb-4 flex-shrink-0">
             <Logo showOS={true} className="text-2xl" />
@@ -791,10 +791,10 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
         className={`h-full w-full flex items-center justify-center ${getTransitionClass()}`}
         style={{
           background: 'var(--dark)',
-          paddingTop: showControls ? '80px' : '0',
-          paddingBottom: showControls ? '100px' : '80px',
-          paddingLeft: '1rem',
-          paddingRight: '1rem',
+          paddingTop: showControls ? (isMobile ? '60px' : '80px') : '0',
+          paddingBottom: showControls ? (isMobile ? '80px' : '100px') : (isMobile ? '60px' : '80px'),
+          paddingLeft: isMobile ? '0.5rem' : '1rem',
+          paddingRight: isMobile ? '0.5rem' : '1rem',
           overflow: 'hidden',
           height: '100vh',
         }}

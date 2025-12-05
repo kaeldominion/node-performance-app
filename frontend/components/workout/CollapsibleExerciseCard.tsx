@@ -32,12 +32,13 @@ export function CollapsibleExerciseCard({
   return (
     <div
       className={`
-        bg-panel thin-border rounded-lg transition-all
+        bg-panel thin-border rounded-lg transition-all flex flex-col
         ${isActive ? 'border-2 border-node-volt' : ''}
-        ${compact ? 'p-3' : 'p-4'}
+        ${compact ? 'p-2' : (isMobile ? 'p-3' : 'p-4')}
       `}
       style={{
         minHeight: 0,
+        maxHeight: '100%',
         overflow: 'hidden',
       }}
     >
@@ -126,7 +127,7 @@ export function CollapsibleExerciseCard({
       )}
 
       {/* Collapsible Details */}
-      <div className={`transition-all overflow-hidden ${isCollapsed && isMobile ? 'max-h-0' : 'max-h-[500px]'}`}>
+      <div className={`transition-all overflow-hidden ${isCollapsed && isMobile ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100'}`}>
         {/* Instructions */}
         {block.exerciseInstructions && (
           <div 
@@ -173,37 +174,37 @@ export function CollapsibleExerciseCard({
             )}
           </div>
         )}
-
-        {/* Tier Prescriptions */}
-        {(block.tierSilver || block.tierGold || block.tierBlack) && (
-          <div className={`grid gap-2 ${compact ? 'grid-cols-3' : 'grid-cols-3'}`}>
-            {block.tierSilver && (
-              <div className="bg-panel thin-border rounded p-2" style={{ borderColor: '#94a3b8', backgroundColor: 'rgba(148, 163, 184, 0.1)' }}>
-                <div className="text-xs mb-1 font-bold uppercase tracking-wider" style={{ color: '#94a3b8' }}>SILVER</div>
-                <div className="font-medium text-xs" style={{ color: '#94a3b8' }}>
-                  {getTierDisplayValue(block.tierSilver, block.exerciseName, block)}
-                </div>
-              </div>
-            )}
-            {block.tierGold && (
-              <div className="bg-panel thin-border rounded p-2" style={{ borderColor: '#fbbf24', backgroundColor: 'rgba(251, 191, 36, 0.1)' }}>
-                <div className="text-xs mb-1 font-bold uppercase tracking-wider" style={{ color: '#fbbf24' }}>GOLD</div>
-                <div className="font-medium text-xs" style={{ color: '#fbbf24' }}>
-                  {getTierDisplayValue(block.tierGold, block.exerciseName, block)}
-                </div>
-              </div>
-            )}
-            {block.tierBlack && (
-              <div className="bg-panel thin-border rounded p-2 border-node-volt" style={{ backgroundColor: theme === 'dark' ? 'rgba(26, 26, 26, 0.8)' : 'rgba(31, 41, 55, 0.8)' }}>
-                <div className="text-xs mb-1 font-bold uppercase tracking-wider text-node-volt">BLACK</div>
-                <div className="font-medium text-xs text-node-volt">
-                  {getTierDisplayValue(block.tierBlack, block.exerciseName, block)}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
       </div>
+
+      {/* Tier Prescriptions - Always Visible */}
+      {(block.tierSilver || block.tierGold || block.tierBlack) && (
+        <div className={`grid gap-1.5 mt-auto ${compact ? 'grid-cols-3' : 'grid-cols-3'}`}>
+          {block.tierSilver && (
+            <div className={`bg-panel thin-border rounded ${compact ? 'p-1.5' : 'p-2'}`} style={{ borderColor: '#94a3b8', backgroundColor: 'rgba(148, 163, 184, 0.1)' }}>
+              <div className={`${compact ? 'text-[10px]' : 'text-xs'} mb-0.5 font-bold uppercase tracking-wider`} style={{ color: '#94a3b8' }}>SILVER</div>
+              <div className={`font-medium ${compact ? 'text-[10px]' : 'text-xs'}`} style={{ color: '#94a3b8' }}>
+                {getTierDisplayValue(block.tierSilver, block.exerciseName, block)}
+              </div>
+            </div>
+          )}
+          {block.tierGold && (
+            <div className={`bg-panel thin-border rounded ${compact ? 'p-1.5' : 'p-2'}`} style={{ borderColor: '#fbbf24', backgroundColor: 'rgba(251, 191, 36, 0.1)' }}>
+              <div className={`${compact ? 'text-[10px]' : 'text-xs'} mb-0.5 font-bold uppercase tracking-wider`} style={{ color: '#fbbf24' }}>GOLD</div>
+              <div className={`font-medium ${compact ? 'text-[10px]' : 'text-xs'}`} style={{ color: '#fbbf24' }}>
+                {getTierDisplayValue(block.tierGold, block.exerciseName, block)}
+              </div>
+            </div>
+          )}
+          {block.tierBlack && (
+            <div className={`bg-panel thin-border rounded ${compact ? 'p-1.5' : 'p-2'} border-node-volt`} style={{ backgroundColor: theme === 'dark' ? 'rgba(26, 26, 26, 0.8)' : 'rgba(31, 41, 55, 0.8)' }}>
+              <div className={`${compact ? 'text-[10px]' : 'text-xs'} mb-0.5 font-bold uppercase tracking-wider text-node-volt`}>BLACK</div>
+              <div className={`font-medium ${compact ? 'text-[10px]' : 'text-xs'} text-node-volt`}>
+                {getTierDisplayValue(block.tierBlack, block.exerciseName, block)}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Tap Hint on Mobile */}
       {isMobile && hasDetails && isCollapsed && !compact && (
