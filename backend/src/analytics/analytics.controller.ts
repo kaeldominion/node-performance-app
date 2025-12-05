@@ -7,7 +7,6 @@ import { ClerkAdminGuard } from '../auth/clerk-admin.guard';
 @Controller('analytics')
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
-  constructor(private readonly analyticsService: AnalyticsService) {}
 
   @Get('stats')
   @UseGuards(ClerkAuthGuard)
