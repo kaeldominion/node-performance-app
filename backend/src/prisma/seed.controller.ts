@@ -9,5 +9,10 @@ export class SeedController {
   async seed() {
     return this.prisma.seedDatabase();
   }
+
+  @Post('seed/exercises')
+  async seedExercises() {
+    return this.prisma.seedExercises();
+  }
 }
 

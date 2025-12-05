@@ -36,5 +36,31 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       };
     }
   }
+
+  async seedExercises() {
+    try {
+      // Run seed using npm script (requires ts-node in production)
+      const { execSync } = require('child_process');
+      
+      execSync('npm run prisma:seed:exercises', { 
+        stdio: 'pipe',
+        env: process.env,
+        cwd: process.cwd()
+      });
+      
+      const total = await this.exercise.count();
+      return { 
+        message: `Exercises seeded successfully. Total: ${total} exercises`,
+        total
+      };
+    } catch (error: any) {
+      // Return error message instead of throwing
+      return { 
+        error: true, 
+        message: `Exercise seeding failed: ${error.message}`,
+        details: error.stdout?.toString() || error.stderr?.toString() || error.stack || ''
+      };
+    }
+  }
 }
 
