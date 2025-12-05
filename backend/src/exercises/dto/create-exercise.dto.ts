@@ -88,5 +88,42 @@ export class CreateExerciseDto {
   @ValidateNested({ each: true })
   @Type(() => ExerciseTierDto)
   tiers?: ExerciseTierDto[];
+  
+  // New fields for reference/how-to guide
+  @IsOptional()
+  @IsString()
+  instructions?: string;
+
+  @IsOptional()
+  variations?: any; // JSON field for exercise variations
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  graphics?: string[];
+
+  @IsOptional()
+  @IsString()
+  videoUrl?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  commonMistakes?: string[];
+
+  @IsOptional()
+  @IsString()
+  progressionTips?: string;
+
+  @IsOptional()
+  @IsString()
+  regressionTips?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  aiGenerated?: boolean;
+
+  @IsOptional()
+  usageCount?: number;
 }
 

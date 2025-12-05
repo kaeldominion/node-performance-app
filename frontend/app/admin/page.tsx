@@ -49,9 +49,11 @@ export default function AdminDashboard() {
           </div>
 
           <div className="bg-panel thin-border rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-2">Programs</h3>
-            <p className="text-3xl font-bold text-node-volt mb-1">{stats.programs}</p>
-            <p className="text-muted-text text-sm">Coming soon</p>
+            <h3 className="text-lg font-semibold mb-2">Workouts</h3>
+            <p className="text-3xl font-bold text-node-volt mb-1">-</p>
+            <Link href="/admin/workouts" className="text-node-volt hover:underline text-sm">
+              Manage Workouts →
+            </Link>
           </div>
 
           <div className="bg-panel thin-border rounded-lg p-6">
@@ -70,12 +72,12 @@ export default function AdminDashboard() {
             >
               Manage Exercises
             </Link>
-            <button
-              disabled
-              className="bg-panel text-muted-text font-bold py-3 px-6 rounded opacity-50 cursor-not-allowed text-center"
+            <Link
+              href="/admin/workouts"
+              className="bg-node-volt text-dark font-bold py-3 px-6 rounded hover:opacity-90 transition-opacity text-center"
             >
-              Manage Programs (Coming Soon)
-            </button>
+              Manage Workouts
+            </Link>
             <button
               disabled
               className="bg-panel text-muted-text font-bold py-3 px-6 rounded opacity-50 cursor-not-allowed text-center"

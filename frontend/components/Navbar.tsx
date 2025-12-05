@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { XPDisplay } from './gamification/XPDisplay';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -18,7 +19,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="text-2xl font-bold font-heading">
-            N<span className="text-node-volt">Ø</span>DE
+            N<span className="text-node-volt">Ø</span>DE <span className="text-muted-text text-lg">OS</span>
           </Link>
 
           <div className="flex items-center gap-6">
@@ -36,6 +37,9 @@ export default function Navbar() {
             </Link>
             {user && (
               <>
+                <Link href="/workouts/recommended" className="text-muted-text hover:text-text-white transition-colors">
+                  Recommended
+                </Link>
                 <Link href="/ai/workout-builder" className="text-muted-text hover:text-text-white transition-colors">
                   AI Builder
                 </Link>
@@ -61,6 +65,7 @@ export default function Navbar() {
             )}
             {user ? (
               <>
+                <XPDisplay userId={user.id} />
                 <span className="text-muted-text">{user.name || user.email}</span>
                 <button
                   onClick={handleLogout}

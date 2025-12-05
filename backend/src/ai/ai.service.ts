@@ -21,67 +21,17 @@ export class AiService {
     archetype?: string;
     workoutType?: 'single' | 'week' | 'month' | 'fourDay';
     cycle?: 'BASE' | 'LOAD' | 'INTENSIFY' | 'DELOAD';
+    isHyrox?: boolean; // Flag for HYROX-style 90-minute conditioning workouts (single workouts only)
+    includeHyrox?: boolean; // Flag to include HYROX sessions in multi-day programs
   }) {
     // Pass archetype to the prompt
     const archetypeParam = params.archetype || undefined;
     const archetypeGuidance = this.getArchetypeGuidance(archetypeParam);
     
-    // Get exercises from database and filter by available equipment
-    const allExercises = await this.exercisesService.findAll();
+    // Check if running route is available
     const hasRunningRoute = params.equipment.some((eq) => 
       eq.toLowerCase().includes('running') || eq.toLowerCase().includes('route') || eq.toLowerCase().includes('outdoor')
     );
-    
-    const availableExercises = allExercises.filter((ex) => {
-      // Always include bodyweight exercises
-      if (ex.equipment.length === 0) return true;
-      
-      // Include running exercises if running route is available
-      if (hasRunningRoute && (
-        ex.name.toLowerCase().includes('run') || 
-        ex.name.toLowerCase().includes('sprint') ||
-        ex.equipment.some((e) => e.toLowerCase().includes('run') || e.toLowerCase().includes('route'))
-      )) {
-        return true;
-      }
-      
-      // Match equipment
-      return params.equipment.some((eq) =>
-        ex.equipment.some((e) => e.toLowerCase().includes(eq.toLowerCase())),
-      );
-    });
-
-    // Format exercises for prompt with detailed metadata
-    const exerciseList = availableExercises
-      .map((ex) => {
-        const equipmentStr = ex.equipment.join(', ') || 'bodyweight';
-        const archetypesStr = ex.suitableArchetypes.join(', ');
-        const primaryMuscles = ex.primaryMuscles.join(', ') || 'N/A';
-        const secondaryMuscles = ex.secondaryMuscles?.join(', ') || '';
-        const space = ex.space || 'N/A';
-        const impact = ex.impactLevel || 'N/A';
-        const typicalUse = ex.typicalUse?.join(', ') || 'N/A';
-        const notes = ex.notes || '';
-        
-        // Format tier prescriptions if available
-        let tierInfo = '';
-        if (ex.tiers && ex.tiers.length > 0) {
-          const tierPrescriptions = ex.tiers.map((tier: any) => {
-            const reps = tier.typicalReps ? ` ${tier.typicalReps} reps` : '';
-            const desc = tier.description ? ` (${tier.description})` : '';
-            return `${tier.tier}:${reps}${desc}`;
-          }).join(' | ');
-          tierInfo = ` | Tiers: ${tierPrescriptions}`;
-        }
-        
-        return `- ${ex.name}
-  Category: ${ex.category} | Pattern: ${ex.movementPattern}
-  Equipment: ${equipmentStr} | Space: ${space} | Impact: ${impact}
-  Muscles: ${primaryMuscles}${secondaryMuscles ? ` (secondary: ${secondaryMuscles})` : ''}
-  Typical Use: ${typicalUse} | Archetypes: ${archetypesStr}${tierInfo}
-  ${notes ? `Notes: ${notes}` : ''}`;
-      })
-      .join('\n\n');
 
     // REVL and Hyrox workout examples
     const workoutExamples = this.getWorkoutExamples();
@@ -90,10 +40,7 @@ export class AiService {
 
 ${archetypeGuidance}
 
-EXERCISE REFERENCE (for inspiration - you can create variations):
-${exerciseList.length > 0 ? exerciseList.substring(0, 2000) + '...\n(Additional exercises available in database)' : 'No exercises in database - generate based on equipment and movement patterns'}
-
-CRITICAL: You are NOT limited to the exercise database. Generate exercises based on:
+CRITICAL: Generate exercises FREELY based on:
 - Available equipment: ${params.equipment.join(', ')}
 - Movement patterns needed for the archetype
 - REVL-style naming conventions (e.g., "BB FFE Rev Lunge", "SA DB Strict Press", "DBall TNG GTS")
@@ -114,14 +61,16 @@ You MUST respond with ONLY valid JSON that matches this exact schema:
       "title": "Section Title",
       "type": "WARMUP" | "EMOM" | "AMRAP" | "FOR_TIME" | "FINISHER" | "COOLDOWN" | "WAVE" | "SUPERSET" | "CIRCUIT" | "CAPACITY" | "FLOW" | "INTERVAL",
       "order": 1,
-      "durationSec": 720 (for AMRAP/FOR_TIME/CAPACITY),
-      "emomWorkSec": 45 (for EMOM),
-      "emomRestSec": 15 (for EMOM),
-      "emomRounds": 12 (for EMOM),
-      "intervalWorkSec": 20 (for INTERVAL: work duration in seconds),
-      "intervalRestSec": 100 (for INTERVAL: rest duration in seconds),
-      "intervalRounds": 8 (for INTERVAL: number of rounds),
-      "note": "Optional section note",
+      "durationSec": 720 (REQUIRED for AMRAP/FOR_TIME/CAPACITY - must be specified in seconds, e.g., 480 for 8:00, 600 for 10:00),
+      "emomWorkSec": 45 (REQUIRED for EMOM - work duration in seconds),
+      "emomRestSec": 15 (REQUIRED for EMOM - rest duration in seconds),
+      "emomRounds": 12 (REQUIRED for EMOM - total number of rounds),
+      "intervalWorkSec": 20 (REQUIRED for INTERVAL/CUSTOM_INTERVAL: work duration in seconds),
+      "intervalRestSec": 100 (REQUIRED for INTERVAL/CUSTOM_INTERVAL: rest duration in seconds),
+      "intervalRounds": 8 (REQUIRED for INTERVAL/CUSTOM_INTERVAL: number of rounds),
+      "rounds": 4 (OPTIONAL for FOR_TIME: number of rounds when format is "X:XX Cap × Y Rounds"),
+      "restBetweenRounds": 30 (OPTIONAL for FOR_TIME: rest duration in seconds between rounds),
+      "note": "REQUIRED for AMRAP/CIRCUIT/FOR_TIME sections - MUST include: 'Complete as many rounds as possible in [X:XX]. Rest [X] seconds between rounds if needed. Move through exercises in order: [exercise order].' Include pacing strategy, rest guidance, and round structure.",
       "blocks": [
         {
           "label": "01",
@@ -130,22 +79,26 @@ You MUST respond with ONLY valid JSON that matches this exact schema:
           "repScheme": "MUST be specific: '10-8-8-8' (wave), '16-14-12' (descending), '8-7-6-5+' (descending with max), '10' (fixed), 'AMRAP' (only if truly unlimited), or specific rep ranges like '8-10'",
           "tempo": "Optional: '2220', '2020', '2s pause', '3s eccentric', 'First 4 Reps: R1-2 = 2220'",
           "loadPercentage": "Optional: '@ 40-45-50-55%' (progressive across rounds) or '@ 60-65-70-75%'",
-          "distance": 200 (optional, for distance-based),
-          "distanceUnit": "m" or "cal",
           "order": 1,
           "tierSilver": {
             "load": "12 kg" or "40% 1RM" or "Bodyweight",
             "targetReps": 10,
+            "distance": 500 (REQUIRED for erg machines: rower, ski erg, bike, assault bike - use different distance/calories per tier),
+            "distanceUnit": "m" or "cal" (REQUIRED for erg machines),
             "notes": "Form focus, steady pace"
           },
           "tierGold": {
             "load": "20 kg" or "50% 1RM" or "Standard RX",
             "targetReps": 12,
+            "distance": 800 (REQUIRED for erg machines: MUST be different from tierSilver - higher for tierGold),
+            "distanceUnit": "m" or "cal" (REQUIRED for erg machines),
             "notes": "Challenging pace, standard RX"
           },
           "tierBlack": {
             "load": "28 kg" or "60% 1RM" or "Heavy",
             "targetReps": 15,
+            "distance": 1000 (REQUIRED for erg machines: MUST be different from tierGold - highest for tierBlack),
+            "distanceUnit": "m" or "cal" (REQUIRED for erg machines),
             "notes": "Competition standard, high intensity"
           }
         }
@@ -171,15 +124,18 @@ INTERVAL Section Type (Sprint Sessions):
 - Can be used as FINISHER or standalone section
 
 TIME MANAGEMENT GUIDELINES:
-- WARMUP: 5-10 minutes (movement prep, activation, light cardio)
-- COOLDOWN: 5 minutes (mobility, stretching, breathing)
+- WARMUP: 5-10 minutes (movement prep, activation, light cardio). HYROX: 10-15 minutes
+- COOLDOWN: 5 minutes (mobility, stretching, breathing). HYROX: 5-10 minutes
 - Main work sections should fit within remaining time
 - EMOM calculations: (workSec + restSec) × rounds = total time (e.g., 45s+15s × 12 = 12:00)
+- Custom intervals: "Every 1:10" = 70s total (calculate work:rest ratio), "Every 3:30" = 210s total
 - AMRAP/FOR_TIME: Duration should be realistic for training level
   * BEGINNER: 8-12 min AMRAPs, 15-20 min FOR_TIME caps
   * INTERMEDIATE: 10-15 min AMRAPs, 20-30 min FOR_TIME caps
   * ADVANCED: 12-20 min AMRAPs, 30-45 min FOR_TIME caps
   * ELITE: 15-25 min AMRAPs, 45-60 min FOR_TIME caps
+  * HYROX: 20-40 min AMRAPs, 30-60 min FOR_TIME caps (long endurance blocks)
+- FOR_TIME with rounds: "1:40 Cap × 4 Rounds" = durationSec: 100, rounds: 4, restBetweenRounds: 30-45
 - Total workout time = WARMUP + Main Work + FINISHER (optional) + COOLDOWN
 - Always leave 2-3 minutes buffer for transitions
 
@@ -194,6 +150,27 @@ TIER PRESCRIPTION GUIDELINES:
   * Typical use (CONDITIONING exercises = higher reps, FINISHER = max effort)
 - ALWAYS generate all three tiers (SILVER, GOLD, BLACK) for each exercise block so users can scale up/down
 
+CRITICAL: ERG MACHINES & DISTANCE-BASED EXERCISES:
+- For erg machines (Rower, SkiErg, Bike, Assault Bike, Echo Bike, BikeErg):
+  * DO NOT use a single distance/calories at the block level
+  * MUST specify different distance/calories in EACH tier (tierSilver, tierGold, tierBlack)
+  * tierSilver: Lower distance/calories (e.g., 500m row, 12 cals bike, 400m ski)
+  * tierGold: Medium distance/calories (e.g., 800m row, 15 cals bike, 600m ski)
+  * tierBlack: Higher distance/calories (e.g., 1000m row, 18 cals bike, 800m ski)
+  * Alternate between meters (m) and calories (cal) - use calories for bike/assault bike, meters for rower/ski erg
+  * Example progression: SILVER: 12 cal, GOLD: 15 cal, BLACK: 18 cal (bike)
+  * Example progression: SILVER: 500m, GOLD: 800m, BLACK: 1000m (rower)
+- For bodyweight exercises that use distance (Burpee Broad Jumps, Shuttle Runs, etc.):
+  * tierSilver: Shorter distance (e.g., 20m, 30m)
+  * tierGold: Medium distance (e.g., 40m, 50m)
+  * tierBlack: Longer distance (e.g., 60m, 80m)
+- For loaded exercises (dumbbells, kettlebells, barbells):
+  * Use different loads per tier (as normal)
+  * Distance/calories are NOT required unless it's a distance-based loaded movement (e.g., Farmers Carry)
+- For bodyweight exercises with reps (Push-ups, Pull-ups, etc.):
+  * Use different targetReps per tier (as normal)
+  * Distance/calories are NOT required
+
 REALISTIC WORKOUT DESIGN:
 - Ensure workouts are challenging but achievable within the time limit
 - Consider equipment transitions and setup time
@@ -207,16 +184,40 @@ Design workouts that are challenging, progressive, realistic, and aligned with t
 
     const workoutType = params.workoutType || 'single';
     const cycle = params.cycle || 'BASE';
-    const workoutTypeGuidance = this.getWorkoutTypeGuidance(workoutType, cycle);
+    const isHyrox = params.isHyrox || false;
+    const includeHyrox = params.includeHyrox || false;
     
-    const cycleGuidance = this.getCycleGuidance(cycle);
+    // For HYROX workouts, use different guidance
+    let workoutTypeGuidance: string;
+    let cycleGuidance: string | undefined;
+    
+    if (isHyrox) {
+      // Single HYROX workout
+      workoutTypeGuidance = 'a single HYROX-style 90-minute conditioning workout';
+    } else if (includeHyrox && workoutType !== 'single') {
+      // Multi-day program with HYROX sessions
+      const hyroxCount = workoutType === 'fourDay' ? 1 : workoutType === 'week' ? 1 : 4; // 4-week = 4 HYROX sessions
+      workoutTypeGuidance = this.getWorkoutTypeGuidance(workoutType, cycle, includeHyrox, hyroxCount);
+      cycleGuidance = this.getCycleGuidance(cycle);
+    } else {
+      // Standard workout
+      workoutTypeGuidance = this.getWorkoutTypeGuidance(workoutType, cycle);
+      cycleGuidance = this.getCycleGuidance(cycle);
+    }
     
     const userPrompt = `Generate ${workoutTypeGuidance} with these parameters:
+${isHyrox ? `
+- Workout Type: HYROX-style 90-minute conditioning session
+- Focus: Endurance, pacing, sustained effort, aerobic capacity
+- Structure: Extended warmup (10-15 min) → Long conditioning blocks (30-60 min) → Cooldown (5-10 min)
+- NO archetype or goal needed - this is pure conditioning
+` : `
 - Goal: ${params.goal}
 - Training Level: ${params.trainingLevel} (used for workout complexity/duration guidance only)
+${archetypeParam ? `- Archetype: ${archetypeParam} (follow archetype structure exactly)` : ''}
+`}
 - Available Equipment: ${params.equipment.join(', ')}
 - Available Time: ${params.availableMinutes} minutes per session
-${archetypeParam ? `- Archetype: ${archetypeParam} (follow archetype structure exactly)` : ''}
 - Preferred Sections: ${params.sectionPreferences?.join(', ') || 'Auto-select based on archetype'}
 ${cycleGuidance ? `- Cycle: ${cycle} - ${cycleGuidance}` : ''}
 
@@ -253,21 +254,28 @@ CRITICAL REQUIREMENTS - REVL-LEVEL DETAIL:
    - Tempo notation when applicable
    - Clear description with form cues
 
-6. SECTION TIMING - Be explicit:
-   - "1:40 Cap × 4 Rounds" = time cap and round count
-   - "Every 1:10 × 12" = interval and total rounds
-   - "EMOM × 16" = EMOM with total rounds
-   - Always calculate total time: (work + rest) × rounds
+6. SECTION TIMING - Be explicit and support ALL REVL formats:
+   - "1:40 Cap × 4 Rounds" = FOR_TIME with durationSec: 100, rounds: 4, restBetweenRounds: 30-45
+   - "8:00 Cap — 5 Rounds" = FOR_TIME with durationSec: 480, rounds: 5, restBetweenRounds: 45-60
+   - "30:00 Cap" = FOR_TIME with durationSec: 1800 (HYROX-style long cap)
+   - "Every 1:10 × 12" = INTERVAL with intervalWorkSec: 60, intervalRestSec: 10, intervalRounds: 12 (total 70s per round)
+   - "Every 3:30 × 4" = INTERVAL with intervalWorkSec: 180, intervalRestSec: 30, intervalRounds: 4 (total 210s per round)
+   - "E2MOM × 8" = INTERVAL with intervalWorkSec: 90, intervalRestSec: 30, intervalRounds: 8 (total 120s per round)
+   - "E4MOM × 2" = INTERVAL with intervalWorkSec: 180, intervalRestSec: 60, intervalRounds: 2 (total 240s per round)
+   - "EMOM × 16" = EMOM with emomWorkSec: 45, emomRestSec: 15, emomRounds: 16
+   - Always calculate total time: (work + rest) × rounds OR (intervalWorkSec + intervalRestSec) × intervalRounds
 
 7. BLOCK STRUCTURES - When multiple blocks:
    - Label clearly: "Block A (14-12-10)", "Block B (12-10-8)"
    - Show rep progression for each block
-   - Specify timing: "2 Blocks Every 1:10 × 12"
+   - "2 Blocks Every 1:10 × 12" = Create 2 SUPERSET sections, each with INTERVAL timing (70s intervals)
+   - Use section.note to explain block rotation: "Rotate between Block A and Block B every 1:10. Complete 12 rounds total (6 of each block)."
 
-8. PAIR/TEAM WORK - Specify format:
-   - "In Pairs 1:1" = one works, one rests
-   - "In Pairs YGIG" = You Go I Go alternating
-   - "Teams of 3-4" = team format
+8. PAIR/TEAM WORK - Specify format in section.note:
+   - "In Pairs 1:1" = one works, one rests (specify in note)
+   - "In Pairs YGIG" = You Go I Go alternating (specify in note)
+   - "Teams of 3-4" = team format (specify in note)
+   - Include partner/team instructions in section.note field
 
 CRITICAL TIME CONSTRAINTS:
 - Total workout must fit within ${params.availableMinutes} minutes
@@ -315,10 +323,102 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
       }
 
       // Validate and return single workout
-      return this.validateWorkoutSchema(workoutJson);
+      const validatedWorkout = this.validateWorkoutSchema(workoutJson);
+      
+      // Extract and store new exercises from the generated workout
+      await this.extractAndStoreExercises(validatedWorkout);
+      
+      return validatedWorkout;
     } catch (error) {
       console.error('OpenAI API error:', error);
       throw new Error('Failed to generate workout');
+    }
+  }
+  
+  /**
+   * Extract exercises from AI-generated workout and store new ones in database
+   */
+  private async extractAndStoreExercises(workout: any): Promise<void> {
+    try {
+      const exerciseNames = new Set<string>();
+      
+      // Collect all unique exercise names from the workout
+      if (workout.sections && Array.isArray(workout.sections)) {
+        workout.sections.forEach((section: any) => {
+          if (section.blocks && Array.isArray(section.blocks)) {
+            section.blocks.forEach((block: any) => {
+              if (block.exerciseName) {
+                exerciseNames.add(block.exerciseName.trim());
+              }
+            });
+          }
+        });
+      }
+      
+      // Check which exercises are new and need to be stored
+      const existingExercises = await this.exercisesService.findAll();
+      const existingNames = new Set(
+        existingExercises.map((ex) => ex.name.toLowerCase())
+      );
+      
+      const newExercises = Array.from(exerciseNames).filter(
+        (name) => !existingNames.has(name.toLowerCase())
+      );
+      
+      // Store new exercises (with minimal data - will be enriched later)
+      for (const exerciseName of newExercises) {
+        try {
+          // Generate a simple exerciseId from the name
+          const exerciseId = exerciseName
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '');
+          
+          // Check if exerciseId already exists
+          const existing = await this.exercisesService
+            .findByExerciseId(exerciseId)
+            .catch(() => null);
+          
+          if (!existing) {
+            // Create basic exercise entry - will be enriched with instructions/variations later
+            await this.exercisesService.create({
+              exerciseId,
+              name: exerciseName,
+              category: 'MIXED', // Default - can be updated later
+              movementPattern: 'FULL_BODY', // Default - can be updated later
+              primaryMuscles: [], // Will be inferred later from exercise name/context
+              equipment: [], // Will be inferred from workout context
+              space: 'OPEN_AREA', // Default
+              impactLevel: 'MEDIUM', // Default
+              typicalUse: ['PRIMARY'],
+              suitableArchetypes: workout.archetype ? [workout.archetype] : [],
+              indoorFriendly: true,
+              aiGenerated: true,
+              usageCount: 1,
+              instructions: null, // Will be generated later via AI enrichment
+              variations: null, // Will be generated later via AI enrichment
+              graphics: [],
+              videoUrl: null,
+              commonMistakes: [],
+              progressionTips: null,
+              regressionTips: null,
+            });
+            
+            console.log(`✅ Stored new AI-generated exercise: ${exerciseName}`);
+          } else {
+            // Increment usage count for existing exercise
+            await this.exercisesService.update(existing.id, {
+              usageCount: existing.usageCount + 1,
+            });
+          }
+        } catch (error) {
+          console.error(`Failed to store exercise ${exerciseName}:`, error);
+          // Continue with other exercises even if one fails
+        }
+      }
+    } catch (error) {
+      console.error('Error extracting exercises from workout:', error);
+      // Don't throw - exercise extraction is non-critical
     }
   }
 
@@ -476,6 +576,86 @@ S3 (In Pairs 1:1 — 6:00 Cap):
 - 100/100 BB/DB Curl
 - 8-10-12... KB High Pull
 
+ERG MACHINE TIER EXAMPLES (CRITICAL - Study these exactly):
+
+Example - Rower with Tier-Specific Distances:
+{
+  "exerciseName": "Row",
+  "tierSilver": {
+    "load": "Bodyweight",
+    "targetReps": null,
+    "distance": 500,
+    "distanceUnit": "m",
+    "notes": "Steady pace, focus on form"
+  },
+  "tierGold": {
+    "load": "Bodyweight",
+    "targetReps": null,
+    "distance": 800,
+    "distanceUnit": "m",
+    "notes": "Challenging pace, maintain stroke rate"
+  },
+  "tierBlack": {
+    "load": "Bodyweight",
+    "targetReps": null,
+    "distance": 1000,
+    "distanceUnit": "m",
+    "notes": "High intensity, competition pace"
+  }
+}
+
+Example - Bike with Tier-Specific Calories:
+{
+  "exerciseName": "Bike Erg",
+  "tierSilver": {
+    "load": "Bodyweight",
+    "targetReps": null,
+    "distance": 12,
+    "distanceUnit": "cal",
+    "notes": "Steady pace, focus on breathing"
+  },
+  "tierGold": {
+    "load": "Bodyweight",
+    "targetReps": null,
+    "distance": 15,
+    "distanceUnit": "cal",
+    "notes": "Challenging pace, push the pace"
+  },
+  "tierBlack": {
+    "load": "Bodyweight",
+    "targetReps": null,
+    "distance": 18,
+    "distanceUnit": "cal",
+    "notes": "Max effort, competition standard"
+  }
+}
+
+Example - SkiErg with Tier-Specific Distances:
+{
+  "exerciseName": "SkiErg",
+  "tierSilver": {
+    "load": "Bodyweight",
+    "targetReps": null,
+    "distance": 400,
+    "distanceUnit": "m",
+    "notes": "Steady pace, focus on technique"
+  },
+  "tierGold": {
+    "load": "Bodyweight",
+    "targetReps": null,
+    "distance": 600,
+    "distanceUnit": "m",
+    "notes": "Challenging pace, maintain rhythm"
+  },
+  "tierBlack": {
+    "load": "Bodyweight",
+    "targetReps": null,
+    "distance": 800,
+    "distanceUnit": "m",
+    "notes": "High intensity, competition pace"
+  }
+}
+
 HYROX WORKOUT EXAMPLES:
 
 Example 1 - Hyrox Race Simulation:
@@ -483,7 +663,7 @@ Example 1 - Hyrox Race Simulation:
 WARMUP: 10 min run + dynamic prep
 FOR_TIME (Cap 45:00):
 - 1km Run
-- 100m SkiErg
+- 100m SkiErg (tierSilver: 80m, tierGold: 100m, tierBlack: 120m)
 - 1km Run
 - 50 Wall Balls (9/6 kg)
 - 1km Run
@@ -493,7 +673,7 @@ FOR_TIME (Cap 45:00):
 - 1km Run
 - 100 Burpee Broad Jumps
 - 1km Run
-- 1000m Row
+- 1000m Row (tierSilver: 800m, tierGold: 1000m, tierBlack: 1200m)
 - 1km Run
 - 200m Farmers Walk (24/16 kg)
 
@@ -554,7 +734,7 @@ Use INTERVAL section type for REVL-style sprint sessions with specific work:rest
 Use these patterns and exercise names when generating workouts.`;
   }
 
-  private getWorkoutTypeGuidance(workoutType: string, cycle: string = 'BASE'): string {
+  private getWorkoutTypeGuidance(workoutType: string, cycle: string = 'BASE', includeHyrox: boolean = false, hyroxCount: number = 0): string {
     switch (workoutType) {
       case 'fourDay':
         return `Generate a 4-DAY PROGRAM (4 workouts). Return JSON with this structure:
@@ -574,6 +754,7 @@ Use these patterns and exercise names when generating workouts.`;
 Perfect for athletes with limited time. Maintains intensity while respecting recovery.`;
       
       case 'week':
+        const weekHyrox = includeHyrox ? `\n- Include 1 HYROX-style 90-minute conditioning session (recommended: Day 4 or Day 5)` : '';
         return `Generate a 1-WEEK PROGRAM (7 workouts). Return JSON with this structure:
 {
   "workouts": [

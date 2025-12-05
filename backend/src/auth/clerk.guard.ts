@@ -8,10 +8,18 @@ export class ClerkAuthGuard implements CanActivate {
     const token = this.extractTokenFromHeader(request);
 
     if (!token) {
+      console.error('❌ No token provided in request');
       throw new UnauthorizedException('No token provided');
     }
 
+    // Check if CLERK_SECRET_KEY is set
+    if (!process.env.CLERK_SECRET_KEY) {
+      console.error('❌ CLERK_SECRET_KEY is not set in environment');
+      throw new UnauthorizedException('Server configuration error');
+    }
+
     try {
+      console.log('🔍 Verifying token with Clerk...', { tokenPreview: token.substring(0, 20) + '...' });
       // Verify the token with Clerk
       const session = await clerkClient.verifyToken(token);
       
@@ -29,7 +37,11 @@ export class ClerkAuthGuard implements CanActivate {
 
       return true;
     } catch (error) {
-      console.error('Clerk token verification failed:', error);
+      console.error('❌ Clerk token verification failed:', {
+        error: error.message || error,
+        errorType: error.constructor?.name,
+        hasSecretKey: !!process.env.CLERK_SECRET_KEY,
+      });
       throw new UnauthorizedException('Invalid token');
     }
   }

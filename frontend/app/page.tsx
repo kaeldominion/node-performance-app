@@ -4,11 +4,14 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
+import { workoutsApi } from '@/lib/api';
 
 export default function LandingPage() {
   const { isSignedIn, isLoaded: clerkLoaded } = useUser();
   const router = useRouter();
   const [redirecting, setRedirecting] = useState(false);
+  const [recommendedWorkouts, setRecommendedWorkouts] = useState<any[]>([]);
+  const [loadingWorkouts, setLoadingWorkouts] = useState(true);
 
   useEffect(() => {
     // Wait for Clerk to load
@@ -23,6 +26,21 @@ export default function LandingPage() {
       router.replace('/dashboard');
     }
   }, [isSignedIn, clerkLoaded, router, redirecting]);
+
+  useEffect(() => {
+    // Load recommended workouts for display
+    const loadRecommended = async () => {
+      try {
+        const workouts = await workoutsApi.getRecommended();
+        setRecommendedWorkouts(workouts.slice(0, 3)); // Show top 3
+      } catch (err) {
+        console.error('Failed to load recommended workouts:', err);
+      } finally {
+        setLoadingWorkouts(false);
+      }
+    };
+    loadRecommended();
+  }, []);
 
   // Always show landing page - redirect happens in background
   // This prevents flickering
@@ -53,7 +71,9 @@ export default function LandingPage() {
             <a href="#player" className="hover:text-node-volt transition-colors">Player</a>
             <a href="#analytics" className="hover:text-node-volt transition-colors">Analytics</a>
             <a href="#ai" className="hover:text-node-volt transition-colors">AI</a>
-            <Link href="/archetypes" className="hover:text-node-volt transition-colors">Archetypes</Link>
+            <a href="#recommended" className="hover:text-node-volt transition-colors">Recommended</a>
+            <a href="#hyrox" className="hover:text-node-volt transition-colors">HYROX</a>
+            <Link href="/theory" className="hover:text-node-volt transition-colors">Theory</Link>
           </div>
           <Link
             href="/auth/register"
@@ -316,19 +336,171 @@ export default function LandingPage() {
               Choose an archetype, set equipment and time, and let the builder create balanced work with clear prescriptions.
             </p>
             <ul className="space-y-3 text-text-white font-body">
-              {['Archetype presets tuned to strength/engine blends', 'Equipment filters for gym / home / travel', 'Instant edit and regenerate flows'].map((line) => (
+              {['Archetype presets tuned to strength/engine blends', 'Equipment filters for gym / home / travel', 'HYROX-style 90-minute conditioning sessions', 'Instant edit and regenerate flows'].map((line) => (
                 <li key={line} className="flex items-start gap-3">
                   <span className="text-node-volt font-heading font-bold">✓</span>
                   <span>{line}</span>
                 </li>
               ))}
             </ul>
-            <Link
-              href="/auth/register"
-              className="inline-block px-8 py-4 thin-border border-node-volt text-node-volt font-heading font-bold uppercase tracking-[0.25em] hover:bg-node-volt hover:text-dark transition-colors"
-            >
-              Build with AI
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link
+                href="/auth/register"
+                className="inline-block px-8 py-4 thin-border border-node-volt text-node-volt font-heading font-bold uppercase tracking-[0.25em] hover:bg-node-volt hover:text-dark transition-colors"
+              >
+                Build with AI
+              </Link>
+              <Link
+                href="/workouts/recommended"
+                className="inline-block px-8 py-4 bg-panel/50 thin-border border-border-dark text-text-white font-heading font-bold uppercase tracking-[0.25em] hover:border-node-volt hover:text-node-volt transition-colors"
+              >
+                Browse Recommended
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Recommended Workouts */}
+      {recommendedWorkouts.length > 0 && (
+        <section id="recommended" className="py-24 bg-dark border-t thin-border px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-16">
+              <span className="text-node-volt uppercase tracking-[0.25em] text-xs font-heading">Curated Sessions</span>
+              <h2 className="text-4xl sm:text-5xl font-heading font-bold mt-4 mb-6">Recommended Workouts</h2>
+              <p className="text-muted-text font-body max-w-2xl mx-auto">
+                Hand-picked sessions from our team. Proven, effective workouts ready to use instantly—no AI generation needed.
+              </p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-6 mb-8">
+              {recommendedWorkouts.map((workout) => (
+                <Link
+                  key={workout.id}
+                  href={`/workouts/${workout.id}`}
+                  className="group bg-panel thin-border p-6 hover:border-node-volt transition-all hover:shadow-lg hover:shadow-node-volt/20"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      {workout.displayCode && (
+                        <div className="text-node-volt font-mono text-sm mb-1">
+                          {workout.displayCode}
+                        </div>
+                      )}
+                      <h3 className="text-xl font-heading font-bold mb-2 group-hover:text-node-volt transition-colors">
+                        {workout.name}
+                      </h3>
+                      {workout.archetype && (
+                        <span className="inline-block px-2 py-1 bg-node-volt/20 text-node-volt text-xs rounded mb-2">
+                          {workout.archetype}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-muted-text group-hover:text-node-volt transition-colors">→</span>
+                  </div>
+                  {workout.description && (
+                    <p className="text-muted-text text-sm mb-4 line-clamp-2">
+                      {workout.description}
+                    </p>
+                  )}
+                  <div className="flex items-center justify-between text-sm text-muted-text">
+                    <span>{workout.sections?.length || 0} sections</span>
+                    <span className="text-node-volt font-semibold">Start →</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <div className="text-center">
+              <Link
+                href="/workouts/recommended"
+                className="inline-block px-8 py-4 thin-border border-node-volt text-node-volt font-heading font-bold uppercase tracking-[0.25em] hover:bg-node-volt hover:text-dark transition-colors"
+              >
+                View All Recommended
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* HYROX Support */}
+      <section id="hyrox" className="py-24 bg-panel/10 border-t thin-border px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <span className="text-4xl">🏃</span>
+                <span className="text-node-volt uppercase tracking-[0.25em] text-xs font-heading">HYROX Support</span>
+              </div>
+              <h2 className="text-4xl sm:text-5xl font-heading font-bold">90-Minute Conditioning Sessions</h2>
+              <p className="text-muted-text font-body">
+                Full HYROX-style workout generation with 80-90 minute sessions. Perfect for endurance athletes, HYROX competitors, and anyone building long-duration capacity.
+              </p>
+              <ul className="space-y-3 text-text-white font-body">
+                {[
+                  'Classic HYROX simulations (6-8 rounds)',
+                  'Threshold engine intervals (10+ rounds)',
+                  'Partner/team formats (YGIG, relay)',
+                  'Running replacements (bike, ski, row)',
+                  'All HYROX stations: Sled Push/Pull, Farmers, Wall Balls, Burpee Broad Jumps',
+                ].map((line) => (
+                  <li key={line} className="flex items-start gap-3">
+                    <span className="text-node-volt font-heading font-bold">✓</span>
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link
+                  href="/ai/workout-builder"
+                  className="inline-block px-8 py-4 bg-node-volt text-dark font-heading font-bold uppercase tracking-[0.25em] hover:bg-text-white transition-colors"
+                >
+                  Generate HYROX Workout
+                </Link>
+                <Link
+                  href="/theory"
+                  className="inline-block px-8 py-4 thin-border border-text-white/30 text-text-white font-heading font-bold uppercase tracking-[0.25em] hover:border-node-volt hover:text-node-volt transition-colors"
+                >
+                  Learn More
+                </Link>
+              </div>
+            </div>
+            <div className="relative">
+              <div className="absolute -inset-6 bg-node-volt/10 blur-3xl opacity-30" />
+              <div className="relative thin-border bg-panel/80 backdrop-blur-md p-6 space-y-4">
+                <div className="flex justify-between text-xs text-muted-text uppercase tracking-[0.25em] font-heading">
+                  <span>HYROX Session</span>
+                  <span>90 Minutes</span>
+                </div>
+                <div className="space-y-3">
+                  <div className="p-4 bg-dark/80 thin-border">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-heading font-bold text-text-white">6 Rounds</span>
+                      <span className="text-node-volt text-sm">For Time</span>
+                    </div>
+                    <div className="text-xs text-muted-text space-y-1">
+                      <div>• Run 800m / Bike 4-5 min</div>
+                      <div>• SkiErg 600-800m</div>
+                      <div>• Sled Push 20-30m</div>
+                      <div>• Sled Pull 20-30m</div>
+                      <div>• Burpee Broad Jumps 40m</div>
+                      <div>• Row 600-800m</div>
+                      <div>• Farmers Carry 100m</div>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-dark/80 thin-border">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-heading font-bold text-text-white">EMOM × 80</span>
+                      <span className="text-node-volt text-sm">Rotating Stations</span>
+                    </div>
+                    <div className="text-xs text-muted-text">
+                      Sustained 80-minute engine work with 8-station rotation
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-text font-body">
+                  Full HYROX race simulation with all stations, pacing strategies, and partner formats.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>

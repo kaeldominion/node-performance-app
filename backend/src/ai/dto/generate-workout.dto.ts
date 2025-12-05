@@ -4,6 +4,7 @@ import {
   IsInt,
   IsString,
   IsOptional,
+  IsBoolean,
   Min,
   Max,
 } from 'class-validator';
@@ -41,5 +42,13 @@ export class GenerateWorkoutDto {
   @IsOptional()
   @IsEnum(['BASE', 'LOAD', 'INTENSIFY', 'DELOAD'])
   cycle?: 'BASE' | 'LOAD' | 'INTENSIFY' | 'DELOAD';
+
+  @IsOptional()
+  @IsBoolean()
+  isHyrox?: boolean; // Flag for HYROX-style 90-minute conditioning workouts (single workouts only)
+
+  @IsOptional()
+  @IsBoolean()
+  includeHyrox?: boolean; // Flag to include HYROX sessions in multi-day programs
 }
 

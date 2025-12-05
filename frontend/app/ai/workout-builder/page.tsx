@@ -42,10 +42,11 @@ export default function WorkoutBuilderPage() {
   const [formData, setFormData] = useState({
     goal: 'HYBRID',
     equipment: [] as string[],
-    availableMinutes: 45,
+    workoutType: 'single' as 'single' | 'week' | 'month' | 'fourDay', // single, 7-day, 4-day, 4-week
+    workoutDuration: 'standard' as 'standard' | 'hyrox', // Only for single workouts
+    includeHyrox: false, // For multi-day programs: include HYROX sessions
     archetype: '' as string | undefined,
     sectionPreferences: ['WARMUP', 'EMOM', 'AMRAP', 'FINISHER', 'COOLDOWN'],
-    workoutType: 'single' as 'single' | 'week' | 'month' | 'fourDay', // single, 7-day, 4-day, 4-week
     cycle: 'BASE' as 'BASE' | 'LOAD' | 'INTENSIFY' | 'DELOAD' | undefined, // Cycle for multi-day programs
   });
   const [showArchetypeInfo, setShowArchetypeInfo] = useState<string | null>(null);
@@ -111,20 +112,30 @@ export default function WorkoutBuilderPage() {
     setGeneratedWorkout(null);
 
     try {
-      // Use ADVANCED as default training level for workout complexity guidance
-      // All workouts will include all three tiers (SILVER, GOLD, BLACK) for user selection
+      // Determine if this is a HYROX workout
+      const isHyrox = formData.workoutType === 'single' && formData.workoutDuration === 'hyrox';
+      
+      // Calculate available minutes based on workout duration
+      const availableMinutes = isHyrox ? 90 : 55; // Standard: 50-60min (use 55), HYROX: 90min
+      
+      // For HYROX, don't send goal/archetype (they don't apply)
       const workout = await aiApi.generateWorkout({
-        goal: formData.goal,
+        goal: isHyrox ? 'CONDITIONING' : formData.goal, // HYROX always uses CONDITIONING
         trainingLevel: 'ADVANCED', // Used only for workout complexity/duration guidance
         equipment: formData.equipment,
-        availableMinutes: formData.availableMinutes,
-        archetype: formData.archetype,
+        availableMinutes: availableMinutes,
+        archetype: isHyrox ? undefined : formData.archetype, // No archetype for HYROX
         sectionPreferences: formData.sectionPreferences,
         workoutType: formData.workoutType,
+        cycle: formData.cycle,
+        isHyrox: isHyrox, // Only true for single HYROX workouts
+        includeHyrox: formData.workoutType !== 'single' ? formData.includeHyrox : undefined, // For multi-day programs
       });
       setGeneratedWorkout(workout);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to generate workout. Please try again.');
+      console.error('Workout generation error:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to generate workout. Please try again.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -175,49 +186,103 @@ export default function WorkoutBuilderPage() {
       <Navbar />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-4xl font-bold mb-8">AI Workout Builder</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-4xl font-bold">AI Workout Builder</h1>
+          <Link
+            href="/workouts/recommended"
+            className="bg-panel thin-border text-text-white px-4 py-2 rounded hover:border-node-volt transition-colors flex items-center gap-2"
+          >
+            <span>⭐</span> Browse Recommended
+          </Link>
+        </div>
 
         <div className="bg-panel thin-border rounded-lg p-6 mb-8">
           <h2 className="text-2xl font-bold mb-6">Workout Parameters</h2>
 
           <div className="space-y-6">
-            {/* Goal */}
-            <div>
-              <label className="block text-sm font-medium mb-2">Primary Goal</label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {TRAINING_GOALS.map((goal) => (
+            {/* Primary Goal (hidden for HYROX) */}
+            {!(formData.workoutType === 'single' && formData.workoutDuration === 'hyrox') && (
+              <div>
+                <label className="block text-sm font-medium mb-2">Primary Goal</label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {TRAINING_GOALS.map((goal) => (
+                    <button
+                      key={goal}
+                      onClick={() => setFormData({ ...formData, goal: goal as any })}
+                      className={`px-4 py-2 rounded border transition-colors ${
+                        formData.goal === goal
+                          ? 'bg-node-volt text-dark border-node-volt'
+                          : 'bg-panel thin-border text-text-white hover:border-node-volt'
+                      }`}
+                    >
+                      {goal}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Workout Duration (only for single workouts) */}
+            {formData.workoutType === 'single' && (
+              <div>
+                <label className="block text-sm font-medium mb-2">Workout Duration</label>
+                <div className="grid grid-cols-2 gap-3">
                   <button
-                    key={goal}
-                    onClick={() => setFormData({ ...formData, goal })}
-                    className={`px-4 py-2 rounded border transition-colors ${
-                      formData.goal === goal
-                        ? 'bg-node-volt text-dark border-node-volt'
-                        : 'bg-panel thin-border text-text-white hover:border-node-volt'
+                    onClick={() => setFormData({ ...formData, workoutDuration: 'standard' })}
+                    className={`px-4 py-4 rounded-lg border-2 transition-all text-left ${
+                      formData.workoutDuration === 'standard'
+                        ? 'bg-node-volt text-dark border-node-volt shadow-lg shadow-node-volt/30'
+                        : 'bg-panel thin-border text-text-white hover:border-node-volt hover:bg-tech-grey'
                     }`}
                   >
-                    {goal}
+                    <div className="text-2xl mb-2">⏱️</div>
+                    <div className="font-bold text-lg mb-1">Standard</div>
+                    <div className="text-xs opacity-80">50-60 minutes</div>
+                    <div className="text-xs opacity-60 mt-1">Standard NØDE workout</div>
                   </button>
-                ))}
+                  <button
+                    onClick={() => setFormData({ ...formData, workoutDuration: 'hyrox' })}
+                    className={`px-4 py-4 rounded-lg border-2 transition-all text-left ${
+                      formData.workoutDuration === 'hyrox'
+                        ? 'bg-node-volt text-dark border-node-volt shadow-lg shadow-node-volt/30'
+                        : 'bg-panel thin-border text-text-white hover:border-node-volt hover:bg-tech-grey'
+                    }`}
+                  >
+                    <div className="text-2xl mb-2">🏃</div>
+                    <div className="font-bold text-lg mb-1">HYROX</div>
+                    <div className="text-xs opacity-80">90 minutes</div>
+                    <div className="text-xs opacity-60 mt-1">Long conditioning session</div>
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Available Time */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Available Time: {formData.availableMinutes} minutes
-              </label>
-              <input
-                type="range"
-                min="20"
-                max="90"
-                step="5"
-                value={formData.availableMinutes}
-                onChange={(e) =>
-                  setFormData({ ...formData, availableMinutes: parseInt(e.target.value) })
-                }
-                className="w-full"
-              />
-            </div>
+            {/* Include HYROX Sessions (for multi-day programs) */}
+            {formData.workoutType !== 'single' && (
+              <div>
+                <label className="block text-sm font-medium mb-2">Include HYROX Sessions</label>
+                <div className="bg-panel/50 border border-border-dark rounded-lg p-4">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.includeHyrox}
+                      onChange={(e) => setFormData({ ...formData, includeHyrox: e.target.checked })}
+                      className="w-5 h-5 rounded border-border-dark bg-tech-grey text-node-volt focus:ring-node-volt"
+                    />
+                    <div>
+                      <div className="font-medium text-text-white">
+                        Include HYROX-style conditioning sessions
+                      </div>
+                      <div className="text-xs text-muted-text mt-1">
+                        {formData.workoutType === 'fourDay' && '1 HYROX session per week (90 min)'}
+                        {formData.workoutType === 'week' && '1 HYROX session per week (90 min)'}
+                        {formData.workoutType === 'month' && '4 HYROX sessions (1 per week, 90 min each)'}
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            )}
 
             {/* Workout Type */}
             <div>
@@ -280,14 +345,36 @@ export default function WorkoutBuilderPage() {
               </div>
             )}
 
-            {/* Archetype */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                NØDE Archetype (Optional)
-                <Link href="/theory" className="ml-2 text-xs text-node-volt hover:underline">
-                  Learn more →
-                </Link>
-              </label>
+            {/* HYROX Info (when HYROX is selected) */}
+            {formData.workoutType === 'single' && formData.workoutDuration === 'hyrox' && (
+              <div className="bg-node-volt/10 border-2 border-node-volt rounded-lg p-6">
+                <div className="flex items-start gap-3">
+                  <div className="text-3xl">🏃</div>
+                  <div>
+                    <h3 className="font-bold text-lg mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                      HYROX-Style Conditioning
+                    </h3>
+                    <p className="text-text-white text-sm leading-relaxed">
+                      This will generate a 90-minute long conditioning session focused on endurance, pacing, and sustained effort. 
+                      Perfect for HYROX training, long-distance running preparation, or building aerobic capacity.
+                    </p>
+                    <p className="text-muted-text text-xs mt-2">
+                      Archetype and Goal selectors are hidden as they don't apply to HYROX-style workouts.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Archetype (hidden for HYROX) */}
+            {!(formData.workoutType === 'single' && formData.workoutDuration === 'hyrox') && (
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  NØDE Archetype (Optional)
+                  <Link href="/theory" className="ml-2 text-xs text-node-volt hover:underline">
+                    Learn more →
+                  </Link>
+                </label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
                 {ARCHETYPES.map((archetype) => (
                   <div key={archetype.code} className="relative">
@@ -334,13 +421,17 @@ export default function WorkoutBuilderPage() {
                   </div>
                 ))}
               </div>
+              <p className="text-xs text-muted-text mt-2">
+                Leave blank for AI to auto-select based on your goal and equipment
+              </p>
               <button
                 onClick={() => setFormData({ ...formData, archetype: undefined })}
-                className="text-sm text-muted-text hover:text-text-white"
+                className="text-sm text-muted-text hover:text-text-white mt-2"
               >
                 Clear selection
               </button>
-            </div>
+              </div>
+            )}
 
             {/* Equipment */}
             <div>

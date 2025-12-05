@@ -105,16 +105,59 @@ export function WorkoutDeckSlide({
       case 'FOR_TIME':
         return (
           <div className="text-center space-y-8 max-w-5xl">
-            <WorkoutTimer
-              type="COUNTDOWN"
-              durationSec={section.durationSec || 720}
-              onComplete={() => setTimerComplete(true)}
-            />
+            {/* Timer */}
+            <div className="space-y-4">
+              <WorkoutTimer
+                type="COUNTDOWN"
+                durationSec={section.durationSec || 720}
+                onComplete={() => setTimerComplete(true)}
+              />
+              {/* Duration and Rounds Display */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-panel/50 backdrop-blur-sm thin-border rounded-lg px-6 py-3">
+                  <div className="text-muted-text text-sm mb-1">Duration</div>
+                  <div className="text-2xl font-bold text-node-volt">
+                    {Math.floor((section.durationSec || 720) / 60)}:{(section.durationSec || 720) % 60 < 10 ? '0' : ''}{(section.durationSec || 720) % 60}
+                  </div>
+                </div>
+                {section.rounds && (
+                  <div className="bg-panel/50 backdrop-blur-sm thin-border rounded-lg px-6 py-3">
+                    <div className="text-muted-text text-sm mb-1">Rounds</div>
+                    <div className="text-2xl font-bold text-node-volt">
+                      {section.rounds}
+                    </div>
+                    {section.restBetweenRounds && (
+                      <div className="text-xs text-muted-text mt-1">
+                        Rest {section.restBetweenRounds}s between rounds
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Instructions Box */}
+            {section.note && (
+              <div className="bg-node-volt/10 border-2 border-node-volt rounded-lg p-6 text-left">
+                <div className="text-node-volt font-bold text-lg mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                  📋 Instructions
+                </div>
+                <p className="text-text-white text-lg leading-relaxed whitespace-pre-line">{section.note}</p>
+              </div>
+            )}
+
+            {/* Exercise Blocks */}
             <div className="space-y-6">
+              <div className="text-muted-text text-sm mb-4">
+                {section.rounds 
+                  ? `Complete ${section.rounds} rounds. Rest ${section.restBetweenRounds || 30}s between rounds.`
+                  : 'Complete exercises in order, then repeat until time expires'
+                }
+              </div>
               {section.blocks.map((block: any, idx: number) => (
                 <div
                   key={block.id || idx}
-                  className="bg-panel/50 backdrop-blur-sm thin-border rounded-lg p-8"
+                  className="bg-panel/50 backdrop-blur-sm thin-border rounded-lg p-8 border-l-4 border-node-volt"
                 >
                   <div className="flex items-center justify-center gap-4 mb-4">
                     {block.label && (
@@ -131,6 +174,12 @@ export function WorkoutDeckSlide({
                   )}
                   {block.repScheme && (
                     <div className="text-2xl text-node-volt font-bold mb-4">{block.repScheme}</div>
+                  )}
+                  {block.tempo && (
+                    <div className="text-lg text-muted-text mb-4">Tempo: <span className="text-node-volt font-semibold">{block.tempo}</span></div>
+                  )}
+                  {block.loadPercentage && (
+                    <div className="text-lg text-muted-text mb-4">Load: <span className="text-node-volt font-semibold">{block.loadPercentage}</span></div>
                   )}
                   {renderTierPrescriptions(block)}
                 </div>
@@ -179,6 +228,15 @@ export function WorkoutDeckSlide({
       case 'WAVE':
         return (
           <div className="text-center space-y-8 max-w-5xl">
+            {/* Instructions Box */}
+            {section.note && (
+              <div className="bg-node-volt/10 border-2 border-node-volt rounded-lg p-6 text-left mb-6">
+                <div className="text-node-volt font-bold text-lg mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                  📋 Wave Structure
+                </div>
+                <p className="text-text-white text-lg leading-relaxed whitespace-pre-line">{section.note}</p>
+              </div>
+            )}
             <div className="space-y-6">
               {section.blocks.map((block: any, idx: number) => (
                 <div
@@ -201,6 +259,12 @@ export function WorkoutDeckSlide({
                   {block.repScheme && (
                     <div className="text-2xl text-node-volt font-bold mb-4">{block.repScheme}</div>
                   )}
+                  {block.tempo && (
+                    <div className="text-lg text-muted-text mb-4">Tempo: <span className="text-node-volt font-semibold">{block.tempo}</span></div>
+                  )}
+                  {block.loadPercentage && (
+                    <div className="text-lg text-muted-text mb-4">Load: <span className="text-node-volt font-semibold">{block.loadPercentage}</span></div>
+                  )}
                   {renderTierPrescriptions(block)}
                 </div>
               ))}
@@ -215,6 +279,15 @@ export function WorkoutDeckSlide({
         }
         return (
           <div className="text-center space-y-8 max-w-6xl">
+            {/* Instructions Box */}
+            {section.note && (
+              <div className="bg-node-volt/10 border-2 border-node-volt rounded-lg p-6 text-left mb-6">
+                <div className="text-node-volt font-bold text-lg mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                  📋 Superset Instructions
+                </div>
+                <p className="text-text-white text-lg leading-relaxed whitespace-pre-line">{section.note}</p>
+              </div>
+            )}
             <div className="space-y-8">
               {pairs.map((pair, pairIdx) => (
                 <div
@@ -237,6 +310,12 @@ export function WorkoutDeckSlide({
                         )}
                         {block.repScheme && (
                           <div className="text-xl text-node-volt font-bold mb-3">{block.repScheme}</div>
+                        )}
+                        {block.tempo && (
+                          <div className="text-sm text-muted-text mb-3">Tempo: <span className="text-node-volt font-semibold">{block.tempo}</span></div>
+                        )}
+                        {block.loadPercentage && (
+                          <div className="text-sm text-muted-text mb-3">Load: <span className="text-node-volt font-semibold">{block.loadPercentage}</span></div>
                         )}
                         {renderTierPrescriptions(block)}
                       </div>

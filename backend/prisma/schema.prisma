@@ -140,6 +140,8 @@ model User {
   isAdmin          Boolean          @default(false) // Legacy - use role instead
   subscriptionTier SubscriptionTier @default(FREE)
   subscriptionEnds DateTime?
+  xp               Int              @default(0) // Experience points for gamification
+  level             Int              @default(1) // User level (1-100+)
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -205,12 +207,13 @@ model Workout {
   templateId String?
   template   WorkoutTemplate? @relation("TemplateWorkouts", fields: [templateId], references: [id], onDelete: SetNull)
 
-  name        String
-  displayCode String?
-  dayIndex    Int?
-  archetype   WorkoutArchetype?
-  description String? // Archetype-specific description
-  shareId     String?  @unique // For shareable workouts
+  name          String
+  displayCode   String?
+  dayIndex      Int?
+  archetype     WorkoutArchetype?
+  description   String? // Archetype-specific description
+  shareId       String?           @unique // For shareable workouts
+  isRecommended Boolean           @default(false) // Admin-curated recommended workouts
 
   sections   WorkoutSection[]
   sessions   SessionLog[]
@@ -231,13 +234,15 @@ model WorkoutSection {
   type  SectionType
   order Int
 
-  durationSec Int?
-  emomWorkSec Int?
-  emomRestSec Int?
-  emomRounds  Int?
-  intervalWorkSec Int? // For INTERVAL: work duration in seconds
-  intervalRestSec Int? // For INTERVAL: rest duration in seconds
-  intervalRounds Int? // For INTERVAL: number of rounds
+  durationSec       Int?
+  emomWorkSec       Int?
+  emomRestSec       Int?
+  emomRounds        Int?
+  intervalWorkSec   Int? // For INTERVAL: work duration in seconds
+  intervalRestSec   Int? // For INTERVAL: rest duration in seconds
+  intervalRounds    Int? // For INTERVAL: number of rounds
+  rounds            Int? // For FOR_TIME sections with multiple rounds (e.g., "1:40 Cap × 4 Rounds")
+  restBetweenRounds Int? // Rest duration in seconds between rounds for FOR_TIME sections
 
   note String?
 
@@ -252,14 +257,14 @@ model ExerciseBlock {
   section   WorkoutSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   order     Int
 
-  label        String?
-  exerciseName String
-  description  String?
-  repScheme    String?
-  tempo        String? // Tempo notation (e.g., "2220", "2s pause", "3s eccentric")
+  label          String?
+  exerciseName   String
+  description    String?
+  repScheme      String?
+  tempo          String? // Tempo notation (e.g., "2220", "2s pause", "3s eccentric")
   loadPercentage String? // Load percentage (e.g., "@ 40-45-50-55%")
-  distance     Int?
-  distanceUnit String?
+  distance       Int?
+  distanceUnit   String?
 
   tierPrescriptions TierPrescription[]
 
@@ -271,10 +276,12 @@ model TierPrescription {
   blockId String
   block   ExerciseBlock @relation(fields: [blockId], references: [id], onDelete: Cascade)
 
-  tier       Tier
-  load       String?
-  targetReps Int?
-  notes      String?
+  tier         Tier
+  load         String?
+  targetReps   Int?
+  distance     Int? // For erg machines and distance-based exercises: different distance per tier
+  distanceUnit String? // "m" for meters, "cal" for calories
+  notes        String?
 
   @@unique([blockId, tier])
   @@map("tier_prescriptions")
@@ -349,6 +356,17 @@ model Exercise {
   suitableArchetypes WorkoutArchetype[]
   indoorFriendly     Boolean            @default(true)
   notes              String?
+
+  // New fields for reference/how-to guide
+  instructions    String? // Step-by-step instructions on how to perform the exercise
+  variations      Json? // Array of exercise variations with descriptions
+  graphics        String[] @default([]) // URLs or paths to instructional graphics/icons
+  videoUrl        String? // Optional video demonstration URL
+  commonMistakes  String[] @default([]) // Common form mistakes to avoid
+  progressionTips String? // Tips for progressing the exercise
+  regressionTips  String? // Tips for regressing the exercise if too difficult
+  aiGenerated     Boolean  @default(false) // Track if exercise was AI-generated
+  usageCount      Int      @default(0) // Track how many times this exercise has been used
 
   tiers ExerciseTier[]
 

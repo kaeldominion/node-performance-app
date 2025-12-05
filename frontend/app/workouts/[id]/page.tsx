@@ -38,6 +38,7 @@ interface Workout {
   archetype?: string;
   description?: string;
   shareId?: string;
+  isRecommended?: boolean;
   sections: WorkoutSection[];
 }
 
@@ -54,6 +55,7 @@ export default function WorkoutPlayerPage() {
   const [rpe, setRpe] = useState(5);
   const [notes, setNotes] = useState('');
   const [deckMode, setDeckMode] = useState(true);
+  const [togglingRecommended, setTogglingRecommended] = useState(false);
 
   useEffect(() => {
     // Allow viewing shared workouts without login
@@ -179,9 +181,36 @@ export default function WorkoutPlayerPage() {
           sessionId={sessionId}
           onWorkoutComplete={() => router.push('/')}
         />
-        {/* Share Button - Fixed Position */}
-        {workout.shareId && (
-          <div className="fixed bottom-6 right-6 z-50">
+        {/* Admin Actions & Share Button - Fixed Position */}
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+          {user?.isAdmin && (
+            <button
+              onClick={async () => {
+                if (!workout) return;
+                setTogglingRecommended(true);
+                try {
+                  await workoutsApi.toggleRecommended(workout.id, !workout.isRecommended);
+                  setWorkout({ ...workout, isRecommended: !workout.isRecommended });
+                  alert(workout.isRecommended ? 'Removed from recommended' : 'Marked as recommended!');
+                } catch (err) {
+                  console.error('Failed to toggle recommended:', err);
+                  alert('Failed to update recommended status');
+                } finally {
+                  setTogglingRecommended(false);
+                }
+              }}
+              disabled={togglingRecommended}
+              className={`font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity shadow-lg flex items-center gap-2 ${
+                workout.isRecommended
+                  ? 'bg-node-volt/20 text-node-volt border-2 border-node-volt'
+                  : 'bg-panel text-text-white border-2 border-border-dark'
+              }`}
+              style={{ fontFamily: 'var(--font-space-grotesk)' }}
+            >
+              <span>{workout.isRecommended ? '⭐' : '☆'}</span> {workout.isRecommended ? 'Recommended' : 'Mark as Recommended'}
+            </button>
+          )}
+          {workout.shareId && (
             <button
               onClick={async () => {
                 const shareUrl = `${window.location.origin}/workouts/share_${workout.shareId}`;
@@ -204,8 +233,8 @@ export default function WorkoutPlayerPage() {
             >
               <span>📤</span> Share Workout
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </>
     );
   }

@@ -1,12 +1,13 @@
 import { Controller, Get, Query, UseGuards, Request, Param } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ClerkAuthGuard } from '../auth/clerk.guard';
 
 @Controller('analytics')
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
   @Get('stats')
+  @UseGuards(ClerkAuthGuard)
   async getStats(
     @Request() req,
     @Query('startDate') startDate?: string,
@@ -20,7 +21,7 @@ export class AnalyticsController {
   }
 
   @Get('strength')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ClerkAuthGuard)
   async getStrengthProgress(
     @Request() req,
     @Query('exercise') exercise?: string,
@@ -29,13 +30,13 @@ export class AnalyticsController {
   }
 
   @Get('engine')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ClerkAuthGuard)
   async getEngineProgress(@Request() req) {
     return this.analyticsService.getEngineProgress(req.user.id);
   }
 
   @Get('weekly')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ClerkAuthGuard)
   async getWeeklySummary(
     @Request() req,
     @Query('weekStart') weekStart?: string,
@@ -47,7 +48,7 @@ export class AnalyticsController {
   }
 
   @Get('monthly')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ClerkAuthGuard)
   async getMonthlySummary(
     @Request() req,
     @Query('month') month?: string,
@@ -61,7 +62,7 @@ export class AnalyticsController {
   }
 
   @Get('trends')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ClerkAuthGuard)
   async getTrends(
     @Request() req,
     @Query('days') days?: string,
@@ -71,7 +72,7 @@ export class AnalyticsController {
 
   // Coach endpoints to view client analytics
   @Get('clients/:clientId/stats')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ClerkAuthGuard)
   async getClientStats(
     @Request() req,
     @Param('clientId') clientId: string,
@@ -86,7 +87,7 @@ export class AnalyticsController {
   }
 
   @Get('clients/:clientId/trends')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ClerkAuthGuard)
   async getClientTrends(
     @Request() req,
     @Param('clientId') clientId: string,

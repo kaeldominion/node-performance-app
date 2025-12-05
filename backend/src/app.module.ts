@@ -11,6 +11,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { CoachesModule } from './coaches/coaches.module';
 import { GymsModule } from './gyms/gyms.module';
 import { TemplatesModule } from './templates/templates.module';
+import { GamificationModule } from './gamification/gamification.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { TemplatesModule } from './templates/templates.module';
     GymsModule,
     TemplatesModule,
     AnalyticsModule,
+    GamificationModule,
   ],
 })
 export class AppModule {}

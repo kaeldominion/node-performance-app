@@ -135,5 +135,46 @@ export class WorkoutsService {
       })),
     };
   }
+
+  async findRecommended() {
+    const workouts = await this.prisma.workout.findMany({
+      where: { isRecommended: true },
+      include: {
+        sections: {
+          orderBy: { order: 'asc' },
+          include: {
+            blocks: {
+              orderBy: { order: 'asc' },
+              include: {
+                tierPrescriptions: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return workouts.map((workout) => ({
+      ...workout,
+      sections: workout.sections.map((section) => ({
+        ...section,
+        blocks: section.blocks.map((block) => ({
+          ...block,
+          tierSilver: block.tierPrescriptions.find((t) => t.tier === 'SILVER') || null,
+          tierGold: block.tierPrescriptions.find((t) => t.tier === 'GOLD') || null,
+          tierBlack: block.tierPrescriptions.find((t) => t.tier === 'BLACK') || null,
+          tierPrescriptions: undefined,
+        })),
+      })),
+    }));
+  }
+
+  async toggleRecommended(id: string, isRecommended: boolean) {
+    return this.prisma.workout.update({
+      where: { id },
+      data: { isRecommended },
+    });
+  }
 }
 

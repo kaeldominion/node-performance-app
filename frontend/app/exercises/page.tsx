@@ -21,6 +21,15 @@ interface Exercise {
   suitableArchetypes: string[];
   indoorFriendly: boolean;
   notes?: string;
+  instructions?: string; // Step-by-step instructions
+  variations?: any; // JSON array of exercise variations
+  graphics?: string[]; // URLs to instructional graphics/icons
+  videoUrl?: string; // Video demonstration URL
+  commonMistakes?: string[]; // Common form mistakes
+  progressionTips?: string; // Tips for progressing
+  regressionTips?: string; // Tips for regressing
+  aiGenerated?: boolean; // Track if AI-generated
+  usageCount?: number; // How many times used
   tiers: Array<{
     tier: string;
     description: string;
@@ -115,7 +124,7 @@ export default function ExercisesPage() {
             Exercise Library
           </h1>
           <p className="text-muted-text">
-            Browse {exercises.length} exercises with detailed instructions and tier prescriptions
+            Reference guide for {exercises.length} exercises - learn proper form, variations, and progression tips
           </p>
         </div>
 
@@ -423,6 +432,139 @@ export default function ExercisesPage() {
                     ))}
                   </div>
                 </div>
+
+                {/* Instructions - How to Perform */}
+                {selectedExercise.instructions && (
+                  <div>
+                    <div className="text-muted-text text-sm mb-2 font-semibold">How to Perform</div>
+                    <div className="bg-tech-grey border border-border-dark rounded-lg p-4">
+                      <p className="text-text-white whitespace-pre-line" style={{ fontFamily: 'var(--font-manrope)' }}>
+                        {selectedExercise.instructions}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Video */}
+                {selectedExercise.videoUrl && (
+                  <div>
+                    <div className="text-muted-text text-sm mb-2 font-semibold">Video Demonstration</div>
+                    <div className="bg-tech-grey border border-border-dark rounded-lg p-4">
+                      <a
+                        href={selectedExercise.videoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-node-volt hover:underline flex items-center gap-2"
+                      >
+                        <span>Watch Video</span>
+                        <span>→</span>
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {/* Graphics/Icons */}
+                {selectedExercise.graphics && selectedExercise.graphics.length > 0 && (
+                  <div>
+                    <div className="text-muted-text text-sm mb-2 font-semibold">Instructional Graphics</div>
+                    <div className="grid grid-cols-2 gap-4">
+                      {selectedExercise.graphics.map((graphic, idx) => (
+                        <div key={idx} className="bg-tech-grey border border-border-dark rounded-lg p-4">
+                          <img
+                            src={graphic}
+                            alt={`${selectedExercise.name} instruction ${idx + 1}`}
+                            className="w-full h-auto rounded"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Variations */}
+                {selectedExercise.variations && (
+                  <div>
+                    <div className="text-muted-text text-sm mb-2 font-semibold">Exercise Variations</div>
+                    <div className="space-y-3">
+                      {Array.isArray(selectedExercise.variations) ? (
+                        selectedExercise.variations.map((variation: any, idx: number) => (
+                          <div key={idx} className="bg-tech-grey border border-border-dark rounded-lg p-4">
+                            <div className="font-semibold text-text-white mb-1">
+                              {variation.name || `Variation ${idx + 1}`}
+                            </div>
+                            {variation.description && (
+                              <p className="text-muted-text text-sm">{variation.description}</p>
+                            )}
+                            {variation.equipment && (
+                              <div className="mt-2 text-xs text-muted-text">
+                                Equipment: {Array.isArray(variation.equipment) ? variation.equipment.join(', ') : variation.equipment}
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      ) : typeof selectedExercise.variations === 'object' ? (
+                        <div className="bg-tech-grey border border-border-dark rounded-lg p-4">
+                          <pre className="text-muted-text text-sm whitespace-pre-wrap">
+                            {JSON.stringify(selectedExercise.variations, null, 2)}
+                          </pre>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                )}
+
+                {/* Common Mistakes */}
+                {selectedExercise.commonMistakes && selectedExercise.commonMistakes.length > 0 && (
+                  <div>
+                    <div className="text-muted-text text-sm mb-2 font-semibold">Common Mistakes to Avoid</div>
+                    <div className="bg-red-900/20 border border-red-800 rounded-lg p-4">
+                      <ul className="list-disc list-inside space-y-2">
+                        {selectedExercise.commonMistakes.map((mistake, idx) => (
+                          <li key={idx} className="text-text-white text-sm">
+                            {mistake}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {/* Progression Tips */}
+                {selectedExercise.progressionTips && (
+                  <div>
+                    <div className="text-muted-text text-sm mb-2 font-semibold">Progression Tips</div>
+                    <div className="bg-green-900/20 border border-green-800 rounded-lg p-4">
+                      <p className="text-text-white text-sm" style={{ fontFamily: 'var(--font-manrope)' }}>
+                        {selectedExercise.progressionTips}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Regression Tips */}
+                {selectedExercise.regressionTips && (
+                  <div>
+                    <div className="text-muted-text text-sm mb-2 font-semibold">Regression Tips</div>
+                    <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-4">
+                      <p className="text-text-white text-sm" style={{ fontFamily: 'var(--font-manrope)' }}>
+                        {selectedExercise.regressionTips}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* AI Generated Badge */}
+                {selectedExercise.aiGenerated && (
+                  <div className="flex items-center gap-2 text-xs text-muted-text">
+                    <span className="bg-node-volt/20 text-node-volt px-2 py-1 rounded">AI Generated</span>
+                    {selectedExercise.usageCount && selectedExercise.usageCount > 0 && (
+                      <span>Used {selectedExercise.usageCount} time{selectedExercise.usageCount !== 1 ? 's' : ''}</span>
+                    )}
+                  </div>
+                )}
 
                 {/* Notes */}
                 {selectedExercise.notes && (
