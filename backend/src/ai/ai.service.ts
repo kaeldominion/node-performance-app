@@ -180,10 +180,11 @@ TIER PRESCRIPTION GUIDELINES:
 - GOLD (Advanced): Standard RX weights, challenging pace, requires established strength base
 - BLACK (Elite): Competition standard, heavy loading, high intensity, failure is likely
 - Use exercise tier prescriptions from the database when available, otherwise estimate based on:
-  * Training level
+  * Training level (BEGINNER/INTERMEDIATE → SILVER, ADVANCED → GOLD, ELITE → BLACK)
   * Exercise complexity
   * Movement pattern
   * Typical use (CONDITIONING exercises = higher reps, FINISHER = max effort)
+- ALWAYS generate all three tiers (SILVER, GOLD, BLACK) for each exercise block so users can scale up/down
 
 REALISTIC WORKOUT DESIGN:
 - Ensure workouts are challenging but achievable within the time limit

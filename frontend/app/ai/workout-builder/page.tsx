@@ -7,8 +7,12 @@ import { aiApi, workoutsApi } from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 
-const TRAINING_LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'ELITE'];
 const TRAINING_GOALS = ['STRENGTH', 'HYPERTROPHY', 'HYBRID', 'CONDITIONING', 'FAT_LOSS', 'LONGEVITY'];
+const TIER_OPTIONS = [
+  { value: 'SILVER', label: 'SILVER', desc: 'Beginner/Intermediate - Focus on mechanics' },
+  { value: 'GOLD', label: 'GOLD', desc: 'Advanced - Standard RX weights' },
+  { value: 'BLACK', label: 'BLACK', desc: 'Elite - Competition standard' },
+];
 const ARCHETYPES = [
   { code: 'PR1ME', name: 'PR1ME', icon: '💪', description: 'Primary Strength Day' },
   { code: 'FORGE', name: 'FORGE', icon: '🔥', description: 'Strength Superset Day' },
@@ -42,7 +46,7 @@ export default function WorkoutBuilderPage() {
 
   const [formData, setFormData] = useState({
     goal: 'HYBRID',
-    trainingLevel: 'INTERMEDIATE',
+    defaultTier: 'GOLD' as 'SILVER' | 'GOLD' | 'BLACK', // Default tier for workout generation
     equipment: [] as string[],
     availableMinutes: 45,
     archetype: '' as string | undefined,
@@ -113,9 +117,16 @@ export default function WorkoutBuilderPage() {
     setGeneratedWorkout(null);
 
     try {
+      // Map tier to training level for AI
+      const tierToTrainingLevel: Record<string, string> = {
+        'SILVER': 'INTERMEDIATE',
+        'GOLD': 'ADVANCED',
+        'BLACK': 'ELITE',
+      };
+      
       const workout = await aiApi.generateWorkout({
         goal: formData.goal,
-        trainingLevel: formData.trainingLevel,
+        trainingLevel: tierToTrainingLevel[formData.defaultTier] || 'ADVANCED',
         equipment: formData.equipment,
         availableMinutes: formData.availableMinutes,
         archetype: formData.archetype,
@@ -181,21 +192,25 @@ export default function WorkoutBuilderPage() {
           <h2 className="text-2xl font-bold mb-6">Workout Parameters</h2>
 
           <div className="space-y-6">
-            {/* Training Level */}
+            {/* Default Tier (replaces Training Level) */}
             <div>
-              <label className="block text-sm font-medium mb-2">Training Level</label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {TRAINING_LEVELS.map((level) => (
+              <label className="block text-sm font-medium mb-2">Default Difficulty Tier</label>
+              <p className="text-xs text-muted-text mb-3">
+                This sets the default tier for generated workouts. You can still adjust per-workout during execution.
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {TIER_OPTIONS.map((tier) => (
                   <button
-                    key={level}
-                    onClick={() => setFormData({ ...formData, trainingLevel: level })}
-                    className={`px-4 py-2 rounded border transition-colors ${
-                      formData.trainingLevel === level
+                    key={tier.value}
+                    onClick={() => setFormData({ ...formData, defaultTier: tier.value as any })}
+                    className={`px-4 py-3 rounded border transition-colors text-left ${
+                      formData.defaultTier === tier.value
                         ? 'bg-node-volt text-dark border-node-volt'
                         : 'bg-panel thin-border text-text-white hover:border-node-volt'
                     }`}
                   >
-                    {level}
+                    <div className="font-bold">{tier.label}</div>
+                    <div className="text-xs opacity-80">{tier.desc}</div>
                   </button>
                 ))}
               </div>
