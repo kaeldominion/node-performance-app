@@ -48,4 +48,5 @@ export class SeedController {
     }
     return this.prisma.resolveMigration(migrationName, action);
   }
+}
 
