@@ -127,7 +127,8 @@ export default function WorkoutBuilderPage() {
       const availableMinutes = isHyrox ? 90 : 55; // Standard: 50-60min (use 55), HYROX: 90min
       
       // For HYROX, don't send goal/archetype (they don't apply)
-      // Don't set reviewing yet - let the terminal show connecting -> generating first
+      // Estimate when to show reviewing phase (after ~25 seconds of generation)
+      const reviewStartTime = Date.now() + 25000; // Start showing review after 25 seconds
       
       const workout = await aiApi.generateWorkout({
         goal: isHyrox ? 'CONDITIONING' : formData.goal, // HYROX always uses CONDITIONING
