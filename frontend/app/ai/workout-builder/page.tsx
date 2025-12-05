@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { aiApi, workoutsApi } from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+import { GenerationTerminal } from '@/components/workout/GenerationTerminal';
 
 const TRAINING_GOALS = ['STRENGTH', 'HYPERTROPHY', 'HYBRID', 'CONDITIONING', 'FAT_LOSS', 'LONGEVITY'];
 const ARCHETYPES = [
@@ -500,8 +501,19 @@ export default function WorkoutBuilderPage() {
           </div>
         </div>
 
-        {/* Error Message */}
-        {error && (
+        {/* Generation Terminal */}
+        {(loading || reviewing || error) && (
+          <div className="mb-8">
+            <GenerationTerminal
+              isGenerating={loading}
+              isReviewing={reviewing}
+              error={error || null}
+            />
+          </div>
+        )}
+
+        {/* Error Message (fallback if terminal doesn't show error well) */}
+        {error && !loading && (
           <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-4 mb-8 text-red-400">
             {error}
           </div>
