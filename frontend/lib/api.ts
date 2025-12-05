@@ -305,6 +305,15 @@ export const gymApi = {
     const response = await api.post(`/gyms/classes/${classId}/attendance`, { memberId, attended });
     return response.data;
   },
+  bulkCreateClasses: async (classes: Array<{
+    name: string;
+    scheduledAt: string;
+    workoutId?: string;
+    maxCapacity?: number;
+  }>) => {
+    const response = await api.post('/gyms/classes/bulk', { classes });
+    return response.data;
+  },
 };
 
 export default api;

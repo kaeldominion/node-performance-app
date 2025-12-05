@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { workoutsApi, sessionsApi } from '@/lib/api';
-import WorkoutDeckPlayer from '@/components/workout/WorkoutDeckPlayer';
+import { WorkoutDeckPlayer } from '@/components/workout/WorkoutDeckPlayer';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 import SectionWarmup from '@/components/workout/SectionWarmup';
@@ -37,6 +37,7 @@ interface Workout {
   displayCode?: string;
   archetype?: string;
   description?: string;
+  shareId?: string;
   sections: WorkoutSection[];
 }
 
