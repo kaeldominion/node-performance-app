@@ -93,10 +93,6 @@ export default function WorkoutBuilderPage() {
     }));
   };
 
-  const handleSelectAllNoMachines = () => {
-    // Since we removed machines from the list, this is the same as Select All
-    handleSelectAll();
-  };
 
   const handleClearEquipment = () => {
     setFormData((prev) => ({
@@ -375,12 +371,6 @@ export default function WorkoutBuilderPage() {
                     className="text-xs px-3 py-1 bg-panel thin-border rounded hover:border-node-volt text-muted-text hover:text-text-white transition-colors"
                   >
                     Select All
-                  </button>
-                  <button
-                    onClick={handleSelectAllNoMachines}
-                    className="text-xs px-3 py-1 bg-panel thin-border rounded hover:border-node-volt text-muted-text hover:text-text-white transition-colors"
-                  >
-                    All (No Machines)
                   </button>
                   <button
                     onClick={handleClearEquipment}
