@@ -7,6 +7,7 @@ import { userApi, sessionsApi, analyticsApi } from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { Icon } from '@/components/icons';
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -18,7 +19,14 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    // Wait for auth to load
+    if (authLoading) {
+      return;
+    }
+    
+    // Only redirect if we're sure there's no user
+    if (!user) {
+      console.log('No user found, redirecting to login...');
       router.push('/auth/login');
       return;
     }
@@ -26,19 +34,27 @@ export default function Dashboard() {
     if (user) {
       loadDashboardData();
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, router]);
 
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const [schedule, recent, statsData, trendsData] = await Promise.all([
-        userApi.getSchedule().catch(() => ({ today: null, upcoming: [] })),
+      const [scheduleData, recent, statsData, trendsData] = await Promise.all([
+        userApi.getSchedule().catch(() => ({ schedule: [], progress: { completed: 0, total: 0, percentage: 0 } })),
         sessionsApi.getRecent().catch(() => []),
         analyticsApi.getStats().catch(() => null),
         analyticsApi.getTrends(7).catch(() => []),
       ]);
 
-      setTodaySession(schedule.today || null);
+      // Find today's workout from schedule
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayWorkout = scheduleData.schedule?.find((item: any) => {
+        const itemDate = new Date(item.date);
+        itemDate.setHours(0, 0, 0, 0);
+        return itemDate.getTime() === today.getTime();
+      });
+      setTodaySession(todayWorkout || null);
       setRecentSessions(recent.slice(0, 5) || []);
       setStats(statsData);
       
@@ -121,7 +137,7 @@ export default function Dashboard() {
             <div className="flex-1">
               <div className="inline-block mb-4 px-4 py-2 bg-node-volt/20 border border-node-volt/50 rounded-full">
                 <span className="text-node-volt text-sm font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                  {streak > 0 ? `🔥 ${streak} Day Streak` : 'Ready to Start'}
+                  {streak > 0 ? `${streak} Day Streak` : 'Ready to Start'}
                 </span>
               </div>
               <h1 className="text-6xl font-bold mb-4 bg-gradient-to-r from-text-white to-node-volt bg-clip-text text-transparent" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
@@ -130,7 +146,7 @@ export default function Dashboard() {
               </h1>
               <p className="text-xl text-muted-text mb-6" style={{ fontFamily: 'var(--font-manrope)' }}>
                 {streak > 0 
-                  ? `Keep the momentum going! You're on fire. 🔥`
+                  ? `Keep the momentum going! You're on fire.`
                   : 'Ready to push your limits today?'
                 }
               </p>
@@ -180,7 +196,7 @@ export default function Dashboard() {
                 <div className="text-muted-text text-sm font-medium" style={{ fontFamily: 'var(--font-manrope)' }}>
                   Current Streak
                 </div>
-                <div className="text-4xl transform group-hover:scale-110 transition-transform">🔥</div>
+                <Icon name="streak" size={48} color="var(--node-volt)" className="transform group-hover:scale-110 transition-transform" />
               </div>
               <div className="text-5xl font-bold text-node-volt mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                 {streak}
@@ -196,7 +212,7 @@ export default function Dashboard() {
                 <div className="text-muted-text text-sm font-medium" style={{ fontFamily: 'var(--font-manrope)' }}>
                   Total Sessions
                 </div>
-                <div className="text-4xl transform group-hover:scale-110 transition-transform">💪</div>
+                <Icon name="sessions" size={48} color="var(--node-volt)" className="transform group-hover:scale-110 transition-transform" />
               </div>
               <div className="text-5xl font-bold text-node-volt mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                 {stats?.totalSessions || 0}
@@ -212,7 +228,7 @@ export default function Dashboard() {
                 <div className="text-muted-text text-sm font-medium" style={{ fontFamily: 'var(--font-manrope)' }}>
                   Total Hours
                 </div>
-                <div className="text-4xl transform group-hover:scale-110 transition-transform">⏱️</div>
+                <Icon name="hours" size={48} color="var(--node-volt)" className="transform group-hover:scale-110 transition-transform" />
               </div>
               <div className="text-5xl font-bold text-node-volt mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                 {totalHours}
@@ -228,7 +244,7 @@ export default function Dashboard() {
                 <div className="text-muted-text text-sm font-medium" style={{ fontFamily: 'var(--font-manrope)' }}>
                   Avg Intensity
                 </div>
-                <div className="text-4xl transform group-hover:scale-110 transition-transform">⚡</div>
+                <Icon name="intensity" size={48} color="var(--node-volt)" className="transform group-hover:scale-110 transition-transform" />
               </div>
               <div className="text-5xl font-bold text-node-volt mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                 {stats?.avgRPE ? stats.avgRPE.toFixed(1) : '0.0'}
@@ -318,7 +334,7 @@ export default function Dashboard() {
           >
             <div className="absolute top-0 right-0 w-24 h-24 bg-node-volt/10 rounded-full blur-xl -mr-12 -mt-12"></div>
             <div className="relative z-10">
-              <div className="text-5xl mb-4 transform group-hover:scale-110 transition-transform">📋</div>
+              <Icon name="programs" size={64} color="var(--node-volt)" className="mb-4 transform group-hover:scale-110 transition-transform" />
               <h3 className="text-xl font-bold mb-2 group-hover:text-node-volt transition-colors" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                 Browse Programs
               </h3>
@@ -334,7 +350,7 @@ export default function Dashboard() {
           >
             <div className="absolute top-0 right-0 w-24 h-24 bg-node-volt/10 rounded-full blur-xl -mr-12 -mt-12"></div>
             <div className="relative z-10">
-              <div className="text-5xl mb-4 transform group-hover:scale-110 transition-transform">🤖</div>
+              <Icon name="ai" size={64} color="var(--node-volt)" className="mb-4 transform group-hover:scale-110 transition-transform" />
               <h3 className="text-xl font-bold mb-2 group-hover:text-node-volt transition-colors" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                 AI Workout Builder
               </h3>
@@ -350,7 +366,7 @@ export default function Dashboard() {
           >
             <div className="absolute top-0 right-0 w-24 h-24 bg-node-volt/10 rounded-full blur-xl -mr-12 -mt-12"></div>
             <div className="relative z-10">
-              <div className="text-5xl mb-4 transform group-hover:scale-110 transition-transform">📚</div>
+              <Icon name="exercises" size={64} color="var(--node-volt)" className="mb-4 transform group-hover:scale-110 transition-transform" />
               <h3 className="text-xl font-bold mb-2 group-hover:text-node-volt transition-colors" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                 Exercise Library
               </h3>

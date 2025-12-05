@@ -7,14 +7,20 @@ import { useUser } from '@clerk/nextjs';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, isLoaded } = useUser();
 
   useEffect(() => {
+    // Wait for Clerk to load before checking sign-in status
+    if (!isLoaded) {
+      return;
+    }
+    
     if (isSignedIn) {
       // Use replace to avoid adding to history stack
+      console.log('User is signed in, redirecting to dashboard...');
       router.replace('/dashboard');
     }
-  }, [isSignedIn, router]);
+  }, [isSignedIn, isLoaded, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-dark p-6">
