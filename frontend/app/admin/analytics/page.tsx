@@ -145,7 +145,7 @@ export default function AdminAnalyticsPage() {
         <div className="bg-panel thin-border rounded-lg p-8 mb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-              🎮 Gamification Preview
+              Gamification Preview
             </h2>
             <button
               onClick={() => {
@@ -341,9 +341,13 @@ export default function AdminAnalyticsPage() {
         </div>
 
         {/* Level Up Modal Preview */}
-        {showLevelUpPreview && (
+        {showLevelUpPreview && previewStats && (
           <LevelUpModal
-            newLevel={previewLevel}
+            level={previewStats.level}
+            levelName={previewStats.levelName}
+            nextLevel={previewStats.nextLevel}
+            nextLevelName={previewStats.nextLevelName}
+            xpToNextLevel={previewStats.xpToNextLevel}
             onClose={() => setShowLevelUpPreview(false)}
           />
         )}
