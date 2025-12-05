@@ -27,154 +27,147 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
   const [progress, setProgress] = useState(5); // Start at 5% (input received)
   const [currentStepProgress, setCurrentStepProgress] = useState(0);
   const [startTime, setStartTime] = useState<number | null>(null);
-  const [animationFrameId, setAnimationFrameId] = useState<number | null>(null);
+  const [phaseStartTime, setPhaseStartTime] = useState<number | null>(null);
+  const [currentPhase, setCurrentPhase] = useState<'connecting' | 'generating' | 'reviewing' | 'optimizing' | 'complete' | null>(null);
 
+  // Reset when starting
   useEffect(() => {
-    // Reset when starting
     if (isGenerating && !startTime) {
-      setStartTime(Date.now());
+      const now = Date.now();
+      setStartTime(now);
+      setPhaseStartTime(now);
+      setCurrentPhase('connecting');
       setProgress(5);
       setCurrentStepProgress(0);
+      setSteps((prev) =>
+        prev.map((step) => {
+          if (step.id === 'connecting') return { ...step, status: 'active' as const };
+          return step;
+        })
+      );
+    }
+  }, [isGenerating, startTime]);
+
+  // Animation loop for smooth progress updates
+  useEffect(() => {
+    if (!isGenerating && !isReviewing && !error) {
+      return;
     }
 
-    // Step 1: Connecting (5% → 15%, ~2 seconds)
-    if (isGenerating && !isReviewing && startTime) {
-      const elapsed = Date.now() - startTime;
-      
-      // Show connecting step for at least 1.5 seconds
-      if (elapsed < 1500) {
-        setSteps((prev) =>
-          prev.map((step) => {
-            if (step.id === 'connecting') return { ...step, status: 'active' as const };
-            return step;
-          })
-        );
-        // Smooth progress from 5% to 15% over 1.5 seconds
-        const connectingProgress = Math.min(1, elapsed / 1500);
-        setProgress(5 + connectingProgress * 10);
-        setCurrentStepProgress(connectingProgress);
-      } 
-      // Complete connecting, start generating (15% → 60%, ~20-25 seconds)
-      else if (elapsed < 25000) {
-        setSteps((prev) =>
-          prev.map((step) => {
-            if (step.id === 'connecting') return { ...step, status: 'complete' as const };
-            if (step.id === 'generating') return { ...step, status: 'active' as const };
-            return step;
-          })
-        );
-        // Smooth progress from 15% to 60% over 20 seconds (after connecting)
-        const generatingElapsed = elapsed - 1500;
-        const generatingDuration = 20000; // 20 seconds for generation
-        const generatingProgress = Math.min(1, generatingElapsed / generatingDuration);
-        setCurrentStepProgress(generatingProgress);
-        setProgress(15 + generatingProgress * 45); // 15% to 60%
-      }
-      // Continue generating if still in this phase
-      else {
-        setProgress(60);
-        setCurrentStepProgress(1);
-      }
-    } 
-    // Step 2: Reviewing (60% → 85%, ~10-12 seconds)
-    else if (isReviewing && startTime) {
-      const elapsed = Date.now() - startTime;
-      
-      setSteps((prev) =>
-        prev.map((step) => {
-          if (step.id === 'generating') return { ...step, status: 'complete' as const };
-          if (step.id === 'reviewing') return { ...step, status: 'active' as const };
-          return step;
-        })
-      );
-      
-      // Estimate review started around 25 seconds
-      const reviewStartTime = 25000;
-      const reviewElapsed = Math.max(0, elapsed - reviewStartTime);
-      const reviewDuration = 12000; // 12 seconds for review
-      const reviewProgress = Math.min(1, reviewElapsed / reviewDuration);
-      setCurrentStepProgress(reviewProgress);
-      setProgress(60 + reviewProgress * 25); // 60% to 85%
-    } 
-    // Step 3: Optimizing (85% → 95%, ~3 seconds)
-    else if (!isGenerating && !isReviewing && !error && startTime) {
-      const elapsed = Date.now() - startTime;
-      
-      setSteps((prev) =>
-        prev.map((step) => {
-          if (step.id === 'reviewing') return { ...step, status: 'complete' as const };
-          if (step.id === 'optimizing') return { ...step, status: 'active' as const };
-          if (step.status === 'pending' && step.id !== 'complete') {
-            return { ...step, status: 'complete' as const };
-          }
-          return step;
-        })
-      );
-      
-      // Estimate optimizing started around 37 seconds
-      const optimizeStartTime = 37000;
-      const optimizeElapsed = Math.max(0, elapsed - optimizeStartTime);
-      const optimizeDuration = 3000; // 3 seconds for optimizing
-      const optimizeProgress = Math.min(1, optimizeElapsed / optimizeDuration);
-      setCurrentStepProgress(optimizeProgress);
-      setProgress(85 + optimizeProgress * 10); // 85% to 95%
-      
-      // Complete after optimizing
-      if (optimizeProgress >= 1) {
-        setTimeout(() => {
+    let animationFrameId: number;
+
+    const updateProgress = () => {
+      if (!startTime || !phaseStartTime) return;
+
+      const totalElapsed = Date.now() - startTime;
+      const phaseElapsed = Date.now() - phaseStartTime;
+
+      // Phase 1: Connecting (5% → 15%, ~2 seconds)
+      if (currentPhase === 'connecting' && isGenerating && !isReviewing) {
+        if (phaseElapsed < 2000) {
+          const phaseProgress = Math.min(1, phaseElapsed / 2000);
+          setCurrentStepProgress(phaseProgress);
+          setProgress(5 + phaseProgress * 10); // 5% to 15%
+        } else {
+          // Transition to generating
           setSteps((prev) =>
             prev.map((step) => {
-              if (step.id === 'optimizing') return { ...step, status: 'complete' as const };
-              if (step.id === 'complete') return { ...step, status: 'complete' as const };
+              if (step.id === 'connecting') return { ...step, status: 'complete' as const };
+              if (step.id === 'generating') return { ...step, status: 'active' as const };
               return step;
             })
           );
-          setProgress(100);
-          setCurrentStepProgress(1);
-        }, 500);
+          setCurrentPhase('generating');
+          setPhaseStartTime(Date.now());
+          setCurrentStepProgress(0);
+        }
       }
-    } 
-    // Error state
-    else if (error) {
+      // Phase 2: Generating (15% → 60%, ~20-25 seconds)
+      else if (currentPhase === 'generating' && isGenerating && !isReviewing) {
+        const generatingDuration = 25000; // 25 seconds for generation
+        const phaseProgress = Math.min(1, phaseElapsed / generatingDuration);
+        setCurrentStepProgress(phaseProgress);
+        setProgress(15 + phaseProgress * 45); // 15% to 60%
+      }
+      // Phase 3: Reviewing (60% → 85%, ~12 seconds)
+      else if (isReviewing && currentPhase !== 'reviewing') {
+        setSteps((prev) =>
+          prev.map((step) => {
+            if (step.id === 'generating') return { ...step, status: 'complete' as const };
+            if (step.id === 'reviewing') return { ...step, status: 'active' as const };
+            return step;
+          })
+        );
+        setCurrentPhase('reviewing');
+        setPhaseStartTime(Date.now());
+        setCurrentStepProgress(0);
+      } else if (currentPhase === 'reviewing' && isReviewing) {
+        const reviewDuration = 12000; // 12 seconds for review
+        const phaseProgress = Math.min(1, phaseElapsed / reviewDuration);
+        setCurrentStepProgress(phaseProgress);
+        setProgress(60 + phaseProgress * 25); // 60% to 85%
+      }
+      // Phase 4: Optimizing (85% → 95%, ~3 seconds)
+      else if (!isGenerating && !isReviewing && !error && currentPhase !== 'optimizing' && currentPhase !== 'complete') {
+        setSteps((prev) =>
+          prev.map((step) => {
+            if (step.id === 'reviewing') return { ...step, status: 'complete' as const };
+            if (step.id === 'optimizing') return { ...step, status: 'active' as const };
+            return step;
+          })
+        );
+        setCurrentPhase('optimizing');
+        setPhaseStartTime(Date.now());
+        setCurrentStepProgress(0);
+      } else if (currentPhase === 'optimizing' && !isGenerating && !isReviewing && !error) {
+        const optimizeDuration = 3000; // 3 seconds for optimizing
+        const phaseProgress = Math.min(1, phaseElapsed / optimizeDuration);
+        setCurrentStepProgress(phaseProgress);
+        setProgress(85 + phaseProgress * 10); // 85% to 95%
+        
+        if (phaseProgress >= 1 && currentPhase === 'optimizing') {
+          // Complete
+          setTimeout(() => {
+            setSteps((prev) =>
+              prev.map((step) => {
+                if (step.id === 'optimizing') return { ...step, status: 'complete' as const };
+                if (step.id === 'complete') return { ...step, status: 'complete' as const };
+                return step;
+              })
+            );
+            setCurrentPhase('complete');
+            setProgress(100);
+            setCurrentStepProgress(1);
+          }, 300);
+        }
+      }
+
+      // Continue animation if still processing
+      if ((isGenerating || isReviewing) && currentPhase !== 'complete') {
+        animationFrameId = requestAnimationFrame(updateProgress);
+      }
+    };
+
+    animationFrameId = requestAnimationFrame(updateProgress);
+
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, [isGenerating, isReviewing, error, startTime, phaseStartTime, currentPhase]);
+
+  // Error state
+  useEffect(() => {
+    if (error) {
       setSteps((prev) =>
         prev.map((step) => {
           if (step.status === 'active') return { ...step, status: 'error' as const };
           return step;
         })
       );
-      // Keep progress at current state on error
     }
-
-    // Cleanup animation frame
-    return () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
-    };
-  }, [isGenerating, isReviewing, error, startTime, animationFrameId]);
-
-  // Continuous animation loop
-  useEffect(() => {
-    if (!isGenerating && !isReviewing && !error) {
-      return;
-    }
-
-    const animate = () => {
-      if (isGenerating || isReviewing) {
-        const frameId = requestAnimationFrame(animate);
-        setAnimationFrameId(frameId);
-      }
-    };
-    
-    const frameId = requestAnimationFrame(animate);
-    setAnimationFrameId(frameId);
-
-    return () => {
-      if (frameId) {
-        cancelAnimationFrame(frameId);
-      }
-    };
-  }, [isGenerating, isReviewing, error]);
+  }, [error]);
 
   if (!isGenerating && !isReviewing && !error) {
     return null; // Don't show terminal when complete
