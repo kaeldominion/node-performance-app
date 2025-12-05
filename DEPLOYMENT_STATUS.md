@@ -1,49 +1,117 @@
-# Deployment Status Checklist
+# Deployment Status
 
-## Current Status: Building ⏳
+## ✅ Latest Commits (All Pushed)
 
-Railway is currently building your backend service.
+- `5c67f32` - Fix tier prescription display to show distance/calories for erg machines
+- `b4ea05a` - Fix TypeScript error: remove completedAt from UpdateSessionDto usage  
+- `ff3b00f` - Add gamification system (XP/levels), tier-specific distances, landing page updates
 
-## What to Watch For
+## 🚀 Backend (Railway)
 
-### 1. Build Stage
-- ✅ Should see "Building the image..."
-- ✅ Should use Node.js 20 (from `.nvmrc`)
-- ✅ Should build NestJS backend (not Next.js frontend)
-- ⚠️ If you see Next.js errors, root directory is still wrong
+**Status**: ✅ Auto-deploys on push to `main`
 
-### 2. Deploy Stage
-- Should see "Deploying..."
-- Service should start
+**Latest Deployment**: Should trigger automatically after commits
 
-### 3. Database Setup
-If you set the deploy command to `npm run db:setup && npm run start:prod`, you should see in logs:
-- "Generating Prisma Client..."
-- "Running migrations..."
-- "Seeding database..."
-- "✅ Created NØDE Core Program with 6 archetypes"
-- "✅ Created Villa Zeno Hybrid program"
+**Migrations**: Will run automatically via `railway.json`:
+- `20251206000000_add_distance_to_tier_prescriptions`
+- `20251206000001_add_xp_and_level`
 
-### 4. Service Running
-- Should see "NØDE Backend running on http://localhost:3001"
-- Status should change to "ACTIVE" or "RUNNING"
+**Check Deployment**:
+1. Go to Railway Dashboard → Your Backend Service
+2. Check "Deployments" tab
+3. Look for latest deployment with commit `5c67f32`
 
-## Next Steps After Deployment
+## 🌐 Frontend (Vercel)
 
-1. **Check Logs**: Click "View logs" to see if migrations ran
-2. **Verify Database**: Go to Postgres → Database → Data tab - should see tables
-3. **Test Backend**: Visit `https://node-performance-app-production.up.railway.app/programs`
-4. **Generate Domain**: If not already done, generate public domain in Networking tab
-5. **Deploy Frontend**: Once backend is working, deploy to Vercel
+**Status**: ⚠️ May need manual trigger
 
-## Troubleshooting
+**Why Vercel Might Not Auto-Deploy**:
 
-**If build fails:**
-- Check logs for errors
-- Verify root directory is `backend`
-- Check Node.js version (should be 20)
+1. **Root Directory Not Set**
+   - Vercel Dashboard → Project Settings → General
+   - **Root Directory** must be: `frontend`
+   - If not set, Vercel won't know where to build
 
-**If migrations don't run:**
-- Check if deploy command includes `npm run db:setup`
-- Or run manually via Railway shell
+2. **Git Integration Issue**
+   - Vercel Dashboard → Project Settings → Git
+   - Verify connected to: `kaeldominion/node-performance-app`
+   - Verify watching: `main` branch
+   - Verify "Auto-deploy on push" is enabled
 
+3. **Build Errors**
+   - Check Vercel Dashboard → Deployments
+   - Look for failed builds
+   - Check build logs for errors
+
+## 🔧 Quick Fix for Vercel
+
+### Option 1: Manual Redeploy (Easiest)
+1. Go to [vercel.com/dashboard](https://vercel.com/dashboard)
+2. Find your project
+3. Go to **Deployments** tab
+4. Click **"Redeploy"** on latest deployment
+5. Or click **"Deploy"** → **"Deploy Latest Commit"**
+
+### Option 2: Verify Configuration
+1. **Settings** → **General**:
+   - Root Directory: `frontend` ✅
+   - Framework: Next.js ✅
+   - Build Command: `npm run build` ✅
+   - Output Directory: `.next` ✅
+
+2. **Settings** → **Git**:
+   - Production Branch: `main` ✅
+   - Auto-deploy: Enabled ✅
+
+3. **Settings** → **Environment Variables**:
+   - `NEXT_PUBLIC_API_URL` = `https://node-performance-app-production.up.railway.app`
+   - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` = (your key)
+
+### Option 3: Force Deploy via CLI
+```bash
+cd frontend
+npx vercel --prod
+```
+
+## 📋 What's New in This Deployment
+
+1. **Gamification System**:
+   - XP points and levels (1-100)
+   - Level-up animations with sounds
+   - XP awarded on workout completion
+   - XP/level display in navbar
+
+2. **Tier-Specific Distances**:
+   - Different distances/calories per tier for erg machines
+   - Displayed correctly in workout player
+   - Works for: Rower, Bike, SkiErg, etc.
+
+3. **Landing Page Updates**:
+   - "NØDE OS" logo
+   - Recommended workouts section
+   - HYROX support section
+
+4. **Bug Fixes**:
+   - Fixed tier prescription display
+   - Fixed TypeScript errors
+
+## ✅ Verification Checklist
+
+After deployment, verify:
+
+- [ ] Backend builds successfully on Railway
+- [ ] Migrations applied (check Railway logs)
+- [ ] Frontend builds successfully on Vercel
+- [ ] XP/level shows in navbar (if logged in)
+- [ ] Tier distances display correctly in workout player
+- [ ] Landing page shows "NØDE OS" logo
+- [ ] Recommended workouts section visible
+- [ ] HYROX section visible
+
+## 🆘 If Vercel Still Doesn't Deploy
+
+1. Check Vercel Dashboard → Deployments for error messages
+2. Verify Root Directory is set to `frontend`
+3. Try manual redeploy
+4. Check Vercel status page for outages
+5. Contact Vercel support if issue persists
