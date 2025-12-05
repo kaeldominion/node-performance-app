@@ -61,15 +61,20 @@ class ClerkErrorBoundaryClass extends Component<
 
 export function ClerkErrorBoundary({ children, fallback }: ClerkErrorBoundaryProps) {
   // Get Clerk key synchronously - environment variables are available at build time
-  const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '';
+  const clerkKeyRaw = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '';
+  // Remove any trailing $ or other invalid characters
+  const clerkKey = clerkKeyRaw.trim().replace(/\$$/, '');
   const isDevMode = process.env.NODE_ENV === 'development' || 
                     process.env.NEXT_PUBLIC_DEV_MODE === 'true';
   const isProduction = process.env.NODE_ENV === 'production';
 
-  // If no Clerk key, render without ClerkProvider
-  if (!clerkKey) {
+  // If no Clerk key or key is invalid, render without ClerkProvider
+  if (!clerkKey || clerkKey.length < 10) {
     if (isDevMode) {
-      console.log('🔧 DEV MODE: No Clerk key, rendering without ClerkProvider');
+      console.log('🔧 DEV MODE: No valid Clerk key, rendering without ClerkProvider', { 
+        keyLength: clerkKey.length,
+        keyPreview: clerkKey.substring(0, 20) 
+      });
     }
     return <>{children}</>;
   }

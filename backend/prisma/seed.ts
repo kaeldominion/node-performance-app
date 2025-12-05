@@ -1048,7 +1048,150 @@ async function main() {
   });
 
   console.log('✅ Created Villa Zeno Hybrid program');
+
+  // Generate demo activities for the last 7 days
+  await generateDemoActivities();
+
   console.log('🎉 Seeding complete!');
+}
+
+async function generateDemoActivities() {
+  console.log('📊 Generating demo activities...');
+
+  // Get all users
+  const users = await prisma.user.findMany({
+    select: { id: true, name: true, username: true },
+    take: 20,
+  });
+
+  if (users.length === 0) {
+    console.log('⚠️  No users found, skipping demo activity generation');
+    return;
+  }
+
+  const activities: any[] = [];
+  const now = new Date();
+  const workoutNames = [
+    'PR1ME Strength',
+    'FORGE Supersets',
+    'ENGIN3 Hybrid',
+    'CIRCUIT X MetCon',
+    'CAPAC1TY Endurance',
+    'FLOWSTATE Recovery',
+    'Upper Body Power',
+    'Lower Body Strength',
+    'Full Body Circuit',
+    'Cardio Blast',
+  ];
+
+  const programNames = [
+    'NØDE Core Weekly',
+    'Villa Zeno Hybrid',
+    'Strength Builder',
+    'Hybrid Performance',
+  ];
+
+  // Generate activities for the last 7 days
+  for (let day = 0; day < 7; day++) {
+    const dayDate = new Date(now);
+    dayDate.setDate(dayDate.getDate() - day);
+    dayDate.setHours(0, 0, 0, 0);
+
+    // Generate 5-15 activities per day
+    const activitiesPerDay = Math.floor(Math.random() * 10) + 5;
+
+    for (let i = 0; i < activitiesPerDay; i++) {
+      const user = users[Math.floor(Math.random() * users.length)];
+      const userName = user.username ? `@${user.username}` : user.name || 'Someone';
+
+      // Random hour between 6 AM and 10 PM
+      const hour = Math.floor(Math.random() * 16) + 6;
+      const minute = Math.floor(Math.random() * 60);
+      const activityTime = new Date(dayDate);
+      activityTime.setHours(hour, minute, 0, 0);
+
+      // Random activity type
+      const activityTypes = [
+        'USER_REGISTERED',
+        'WORKOUT_CREATED',
+        'SESSION_STARTED',
+        'SESSION_COMPLETED',
+        'NETWORK_CONNECTED',
+        'USER_LEVEL_UP',
+        'PROGRAM_STARTED',
+      ];
+
+      const type = activityTypes[Math.floor(Math.random() * activityTypes.length)] as any;
+
+      let message = '';
+      let metadata: any = {};
+
+      switch (type) {
+        case 'USER_REGISTERED':
+          message = `New user ${userName} joined`;
+          break;
+        case 'WORKOUT_CREATED':
+          const workoutName = workoutNames[Math.floor(Math.random() * workoutNames.length)];
+          message = `${userName} created workout: ${workoutName}`;
+          metadata = { workoutName };
+          break;
+        case 'SESSION_STARTED':
+          const startedWorkout = workoutNames[Math.floor(Math.random() * workoutNames.length)];
+          message = `${userName} started ${startedWorkout}`;
+          metadata = { workoutName: startedWorkout };
+          break;
+        case 'SESSION_COMPLETED':
+          const completedWorkout = workoutNames[Math.floor(Math.random() * workoutNames.length)];
+          const rpe = Math.floor(Math.random() * 5) + 5; // RPE 5-10
+          message = `${userName} completed ${completedWorkout} (RPE: ${rpe})`;
+          metadata = { workoutName: completedWorkout, rpe };
+          break;
+        case 'NETWORK_CONNECTED':
+          const otherUser = users[Math.floor(Math.random() * users.length)];
+          if (otherUser.id !== user.id) {
+            const otherUserName = otherUser.username
+              ? `@${otherUser.username}`
+              : otherUser.name || 'Someone';
+            message = `${userName} connected with ${otherUserName}`;
+          } else {
+            continue; // Skip if same user
+          }
+          break;
+        case 'USER_LEVEL_UP':
+          const level = Math.floor(Math.random() * 20) + 2; // Level 2-21
+          message = `${userName} reached Level ${level}`;
+          metadata = { level };
+          break;
+        case 'PROGRAM_STARTED':
+          const programName = programNames[Math.floor(Math.random() * programNames.length)];
+          message = `${userName} started program: ${programName}`;
+          metadata = { programName };
+          break;
+      }
+
+      activities.push({
+        userId: user.id,
+        type,
+        message,
+        metadata,
+        createdAt: activityTime,
+      });
+    }
+  }
+
+  // Insert activities in batches
+  let inserted = 0;
+  const batchSize = 50;
+  for (let i = 0; i < activities.length; i += batchSize) {
+    const batch = activities.slice(i, i + batchSize);
+    await prisma.activityLog.createMany({
+      data: batch,
+      skipDuplicates: true,
+    });
+    inserted += batch.length;
+  }
+
+  console.log(`✅ Generated ${inserted} demo activities for the last 7 days`);
 }
 
 main()

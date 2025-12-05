@@ -17,6 +17,14 @@ interface Workout {
   description?: string;
   isRecommended: boolean;
   createdAt: string;
+  createdBy?: string | null;
+  creator?: {
+    id: string;
+    email: string;
+    name?: string | null;
+    username?: string | null;
+  } | null;
+  sectionCount?: number;
 }
 
 export default function AdminWorkoutsPage() {
@@ -26,6 +34,11 @@ export default function AdminWorkoutsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterArchetype, setFilterArchetype] = useState<string>('');
+  const [filterRecommended, setFilterRecommended] = useState<string>('all'); // 'all', 'true', 'false'
+  const [filterStartDate, setFilterStartDate] = useState<string>('');
+  const [filterEndDate, setFilterEndDate] = useState<string>('');
+  const [filterHyrox, setFilterHyrox] = useState<boolean>(false);
 
   useEffect(() => {
     if (!authLoading && (!user || !user.isAdmin)) {
@@ -37,15 +50,45 @@ export default function AdminWorkoutsPage() {
     }
   }, [user, authLoading, router]);
 
+  // Reload when filters change
+  useEffect(() => {
+    if (user?.isAdmin) {
+      const timeoutId = setTimeout(() => {
+        loadWorkouts();
+      }, 300); // Debounce search
+      return () => clearTimeout(timeoutId);
+    }
+  }, [searchTerm, filterArchetype, filterRecommended, filterStartDate, filterEndDate, filterHyrox]);
+
   const loadWorkouts = async () => {
     try {
       setLoading(true);
-      // For now, we'll need to fetch all workouts - we can add a findAll endpoint later
-      // For now, admins can mark workouts as recommended from the workout detail page
-      setWorkouts([]);
+      setError('');
+      
+      const filters: any = {};
+      if (searchTerm) filters.search = searchTerm;
+      if (filterArchetype) filters.archetype = filterArchetype;
+      if (filterRecommended !== 'all') {
+        filters.isRecommended = filterRecommended === 'true';
+      }
+      if (filterStartDate) filters.startDate = filterStartDate;
+      if (filterEndDate) filters.endDate = filterEndDate;
+      if (filterHyrox) filters.isHyrox = true;
+      
+      console.log('Loading workouts with filters:', filters);
+      const data = await workoutsApi.getAll(filters);
+      console.log('Received workouts data:', data);
+      setWorkouts(Array.isArray(data) ? data : []);
     } catch (err: any) {
       console.error('Failed to load workouts:', err);
-      setError('Failed to load workouts');
+      console.error('Error details:', {
+        message: err.message,
+        response: err.response,
+        status: err.response?.status,
+        data: err.response?.data,
+      });
+      setError(err.response?.data?.message || err.message || 'Failed to load workouts');
+      setWorkouts([]);
     } finally {
       setLoading(false);
     }
@@ -75,10 +118,7 @@ export default function AdminWorkoutsPage() {
     return null;
   }
 
-  const filteredWorkouts = workouts.filter(w => 
-    w.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    w.displayCode?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const archetypes = ['PR1ME', 'FORGE', 'ENGIN3', 'CIRCUIT_X', 'CAPAC1TY', 'FLOWSTATE', 'HYROX'];
 
   return (
     <div className="min-h-screen bg-dark">
@@ -99,12 +139,6 @@ export default function AdminWorkoutsPage() {
             </Link>
           </div>
 
-          <div className="bg-node-volt/10 border border-node-volt rounded-lg p-4 mb-6">
-            <p className="text-sm text-text-white">
-              <strong>Note:</strong> To mark a workout as recommended, navigate to the workout detail page and use the "Mark as Recommended" button. 
-              This page will show all workouts once we add a list endpoint.
-            </p>
-          </div>
         </div>
 
         {error && (
@@ -113,12 +147,118 @@ export default function AdminWorkoutsPage() {
           </div>
         )}
 
-        {workouts.length === 0 ? (
+        {/* Filters */}
+        <div className="bg-panel thin-border rounded-lg p-6 mb-6">
+          <h2 className="text-lg font-bold mb-4">Filters</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-muted-text mb-2">Search</label>
+              <input
+                type="text"
+                placeholder="Name, code, description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-dark thin-border rounded-lg px-4 py-2 text-text-white placeholder-muted-text focus:outline-none focus:border-node-volt"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-muted-text mb-2">Archetype</label>
+              <select
+                value={filterArchetype}
+                onChange={(e) => setFilterArchetype(e.target.value)}
+                className="w-full bg-dark thin-border rounded-lg px-4 py-2 text-text-white focus:outline-none focus:border-node-volt"
+              >
+                <option value="">All</option>
+                {archetypes.map(arch => (
+                  <option key={arch} value={arch}>{arch}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-muted-text mb-2">HYROX Only</label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filterHyrox}
+                  onChange={(e) => setFilterHyrox(e.target.checked)}
+                  className="w-5 h-5 rounded border-border-dark bg-tech-grey text-node-volt focus:ring-node-volt"
+                />
+                <span className="text-sm text-text-white">Show HYROX workouts only</span>
+              </label>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-muted-text mb-2">Recommended</label>
+              <select
+                value={filterRecommended}
+                onChange={(e) => setFilterRecommended(e.target.value)}
+                className="w-full bg-dark thin-border rounded-lg px-4 py-2 text-text-white focus:outline-none focus:border-node-volt"
+              >
+                <option value="all">All</option>
+                <option value="true">Recommended</option>
+                <option value="false">Not Recommended</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-muted-text mb-2">Start Date</label>
+              <input
+                type="date"
+                value={filterStartDate}
+                onChange={(e) => setFilterStartDate(e.target.value)}
+                className="w-full bg-dark thin-border rounded-lg px-4 py-2 text-text-white focus:outline-none focus:border-node-volt"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-muted-text mb-2">End Date</label>
+              <input
+                type="date"
+                value={filterEndDate}
+                onChange={(e) => setFilterEndDate(e.target.value)}
+                className="w-full bg-dark thin-border rounded-lg px-4 py-2 text-text-white focus:outline-none focus:border-node-volt"
+              />
+            </div>
+          </div>
+          <div className="mt-4 flex justify-end">
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setFilterArchetype('');
+                setFilterRecommended('all');
+                setFilterStartDate('');
+                setFilterEndDate('');
+                setFilterHyrox(false);
+              }}
+              className="px-4 py-2 text-sm text-muted-text hover:text-text-white transition-colors"
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="bg-panel thin-border rounded-lg p-12 text-center">
+            <div className="mb-4 flex justify-center"><Icons.SESSIONS size={64} className="text-node-volt animate-pulse" /></div>
+            <h2 className="text-2xl font-bold mb-2">Loading Workouts...</h2>
+          </div>
+        ) : error ? (
+          <div className="bg-panel thin-border rounded-lg p-12 text-center">
+            <div className="mb-4 flex justify-center"><Icons.SESSIONS size={64} className="text-red-400" /></div>
+            <h2 className="text-2xl font-bold mb-2 text-red-400">Error Loading Workouts</h2>
+            <p className="text-muted-text mb-6">{error}</p>
+            <button
+              onClick={loadWorkouts}
+              className="inline-block bg-node-volt text-dark font-bold px-6 py-3 rounded hover:opacity-90 transition-opacity"
+            >
+              Retry
+            </button>
+          </div>
+        ) : workouts.length === 0 ? (
           <div className="bg-panel thin-border rounded-lg p-12 text-center">
             <div className="mb-4 flex justify-center"><Icons.SESSIONS size={64} className="text-node-volt" /></div>
             <h2 className="text-2xl font-bold mb-2">No Workouts Found</h2>
             <p className="text-muted-text mb-6">
-              Workout management features coming soon. For now, mark workouts as recommended from their detail pages.
+              {searchTerm || filterArchetype || filterRecommended !== 'all' || filterStartDate || filterEndDate || filterHyrox
+                ? 'Try adjusting your filters to see more results.'
+                : 'No workouts have been created yet.'}
             </p>
             <Link
               href="/admin"
@@ -129,18 +269,20 @@ export default function AdminWorkoutsPage() {
           </div>
         ) : (
           <>
-            <div className="mb-6">
-              <input
-                type="text"
-                placeholder="Search workouts..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full max-w-md bg-panel border border-border-dark rounded-lg px-4 py-2 text-text-white placeholder-muted-text focus:outline-none focus:border-node-volt"
-              />
+            <div className="mb-4 flex items-center justify-between">
+              <div className="text-muted-text">
+                Showing {workouts.length} workout{workouts.length !== 1 ? 's' : ''}
+              </div>
+              <button
+                onClick={loadWorkouts}
+                className="px-4 py-2 bg-panel thin-border rounded-lg text-text-white hover:border-node-volt transition-colors text-sm"
+              >
+                Refresh
+              </button>
             </div>
 
             <div className="space-y-3">
-              {filteredWorkouts.map((workout) => (
+              {workouts.map((workout) => (
                 <div
                   key={workout.id}
                   className="bg-panel thin-border rounded-lg p-6 flex items-center justify-between"
@@ -165,8 +307,22 @@ export default function AdminWorkoutsPage() {
                       )}
                     </div>
                     {workout.description && (
-                      <p className="text-muted-text text-sm">{workout.description}</p>
+                      <p className="text-muted-text text-sm mb-2">{workout.description}</p>
                     )}
+                    <div className="flex items-center gap-4 text-xs text-muted-text mt-2">
+                      <span>
+                        Created: {new Date(workout.createdAt).toLocaleDateString()}
+                      </span>
+                      {workout.creator && (
+                        <span>
+                          By: {workout.creator.name || workout.creator.email}
+                          {workout.creator.username && ` (@${workout.creator.username})`}
+                        </span>
+                      )}
+                      {workout.sectionCount !== undefined && (
+                        <span>{workout.sectionCount} section{workout.sectionCount !== 1 ? 's' : ''}</span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <Link

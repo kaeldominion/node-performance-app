@@ -136,6 +136,7 @@ model User {
   email            String           @unique
   passwordHash     String
   name             String?
+  username         String?           @unique // Username for network connections
   role             UserRole         @default(HOME_USER)
   isAdmin          Boolean          @default(false) // Legacy - use role instead
   subscriptionTier SubscriptionTier @default(FREE)
@@ -158,6 +159,10 @@ model User {
   networkAsRequester Network[]            @relation("NetworkRequester")
   networkAsAddressee Network[]             @relation("NetworkAddressee")
   networkCode        String?              @unique // QR code for adding to network
+  notifications     Notification[]
+  activityLogs       ActivityLog[]
+  createdWorkouts   Workout[]             @relation("CreatedWorkouts")
+  achievements       UserAchievement[]
 
   @@map("users")
 }
@@ -221,6 +226,8 @@ model Workout {
   program    Program?         @relation(fields: [programId], references: [id], onDelete: SetNull)
   templateId String?
   template   WorkoutTemplate? @relation("TemplateWorkouts", fields: [templateId], references: [id], onDelete: SetNull)
+  createdBy  String? // userId who created/saved this workout
+  creator    User?            @relation("CreatedWorkouts", fields: [createdBy], references: [id], onDelete: SetNull)
 
   name          String
   displayCode   String?
@@ -595,4 +602,107 @@ enum NetworkStatus {
   PENDING
   ACCEPTED
   BLOCKED
+}
+
+enum NotificationType {
+  NETWORK_REQUEST
+  NETWORK_ACCEPTED
+  NETWORK_REJECTED
+  FRIEND_WORKOUT_STARTED
+  FRIEND_WORKOUT_COMPLETED
+  FRIEND_WORKOUT_CREATED
+  FRIEND_STATS_IMPROVED
+  FRIEND_LEVEL_UP
+  FRIEND_LEADERBOARD_ENTRY
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  networkId String?          // Reference to Network record if applicable
+  activityLogId String?      // Reference to ActivityLog if applicable
+  activityLog ActivityLog?   @relation(fields: [activityLogId], references: [id], onDelete: SetNull)
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+enum ActivityType {
+  USER_REGISTERED
+  USER_LEVEL_UP
+  WORKOUT_CREATED
+  WORKOUT_SCHEDULED
+  SESSION_STARTED
+  SESSION_COMPLETED
+  NETWORK_CONNECTED
+  PROGRAM_STARTED
+  PROGRAM_COMPLETED
+  STATS_IMPROVED
+  LEADERBOARD_ENTRY
+}
+
+model ActivityLog {
+  id        String       @id @default(cuid())
+  userId    String?
+  user      User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  type      ActivityType
+  entityType String?    // e.g., 'workout', 'session', 'program'
+  entityId  String?      // ID of the related entity
+  message   String       // Human-readable message
+  metadata  Json?        // Additional data (workout name, stats, etc.)
+  createdAt DateTime     @default(now())
+
+  notifications Notification[]
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+// Achievement System
+enum AchievementCategory {
+  STREAK
+  VOLUME
+  CONSISTENCY
+  INTENSITY
+  MILESTONE
+  SPECIAL
+}
+
+model Achievement {
+  id          String              @id @default(cuid())
+  code        String              @unique // e.g., "STREAK_7", "FIRST_WORKOUT"
+  name        String
+  description String
+  category    AchievementCategory
+  icon        String              // Icon identifier
+  rarity      String              @default("COMMON") // COMMON, RARE, EPIC, LEGENDARY
+  xpReward    Int                 @default(0)
+  metadata    Json?               // Additional data (thresholds, conditions, etc.)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  userAchievements UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  earnedAt      DateTime    @default(now())
+  metadata      Json?       // Additional data (value when earned, etc.)
+
+  @@unique([userId, achievementId])
+  @@index([userId, earnedAt])
+  @@map("user_achievements")
 }

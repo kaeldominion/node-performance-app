@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Param, UseGuards, Patch, Delete, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, UseGuards, Patch, Delete, Request, Query } from '@nestjs/common';
 import { WorkoutsService } from './workouts.service';
 import { ClerkAdminGuard } from '../auth/clerk-admin.guard';
 import { ClerkAuthGuard } from '../auth/clerk.guard';
@@ -18,9 +18,27 @@ export class WorkoutsController {
     return this.workoutsService.findByUser(req.user.id);
   }
 
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this.workoutsService.findOne(id);
+  @Get('admin-all')
+  @UseGuards(ClerkAdminGuard)
+  async findAllAdmin(@Request() req: any, @Query() query: any) {
+    console.log('Admin workouts endpoint called');
+    console.log('Query params:', query);
+    console.log('User:', req.user);
+    
+    const filterParams: any = {};
+    
+    if (query.search) filterParams.search = query.search;
+    if (query.createdBy) filterParams.createdBy = query.createdBy;
+    if (query.archetype) filterParams.archetype = query.archetype;
+    if (query.isRecommended !== undefined) filterParams.isRecommended = query.isRecommended === 'true';
+    if (query.startDate) filterParams.startDate = new Date(query.startDate);
+    if (query.endDate) filterParams.endDate = new Date(query.endDate);
+    if (query.isHyrox !== undefined) filterParams.isHyrox = query.isHyrox === 'true';
+    
+    console.log('Filter params:', filterParams);
+    const result = await this.workoutsService.findAll(filterParams);
+    console.log(`Returning ${result.length} workouts`);
+    return result;
   }
 
   @Get('share/:shareId')
@@ -28,9 +46,15 @@ export class WorkoutsController {
     return this.workoutsService.findByShareId(shareId);
   }
 
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    return this.workoutsService.findOne(id);
+  }
+
   @Post()
-  async create(@Body() createWorkoutDto: any) {
-    return this.workoutsService.create(createWorkoutDto);
+  @UseGuards(ClerkAuthGuard)
+  async create(@Request() req: any, @Body() createWorkoutDto: any) {
+    return this.workoutsService.create(req.user.id, createWorkoutDto, req.user.email);
   }
 
   @Put(':id')

@@ -5,6 +5,7 @@ import {
   IsString,
   IsOptional,
   IsBoolean,
+  IsIn,
   Min,
   Max,
 } from 'class-validator';
@@ -36,11 +37,11 @@ export class GenerateWorkoutDto {
   archetype?: WorkoutArchetype;
 
   @IsOptional()
-  @IsString()
+  @IsIn(['single', 'week', 'month', 'fourDay'])
   workoutType?: 'single' | 'week' | 'month' | 'fourDay';
 
   @IsOptional()
-  @IsEnum(['BASE', 'LOAD', 'INTENSIFY', 'DELOAD'])
+  @IsIn(['BASE', 'LOAD', 'INTENSIFY', 'DELOAD'])
   cycle?: 'BASE' | 'LOAD' | 'INTENSIFY' | 'DELOAD';
 
   @IsOptional()

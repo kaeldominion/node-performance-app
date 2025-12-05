@@ -227,12 +227,33 @@ export function useAuth(): AuthContextType {
         console.log('API call successful, user data received:', { userId: userData?.id, email: userData?.email });
         setDbUser(userData);
       } catch (error: any) {
-        console.error('Failed to fetch user data:', {
-          error,
-          errorMessage: error?.message,
-          errorResponse: error?.response?.data,
-          status: error?.response?.status,
-        });
+        const errorDetails = {
+          message: error?.message || 'Unknown error',
+          response: error?.response ? {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            data: error.response.data,
+          } : null,
+          request: error?.request ? {
+            url: error.request.responseURL || error.config?.url,
+            method: error.config?.method,
+          } : null,
+          code: error?.code,
+          name: error?.name,
+          isNetworkError: !error?.response && error?.request,
+        };
+        
+        console.error('Failed to fetch user data:', errorDetails);
+        
+        // If it's a network error, provide helpful message
+        if (errorDetails.isNetworkError) {
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+          console.error('⚠️ Network Error: Backend server appears to be unavailable');
+          console.error('Expected backend URL:', apiUrl);
+          console.error('Please ensure the backend is running on', apiUrl);
+          // Don't set loading to false immediately - might be temporary
+          return;
+        }
         
         // If it's a 401, the token might not be valid yet - wait and retry once
         if (error?.response?.status === 401) {

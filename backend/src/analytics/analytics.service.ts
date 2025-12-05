@@ -308,8 +308,10 @@ export class AnalyticsService {
 
   // Leaderboard methods
   async getSystemStats() {
+    console.log('getSystemStats service called');
     // Total users
     const totalUsers = await this.prisma.user.count();
+    console.log(`Total users: ${totalUsers}`);
     const activeUsers = await this.prisma.user.count({
       where: {
         sessions: {
@@ -324,6 +326,7 @@ export class AnalyticsService {
 
     // Total workouts
     const totalWorkouts = await this.prisma.workout.count();
+    console.log(`Total workouts: ${totalWorkouts}`);
     const recommendedWorkouts = await this.prisma.workout.count({
       where: { isRecommended: true },
     });
@@ -741,6 +744,108 @@ export class AnalyticsService {
       prCount: prCounts.length > 0
         ? calculatePercentile(currentUserStats.prCount, prCounts)
         : null,
+    };
+  }
+
+  async getUserRank(userId: string) {
+    // Get ranks for all metrics
+    const metrics: Array<'sessions' | 'hours' | 'rpe' | 'streak'> = ['sessions', 'hours', 'rpe', 'streak'];
+    const ranks: Record<string, number | null> = {};
+
+    for (const metric of metrics) {
+      const leaderboard = await this.getLeaderboard(metric, 1000); // Get large leaderboard to find rank
+      const userEntry = leaderboard.find(entry => entry.userId === userId);
+      ranks[metric] = userEntry ? userEntry.rank : null;
+    }
+
+    return ranks;
+  }
+
+  async getTrendComparison(userId: string, period: '1m' | '3m' | '6m' | '1y') {
+    const now = new Date();
+    let periodStart: Date;
+    let periodEnd: Date;
+    let comparisonStart: Date;
+    let comparisonEnd: Date;
+
+    // Calculate period dates
+    switch (period) {
+      case '1m':
+        periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        periodEnd = now;
+        comparisonStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        comparisonEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+        break;
+      case '3m':
+        periodStart = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+        periodEnd = now;
+        comparisonStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+        comparisonEnd = new Date(now.getFullYear(), now.getMonth() - 2, 0, 23, 59, 59, 999);
+        break;
+      case '6m':
+        periodStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+        periodEnd = now;
+        comparisonStart = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+        comparisonEnd = new Date(now.getFullYear(), now.getMonth() - 5, 0, 23, 59, 59, 999);
+        break;
+      case '1y':
+        periodStart = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        periodEnd = now;
+        comparisonStart = new Date(now.getFullYear() - 2, now.getMonth(), now.getDate());
+        comparisonEnd = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        break;
+    }
+
+    // Get stats for both periods
+    const currentStats = await this.getUserStats(userId, periodStart, periodEnd);
+    const previousStats = await this.getUserStats(userId, comparisonStart, comparisonEnd);
+
+    // Calculate completion rates separately
+    const currentAllSessions = await this.prisma.sessionLog.count({
+      where: {
+        userId,
+        startedAt: { gte: periodStart, lte: periodEnd },
+      },
+    });
+    const currentCompletionRate = currentAllSessions > 0 
+      ? (currentStats.totalSessions / currentAllSessions) * 100 
+      : 0;
+
+    const previousAllSessions = await this.prisma.sessionLog.count({
+      where: {
+        userId,
+        startedAt: { gte: comparisonStart, lte: comparisonEnd },
+      },
+    });
+    const previousCompletionRate = previousAllSessions > 0
+      ? (previousStats.totalSessions / previousAllSessions) * 100
+      : 0;
+
+    // Calculate sessions per week
+    const currentDays = Math.max(1, Math.floor((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24)));
+    const previousDays = Math.max(1, Math.floor((comparisonEnd.getTime() - comparisonStart.getTime()) / (1000 * 60 * 60 * 24)));
+    
+    const currentSessionsPerWeek = (currentStats.totalSessions / currentDays) * 7;
+    const previousSessionsPerWeek = (previousStats.totalSessions / previousDays) * 7;
+
+    // Calculate percentage changes
+    const calculateChange = (current: number, previous: number): number | null => {
+      if (previous === 0) {
+        return current > 0 ? 100 : null;
+      }
+      return Math.round(((current - previous) / previous) * 100);
+    };
+
+    // Calculate PR trend
+    const prTrend = await this.calculatePRTrend(userId, periodStart, periodEnd, comparisonStart, comparisonEnd);
+
+    return {
+      completionRate: calculateChange(currentCompletionRate, previousCompletionRate),
+      avgRPE: calculateChange(currentStats.avgRPE, previousStats.avgRPE),
+      sessionsPerWeek: calculateChange(currentSessionsPerWeek, previousSessionsPerWeek),
+      prCount: prTrend,
+      totalSessions: calculateChange(currentStats.totalSessions, previousStats.totalSessions),
+      totalHours: calculateChange(currentStats.totalDurationHours, previousStats.totalDurationHours),
     };
   }
 }

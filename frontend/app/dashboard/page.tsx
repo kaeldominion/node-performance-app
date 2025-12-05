@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { Icons } from '@/lib/iconMapping';
 import { AddNetworkModal } from '@/components/network/AddNetworkModal';
-import { NetworkActivity } from '@/components/network/NetworkActivity';
+import { TerminalActivityFeed } from '@/components/activity/TerminalActivityFeed';
 
 // Mini AI Form Component
 function AIMiniForm() {
@@ -149,6 +149,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [showAddNetworkModal, setShowAddNetworkModal] = useState(false);
   const [currentUserNetworkCode, setCurrentUserNetworkCode] = useState<string | null>(null);
+  const [friendIds, setFriendIds] = useState<string[]>([]);
 
   useEffect(() => {
     // Wait for auth to load
@@ -203,6 +204,17 @@ export default function Dashboard() {
       setUpcomingSessions((scheduled || []).slice(0, 5) || []);
       setXpStats(xpData);
       setCurrentUserNetworkCode((userData as any)?.networkCode || null);
+      
+      // Load network connections for friend filtering
+      try {
+        const networkData = await networkApi.getNetwork();
+        const friendUserIds = networkData.map((conn: any) => 
+          conn.requesterId === user?.id ? conn.addresseeId : conn.requesterId
+        );
+        setFriendIds(friendUserIds);
+      } catch (error) {
+        console.error('Failed to load network:', error);
+      }
       
       // Format trends for chart
       if (trendsData?.dailyStats) {
@@ -796,11 +808,19 @@ export default function Dashboard() {
               onClick={() => setShowAddNetworkModal(true)}
               className="bg-node-volt text-dark font-bold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity text-sm flex items-center gap-2"
             >
-              <Icons.SHARE size={16} />
+              <Icons.USER_PLUS size={16} />
               Add to Network
             </button>
           </div>
-          <NetworkActivity />
+          <div className="h-[500px] rounded-lg overflow-hidden thin-border" style={{ backgroundColor: 'var(--panel)' }}>
+            <TerminalActivityFeed
+              friendIds={friendIds}
+              showFriendFilter={true}
+              onUsernameClick={(userId, username) => {
+                router.push(`/profile/${userId}`);
+              }}
+            />
+          </div>
         </div>
       </div>
 

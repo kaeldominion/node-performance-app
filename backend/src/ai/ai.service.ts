@@ -7,8 +7,23 @@ export class AiService {
   private openai: OpenAI;
 
   constructor(private exercisesService: ExercisesService) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    
+    // Log API key status (without exposing the key)
+    if (!apiKey) {
+      console.error('❌ OPENAI_API_KEY is not set. AI workout generation will fail.');
+    } else {
+      console.log('✅ OPENAI_API_KEY is set:', {
+        hasKey: true,
+        keyLength: apiKey.length,
+        keyPrefix: apiKey.substring(0, 7) + '...',
+        keySuffix: '...' + apiKey.substring(apiKey.length - 4),
+      });
+    }
+    
     this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+      apiKey: apiKey || '', // Will fail with clear error if not set
+      timeout: 120000, // 120 seconds timeout for long requests
     });
   }
 
@@ -24,6 +39,16 @@ export class AiService {
     isHyrox?: boolean; // Flag for HYROX-style 90-minute conditioning workouts (single workouts only)
     includeHyrox?: boolean; // Flag to include HYROX sessions in multi-day programs
   }) {
+    console.log('🔧 generateWorkout called with params:', {
+      goal: params.goal,
+      trainingLevel: params.trainingLevel,
+      equipment: params.equipment,
+      availableMinutes: params.availableMinutes,
+      workoutType: params.workoutType,
+      hasOpenAIClient: !!this.openai,
+      apiKeySet: !!process.env.OPENAI_API_KEY,
+    });
+    
     // Pass archetype to the prompt (only for single workouts)
     // For multi-day programs, archetype will be randomly selected by AI based on goal
     const archetypeParam = (params.workoutType === 'single' && params.archetype) ? params.archetype : undefined;
@@ -437,9 +462,64 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
       await this.extractAndStoreExercises(reviewedWorkout, params.equipment);
       
       return reviewedWorkout;
-    } catch (error) {
-      console.error('OpenAI API error:', error);
-      throw new Error('Failed to generate workout');
+    } catch (error: any) {
+      // Log the exact error before processing
+      console.error('❌ Error in generateWorkout:', {
+        errorType: error?.constructor?.name,
+        errorMessage: error?.message,
+        errorStatus: error?.status,
+        errorCode: error?.code,
+        errorResponse: error?.response ? {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+        } : null,
+      });
+      console.error('OpenAI API error:', {
+        message: error?.message,
+        status: error?.status,
+        code: error?.code,
+        type: error?.type,
+        response: error?.response ? {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+        } : null,
+        stack: error?.stack,
+      });
+      
+      // Check if OpenAI API key is missing or invalid
+      if (error?.status === 401 || 
+          error?.response?.status === 401 ||
+          error?.message?.includes('Invalid API key') || 
+          error?.message?.includes('Incorrect API key') ||
+          error?.response?.data?.error?.code === 'invalid_api_key') {
+        throw new Error('OpenAI API key is missing or invalid. Please configure OPENAI_API_KEY in your environment variables.');
+      }
+      
+      // Check for rate limiting
+      if (error?.status === 429 || error?.message?.includes('rate limit')) {
+        throw new Error('OpenAI API rate limit exceeded. Please try again in a moment.');
+      }
+      
+      // Check for network/timeout errors
+      if (error?.code === 'ECONNABORTED' || error?.message?.includes('timeout') || error?.message?.includes('ETIMEDOUT')) {
+        throw new Error('Request timed out. The AI service is taking longer than expected. Please try again.');
+      }
+      
+      // Check for network errors
+      if (error?.code === 'ENOTFOUND' || error?.code === 'ECONNREFUSED' || error?.message?.includes('network')) {
+        throw new Error('Network error connecting to OpenAI. Please check your internet connection and try again.');
+      }
+      
+      // Check for API errors
+      if (error?.response?.data?.error?.message) {
+        throw new Error(`OpenAI API error: ${error.response.data.error.message}`);
+      }
+      
+      // Generic error with more context
+      const errorMessage = error?.message || 'Unknown error';
+      throw new Error(`Failed to generate workout: ${errorMessage}`);
     }
   }
   
@@ -1480,6 +1560,60 @@ Each week should reflect its cycle in workout intensity, volume, and complexity.
         return 'DELOAD CYCLE: Recovery week with lower intensity. Focus on mobility, light movement, and active recovery.';
       default:
         return '';
+    }
+  }
+
+  /**
+   * Test OpenAI API connection and key validity
+   */
+  async testOpenAI(): Promise<{ success: boolean; message: string; details?: any }> {
+    try {
+      const apiKey = process.env.OPENAI_API_KEY;
+      
+      if (!apiKey) {
+        return {
+          success: false,
+          message: 'OPENAI_API_KEY is not set in environment variables',
+        };
+      }
+
+      // Make a simple API call to test the key
+      const testResponse = await this.openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: 'You are a test assistant.' },
+          { role: 'user', content: 'Say "test successful" if you can read this.' },
+        ],
+        max_tokens: 10,
+      });
+
+      return {
+        success: true,
+        message: 'OpenAI API key is valid and working',
+        details: {
+          model: testResponse.model,
+          response: testResponse.choices[0]?.message?.content,
+        },
+      };
+    } catch (error: any) {
+      console.error('OpenAI test error:', error);
+      
+      let message = 'OpenAI API test failed';
+      if (error?.status === 401 || error?.response?.status === 401) {
+        message = 'OpenAI API key is invalid or expired';
+      } else if (error?.message) {
+        message = `OpenAI API error: ${error.message}`;
+      }
+
+      return {
+        success: false,
+        message,
+        details: {
+          status: error?.status || error?.response?.status,
+          code: error?.code,
+          errorMessage: error?.message,
+        },
+      };
     }
   }
 }

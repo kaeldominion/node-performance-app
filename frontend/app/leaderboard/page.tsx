@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { analyticsApi } from '@/lib/api';
+import { analyticsApi, networkApi } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
 import { Icons } from '@/lib/iconMapping';
 
@@ -18,13 +19,19 @@ interface LeaderboardEntry {
 }
 
 export default function LeaderboardPage() {
+  const { user } = useAuth();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [selectedMetric, setSelectedMetric] = useState<'sessions' | 'hours' | 'rpe' | 'streak'>('sessions');
   const [loading, setLoading] = useState(true);
+  const [networkConnections, setNetworkConnections] = useState<Map<string, string>>(new Map());
+  const [loadingConnections, setLoadingConnections] = useState(true);
 
   useEffect(() => {
     loadLeaderboard();
-  }, [selectedMetric]);
+    if (user) {
+      loadNetworkConnections();
+    }
+  }, [selectedMetric, user]);
 
   const loadLeaderboard = async () => {
     try {
@@ -36,6 +43,46 @@ export default function LeaderboardPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadNetworkConnections = async () => {
+    try {
+      setLoadingConnections(true);
+      const network = await networkApi.getNetwork();
+      const connectionMap = new Map<string, string>();
+      network.forEach((conn: any) => {
+        connectionMap.set(conn.id, 'ACCEPTED');
+      });
+      
+      // Also check pending requests
+      const pending = await networkApi.getPending();
+      pending.forEach((req: any) => {
+        connectionMap.set(req.requester.id, 'PENDING');
+      });
+      
+      setNetworkConnections(connectionMap);
+    } catch (error) {
+      console.error('Failed to load network connections:', error);
+    } finally {
+      setLoadingConnections(false);
+    }
+  };
+
+  const handleAddToNetwork = async (userId: string) => {
+    try {
+      await networkApi.sendRequest(userId);
+      await loadNetworkConnections();
+      alert('Network request sent!');
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Failed to send network request');
+    }
+  };
+
+  const getConnectionStatus = (userId: string): 'connected' | 'pending' | null => {
+    const status = networkConnections.get(userId);
+    if (status === 'ACCEPTED') return 'connected';
+    if (status === 'PENDING') return 'pending';
+    return null;
   };
 
   const getMetricLabel = (metric: string) => {
@@ -149,6 +196,38 @@ export default function LeaderboardPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Network Action */}
+                  {user && entry.userId !== user.id && (
+                    <div className="flex items-center">
+                      {(() => {
+                        const status = getConnectionStatus(entry.userId);
+                        if (status === 'connected') {
+                          return (
+                            <span className="text-xs text-node-volt px-3 py-1 bg-node-volt/10 rounded-lg">
+                              Connected
+                            </span>
+                          );
+                        }
+                        if (status === 'pending') {
+                          return (
+                            <span className="text-xs text-muted-text px-3 py-1 bg-dark rounded-lg">
+                              Pending
+                            </span>
+                          );
+                        }
+                        return (
+                          <button
+                            onClick={() => handleAddToNetwork(entry.userId)}
+                            className="bg-node-volt text-dark font-bold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity text-sm flex items-center gap-2"
+                          >
+                            <Icons.PLUS size={16} />
+                            Add to Network
+                          </button>
+                        );
+                      })()}
+                    </div>
+                  )}
 
                   {/* Stats Grid */}
                   <div className="flex items-center gap-8">

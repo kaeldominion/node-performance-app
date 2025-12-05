@@ -88,10 +88,18 @@ export default function AdminDashboard() {
   const loadStats = async () => {
     try {
       setLoading(true);
+      console.log('Loading system stats...');
       const data = await analyticsApi.getSystemStats();
+      console.log('Received system stats:', data);
       setSystemStats(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load system stats:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
     } finally {
       setLoading(false);
     }
