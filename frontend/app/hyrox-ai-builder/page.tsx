@@ -398,7 +398,7 @@ export default function HyroxAIBuilderPage() {
             }`}
           >
             <div className="flex items-center gap-3 mb-12">
-              <Icons.Workout size={32} className="text-node-volt animate-pulse-slow" />
+              <Icons.SESSIONS size={32} className="text-node-volt animate-pulse-slow" />
               <span className="text-node-volt uppercase tracking-[0.25em] text-xs font-heading">Deck Player</span>
             </div>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold mb-8">
