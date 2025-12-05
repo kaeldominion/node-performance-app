@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, Manrope } from "next/font/google";
-import { ClerkProvider } from '@clerk/nextjs';
+import { ClerkErrorBoundary } from '@/components/ClerkErrorBoundary';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import "./globals.css";
 
@@ -29,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider publishableKey={clerkKey}>
+    <ClerkErrorBoundary>
       <html lang="en" className="dark" suppressHydrationWarning>
         <body
           className={`${spaceGrotesk.variable} ${manrope.variable} antialiased bg-dark text-text-white`}
