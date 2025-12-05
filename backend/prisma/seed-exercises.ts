@@ -1773,51 +1773,76 @@ const exercisesData = [
 async function main() {
   console.log('🌱 Seeding exercises database...');
 
+  let successCount = 0;
+  let errorCount = 0;
+  const errors: Array<{ exerciseId: string; error: string }> = [];
+
   for (const exerciseData of exercisesData) {
-    const { tiers, ...exercise } = exerciseData;
+    try {
+      const { tiers, ...exercise } = exerciseData;
 
-    // Upsert exercise (without tiers) - cast enums properly
-    const exerciseRecord = await prisma.exercise.upsert({
-      where: { exerciseId: exercise.exerciseId },
-      update: {
-        ...exercise,
-        category: exercise.category as any,
-        movementPattern: exercise.movementPattern as any,
-        space: exercise.space as any,
-        impactLevel: exercise.impactLevel as any,
-        typicalUse: exercise.typicalUse as any,
-        suitableArchetypes: exercise.suitableArchetypes as any,
-      },
-      create: {
-        ...exercise,
-        category: exercise.category as any,
-        movementPattern: exercise.movementPattern as any,
-        space: exercise.space as any,
-        impactLevel: exercise.impactLevel as any,
-        typicalUse: exercise.typicalUse as any,
-        suitableArchetypes: exercise.suitableArchetypes as any,
-      },
-    });
-
-    // Delete existing tiers
-    await prisma.exerciseTier.deleteMany({
-      where: { exerciseId: exerciseRecord.id },
-    });
-
-    // Create new tiers
-    if (tiers && tiers.length > 0) {
-      await prisma.exerciseTier.createMany({
-        data: tiers.map((tier) => ({
-          exerciseId: exerciseRecord.id,
-          tier: tier.tier as any,
-          description: tier.description,
-          typicalReps: tier.typicalReps,
-        })),
+      // Upsert exercise (without tiers) - cast enums properly
+      const exerciseRecord = await prisma.exercise.upsert({
+        where: { exerciseId: exercise.exerciseId },
+        update: {
+          ...exercise,
+          category: exercise.category as any,
+          movementPattern: exercise.movementPattern as any,
+          space: exercise.space as any,
+          impactLevel: exercise.impactLevel as any,
+          typicalUse: exercise.typicalUse as any,
+          suitableArchetypes: exercise.suitableArchetypes as any,
+        },
+        create: {
+          ...exercise,
+          category: exercise.category as any,
+          movementPattern: exercise.movementPattern as any,
+          space: exercise.space as any,
+          impactLevel: exercise.impactLevel as any,
+          typicalUse: exercise.typicalUse as any,
+          suitableArchetypes: exercise.suitableArchetypes as any,
+        },
       });
+
+      // Delete existing tiers
+      await prisma.exerciseTier.deleteMany({
+        where: { exerciseId: exerciseRecord.id },
+      });
+
+      // Create new tiers
+      if (tiers && tiers.length > 0) {
+        await prisma.exerciseTier.createMany({
+          data: tiers.map((tier) => ({
+            exerciseId: exerciseRecord.id,
+            tier: tier.tier as any,
+            description: tier.description,
+            typicalReps: tier.typicalReps,
+          })),
+        });
+      }
+
+      successCount++;
+    } catch (error: any) {
+      errorCount++;
+      const errorMsg = error.message || String(error);
+      errors.push({ exerciseId: exerciseData.exerciseId, error: errorMsg });
+      console.error(`❌ Failed to seed ${exerciseData.exerciseId}: ${errorMsg}`);
     }
   }
 
-  console.log(`✅ Seeded ${exercisesData.length} exercises`);
+  console.log(`✅ Successfully seeded ${successCount} exercises`);
+  if (errorCount > 0) {
+    console.error(`❌ Failed to seed ${errorCount} exercises:`);
+    errors.forEach(({ exerciseId, error }) => {
+      console.error(`  - ${exerciseId}: ${error}`);
+    });
+  }
+  console.log(`📊 Total: ${exercisesData.length} exercises processed`);
+
+  // Exit with error code if any failed
+  if (errorCount > 0) {
+    process.exit(1);
+  }
 }
 
 main()
