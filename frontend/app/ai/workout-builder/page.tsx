@@ -36,6 +36,7 @@ export default function WorkoutBuilderPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
   const [generatedWorkout, setGeneratedWorkout] = useState<any>(null);
   const [error, setError] = useState('');
 
@@ -119,6 +120,9 @@ export default function WorkoutBuilderPage() {
       const availableMinutes = isHyrox ? 90 : 55; // Standard: 50-60min (use 55), HYROX: 90min
       
       // For HYROX, don't send goal/archetype (they don't apply)
+      // Show reviewing status after generation starts
+      setReviewing(true);
+      
       const workout = await aiApi.generateWorkout({
         goal: isHyrox ? 'CONDITIONING' : formData.goal, // HYROX always uses CONDITIONING
         trainingLevel: 'ADVANCED', // Used only for workout complexity/duration guidance
@@ -483,7 +487,9 @@ export default function WorkoutBuilderPage() {
               {loading ? (
                 <>
                   <div className="loading-spinner w-5 h-5 border-2"></div>
-                  <span>Generating Workout...</span>
+                  <span>
+                    {reviewing ? 'Reviewing & Testing Workout...' : 'Generating Workout...'}
+                  </span>
                 </>
               ) : (
                 'Generate Workout'

@@ -328,10 +328,13 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
       // Validate and return single workout
       const validatedWorkout = this.validateWorkoutSchema(workoutJson);
       
-      // Extract and store new exercises from the generated workout
-      await this.extractAndStoreExercises(validatedWorkout);
+      // Review and adjust workout if needed
+      const reviewedWorkout = await this.reviewAndAdjustWorkout(validatedWorkout, params);
       
-      return validatedWorkout;
+      // Extract and store new exercises from the generated workout
+      await this.extractAndStoreExercises(reviewedWorkout, params.equipment);
+      
+      return reviewedWorkout;
     } catch (error) {
       console.error('OpenAI API error:', error);
       throw new Error('Failed to generate workout');
