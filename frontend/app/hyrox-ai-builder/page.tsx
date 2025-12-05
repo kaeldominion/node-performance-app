@@ -605,22 +605,6 @@ export default function HyroxAIBuilderPage() {
               ))}
             </ul>
             
-            <div className="bg-node-volt/10 thin-border border-node-volt/30 rounded-lg p-6">
-              <div className="flex items-start gap-4">
-                <Zap size={24} className="text-node-volt flex-shrink-0 mt-1" />
-                <div>
-                  <h4 className="text-lg font-heading font-bold mb-2 text-node-volt">
-                    The Power of Community Motivation
-                  </h4>
-                  <p className="text-muted-text leading-relaxed">
-                    Research shows that training with others—even virtually—increases motivation, consistency, and performance. 
-                    When you see your network completing workouts, hitting PRs, and leveling up, it creates positive peer pressure 
-                    that drives you to show up and push harder.
-                  </p>
-                </div>
-              </div>
-            </div>
-            
             <div className="flex flex-col sm:flex-row gap-4 mt-8">
               <Link
                 href="/auth/register"
@@ -633,7 +617,7 @@ export default function HyroxAIBuilderPage() {
           </div>
           
           <div 
-            className={`relative transition-all duration-1000 delay-300 ${
+            className={`relative space-y-6 transition-all duration-1000 delay-300 ${
               isVisible.network ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'
             }`}
           >
@@ -661,6 +645,23 @@ export default function HyroxAIBuilderPage() {
                     <div className="text-xs text-muted-text">{activity.time}</div>
                   </div>
                 ))}
+              </div>
+            </div>
+            
+            {/* The Power of Community Motivation - moved below live feed */}
+            <div className="bg-node-volt/10 thin-border border-node-volt/30 rounded-lg p-6">
+              <div className="flex items-start gap-4">
+                <Zap size={24} className="text-node-volt flex-shrink-0 mt-1" />
+                <div>
+                  <h4 className="text-lg font-heading font-bold mb-2 text-node-volt">
+                    The Power of Community Motivation
+                  </h4>
+                  <p className="text-muted-text leading-relaxed">
+                    Research shows that training with others—even virtually—increases motivation, consistency, and performance. 
+                    When you see your network completing workouts, hitting PRs, and leveling up, it creates positive peer pressure 
+                    that drives you to show up and push harder.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
