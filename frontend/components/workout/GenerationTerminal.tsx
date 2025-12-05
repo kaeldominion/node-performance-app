@@ -243,3 +243,26 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
   );
 }
 
+// Add shimmer animation CSS
+if (typeof document !== 'undefined') {
+  const existingStyle = document.head.querySelector('style[data-terminal-shimmer]');
+  if (!existingStyle) {
+    const style = document.createElement('style');
+    style.setAttribute('data-terminal-shimmer', 'true');
+    style.textContent = `
+      @keyframes shimmer {
+        0% {
+          transform: translateX(-100%);
+        }
+        100% {
+          transform: translateX(100%);
+        }
+      }
+      .animate-shimmer {
+        animation: shimmer 2s infinite;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+}
+
