@@ -86,19 +86,31 @@ export default function WorkoutBuilderPage() {
   const [showSaveSuccessModal, setShowSaveSuccessModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
 
-  // Load form data from URL query parameters (from dashboard mini form)
+  // Load form data from URL query parameters (from dashboard mini form or HYROX page)
   useEffect(() => {
     const goalParam = searchParams.get('goal');
     const archetypeParam = searchParams.get('archetype');
     const workoutTypeParam = searchParams.get('workoutType');
+    const workoutDurationParam = searchParams.get('workoutDuration');
+    const equipmentParam = searchParams.get('equipment');
+    const trainingLevelParam = searchParams.get('trainingLevel');
 
-    if (goalParam || archetypeParam || workoutTypeParam) {
+    if (goalParam || archetypeParam || workoutTypeParam || workoutDurationParam || equipmentParam || trainingLevelParam) {
       setFormData(prev => ({
         ...prev,
         goal: goalParam || prev.goal,
         archetype: archetypeParam || prev.archetype,
         workoutType: (workoutTypeParam as 'single' | 'week' | 'month' | 'fourDay') || prev.workoutType,
+        workoutDuration: (workoutDurationParam as 'standard' | 'hyrox') || prev.workoutDuration,
       }));
+
+      // Handle equipment from query params
+      if (equipmentParam) {
+        const equipmentArray = equipmentParam.split(',').filter(Boolean);
+        if (equipmentArray.length > 0) {
+          setFormData(prev => ({ ...prev, equipment: equipmentArray }));
+        }
+      }
     }
   }, [searchParams]);
 
