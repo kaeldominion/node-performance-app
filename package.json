@@ -1,20 +1,14 @@
 {
   "name": "node-performance-app",
   "version": "1.0.0",
-  "description": "NØDE Performance App - Elite training platform",
   "private": true,
-  "workspaces": [
-    "backend",
-    "frontend"
-  ],
   "scripts": {
+    "dev:setup": "./scripts/dev-setup.sh",
+    "dev:start": "./scripts/dev-start.sh",
+    "dev:db:up": "docker-compose up -d postgres",
+    "dev:db:down": "docker-compose down",
+    "dev:db:logs": "docker-compose logs -f postgres",
     "dev:backend": "cd backend && npm run start:dev",
-    "dev:frontend": "cd frontend && npm run dev",
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "build": "npm run build --workspace=backend && npm run build --workspace=frontend"
-  },
-  "devDependencies": {
-    "concurrently": "^8.2.2"
+    "dev:frontend": "cd frontend && npm run dev"
   }
 }
-
