@@ -10,6 +10,7 @@ import { Logo } from './Logo';
 import { Icons } from '@/lib/iconMapping';
 import { Moon, Sun } from 'lucide-react';
 import { UserMenu } from './UserMenu';
+import { NotificationBell } from './notifications/NotificationBell';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -67,6 +68,8 @@ export default function Navbar() {
               <>
                 <div className="h-6 w-px bg-border-dark mx-2" />
                 <XPDisplay userId={user.id} />
+                <div className="h-6 w-px bg-border-dark mx-2" />
+                <NotificationBell />
                 <div className="h-6 w-px bg-border-dark mx-2" />
                 <UserMenu user={user} onLogout={handleLogout} />
               </>

@@ -218,7 +218,25 @@ function WorkoutBuilderPageContent() {
       setGeneratedWorkout(workout);
     } catch (err: any) {
       console.error('Workout generation error:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to generate workout. Please try again.';
+      
+      // Handle different error types
+      let errorMessage = 'Failed to generate workout. Please try again.';
+      
+      if (err.response?.data?.message) {
+        // Backend returned a specific error message
+        errorMessage = err.response.data.message;
+      } else if (!err.response && err.request) {
+        // Network error - no response from server
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+        errorMessage = `Network Error: Unable to connect to the backend API. Please check that the backend is running and the API URL is configured correctly (${apiUrl}).`;
+      } else if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        // Request timeout
+        errorMessage = 'Request timed out. The AI service is taking longer than expected. Please try again.';
+      } else if (err.message) {
+        // Use the error message from the error object
+        errorMessage = err.message;
+      }
+      
       setError(errorMessage);
       setReviewing(false);
       setShowTerminal(true); // Keep terminal visible for errors
@@ -279,6 +297,7 @@ function WorkoutBuilderPageContent() {
       } else {
         // Single workout - save first, then show success modal
         const savedWorkout = await workoutsApi.create(generatedWorkout);
+        console.log('Workout saved successfully:', savedWorkout);
         setSavedWorkoutId(savedWorkout.id);
         setShowSaveSuccessModal(true);
       }
@@ -303,7 +322,8 @@ function WorkoutBuilderPageContent() {
   };
 
   const handleGoToDashboard = () => {
-    router.push('/dashboard');
+    // Navigate to workouts page with timestamp to force refresh
+    router.push(`/workouts?tab=my-workouts&_t=${Date.now()}`);
   };
 
   const handleStayHere = () => {
@@ -1082,7 +1102,7 @@ function WorkoutBuilderPageContent() {
                   onClick={handleGoToDashboard}
                   className="w-full bg-panel/50 thin-border text-muted-text px-6 py-3 rounded-lg hover:border-node-volt hover:text-node-volt transition-colors text-center"
                 >
-                  Go to Dashboard
+                  View My Workouts
                 </button>
                 <button
                   onClick={handleStayHere}

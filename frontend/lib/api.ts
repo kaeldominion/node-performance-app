@@ -5,6 +5,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 120000, // 120 seconds timeout for long-running AI requests
 });
 
 // Token will be set by components using useApiToken hook
@@ -77,9 +78,25 @@ api.interceptors.response.use(
     // Check if it's a network error (no response from server)
     const isNetworkError = !error?.response && error?.request;
     
-    if (isPublicEndpoint || isNetworkError) {
-      // For public endpoints or network errors, only log a simple warning
-      // Network errors are expected when backend is unavailable
+    if (isNetworkError) {
+      // Network error - backend is likely not running or unreachable
+      const baseURL = error?.config?.baseURL || api.defaults.baseURL;
+      
+      // Only log detailed errors in development to avoid console spam
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('⚠️ NETWORK ERROR - Backend unreachable');
+        console.warn('Attempted URL:', baseURL + error?.config?.url);
+        console.warn('Base URL:', baseURL);
+        console.warn('💡 TROUBLESHOOTING:');
+        console.warn('1. Make sure the backend is running on', baseURL);
+        console.warn('2. Start the backend: cd backend && npm run start:dev');
+        console.warn('3. Verify NEXT_PUBLIC_API_URL is set correctly');
+      } else {
+        // In production, just log a simple warning
+        console.warn('⚠️ Backend server unreachable. Some features may not work.');
+      }
+    } else if (isPublicEndpoint) {
+      // For public endpoints, only log a simple warning
       if (process.env.NODE_ENV === 'development') {
         console.debug('API call failed (backend may be unavailable):', {
           url: error?.config?.url,
@@ -87,7 +104,6 @@ api.interceptors.response.use(
           message: error?.message,
         });
       }
-      // In production, don't log network errors to console to avoid noise
     } else {
       // For protected endpoints with server responses, log full error details
       console.error('❌ API call failed');
@@ -167,6 +183,18 @@ export const authApi = {
 
 // User API
 export const userApi = {
+  getPublicProfile: async (userId: string) => {
+    const response = await api.get(`/users/public/${userId}`, {
+      isPublicEndpoint: true,
+    } as any);
+    return response.data;
+  },
+  getPublicProfileStats: async (userId: string) => {
+    const response = await api.get(`/users/public/${userId}/stats`, {
+      isPublicEndpoint: true,
+    } as any);
+    return response.data;
+  },
   getMe: async () => {
     const response = await api.get('/me');
     return response.data;
@@ -245,6 +273,29 @@ export const workoutsApi = {
     const response = await api.patch(`/workouts/${id}/recommended`, { isRecommended });
     return response.data;
   },
+  getAll: async (filters?: {
+    search?: string;
+    createdBy?: string;
+    archetype?: string;
+    isRecommended?: boolean;
+    startDate?: string;
+    endDate?: string;
+    isHyrox?: boolean;
+  }) => {
+    const params = new URLSearchParams();
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.createdBy) params.append('createdBy', filters.createdBy);
+    if (filters?.archetype) params.append('archetype', filters.archetype);
+    if (filters?.isRecommended !== undefined) params.append('isRecommended', String(filters.isRecommended));
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    if (filters?.isHyrox !== undefined) params.append('isHyrox', String(filters.isHyrox));
+    
+    const queryString = params.toString();
+    const url = `/workouts/admin-all${queryString ? `?${queryString}` : ''}`;
+    const response = await api.get(url);
+    return response.data;
+  },
   delete: async (id: string) => {
     const response = await api.delete(`/workouts/${id}`);
     return response.data;
@@ -311,12 +362,20 @@ export const networkApi = {
     const response = await api.get(`/me/network/search-code?code=${encodeURIComponent(code)}`);
     return response.data;
   },
+  searchByUsername: async (username: string) => {
+    const response = await api.get(`/me/network/username/${encodeURIComponent(username)}`);
+    return response.data;
+  },
   sendRequest: async (addresseeId: string) => {
     const response = await api.post('/me/network', { addresseeId });
     return response.data;
   },
   acceptRequest: async (requestId: string) => {
     const response = await api.post(`/me/network/${requestId}/accept`);
+    return response.data;
+  },
+  rejectRequest: async (requestId: string) => {
+    const response = await api.post(`/me/network/${requestId}/reject`);
     return response.data;
   },
   remove: async (networkUserId: string) => {
@@ -335,8 +394,28 @@ export const networkApi = {
     const response = await api.get('/me/network/pending');
     return response.data;
   },
+  getDirectory: async (options?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    minLevel?: number;
+    maxLevel?: number;
+  }) => {
+    const params = new URLSearchParams();
+    if (options?.page) params.append('page', options.page.toString());
+    if (options?.limit) params.append('limit', options.limit.toString());
+    if (options?.search) params.append('search', options.search);
+    if (options?.minLevel) params.append('minLevel', options.minLevel.toString());
+    if (options?.maxLevel) params.append('maxLevel', options.maxLevel.toString());
+    const response = await api.get(`/me/network/directory?${params.toString()}`);
+    return response.data;
+  },
   generateCode: async () => {
     const response = await api.post('/me/network/generate-code');
+    return response.data;
+  },
+  generateShareLink: async (type?: 'code' | 'user') => {
+    const response = await api.post('/me/network/share-link', { type });
     return response.data;
   },
 };
@@ -455,8 +534,15 @@ export const analyticsApi = {
     const response = await api.get(`/analytics/clients/${clientId}/trends?days=${days}`);
     return response.data;
   },
-  getLeaderboard: async (metric: 'sessions' | 'hours' | 'rpe' | 'streak' = 'sessions', limit: number = 50) => {
-    const response = await api.get(`/analytics/leaderboard?metric=${metric}&limit=${limit}`);
+  getLeaderboard: async (metric: 'sessions' | 'hours' | 'rpe' | 'streak' = 'sessions', limit: number = 50, trending: boolean = false, trendPeriod: '7d' | '30d' = '7d') => {
+    const params = new URLSearchParams({
+      metric,
+      limit: limit.toString(),
+      ...(trending && { trending: 'true', trendPeriod }),
+    });
+    const response = await api.get(`/analytics/leaderboard?${params.toString()}`, {
+      isPublicEndpoint: true,
+    } as any);
     return response.data;
   },
   getPercentiles: async () => {
@@ -465,6 +551,14 @@ export const analyticsApi = {
   },
   getMonthTrends: async () => {
     const response = await api.get('/analytics/month-trends');
+    return response.data;
+  },
+  getMyRank: async () => {
+    const response = await api.get('/analytics/my-rank');
+    return response.data;
+  },
+  getTrendComparison: async (period: '1m' | '3m' | '6m' | '1y' = '1m') => {
+    const response = await api.get(`/analytics/trend-comparison?period=${period}`);
     return response.data;
   },
 };
@@ -575,6 +669,70 @@ export const gymApi = {
 export const gamificationApi = {
   getStats: async () => {
     const response = await api.get('/gamification/stats');
+    return response.data;
+  },
+  getAchievements: async () => {
+    const response = await api.get('/gamification/achievements');
+    return response.data;
+  },
+  checkAchievements: async () => {
+    const response = await api.post('/gamification/achievements/check');
+    return response.data;
+  },
+};
+
+// Notifications API
+export const activityApi = {
+  getFeed: async (options?: { page?: number; limit?: number; type?: string; since?: string }) => {
+    const params = new URLSearchParams();
+    if (options?.page) params.append('page', options.page.toString());
+    if (options?.limit) params.append('limit', options.limit.toString());
+    if (options?.type) params.append('type', options.type);
+    if (options?.since) params.append('since', options.since);
+    
+    const response = await api.get(`/activity/feed?${params.toString()}`);
+    return response.data;
+  },
+  getRecent: async (limit?: number) => {
+    const params = limit ? `?limit=${limit}` : '';
+    const response = await api.get(`/activity/feed/recent${params}`);
+    return response.data;
+  },
+  getStats: async (days?: number) => {
+    const params = days ? `?days=${days}` : '';
+    const response = await api.get(`/activity/stats${params}`);
+    return response.data;
+  },
+  getUserActivity: async (userId: string, limit?: number) => {
+    const params = limit ? `?limit=${limit}` : '';
+    const response = await api.get(`/activity/user/${userId}${params}`);
+    return response.data;
+  },
+};
+
+export const notificationsApi = {
+  getAll: async () => {
+    const response = await api.get('/me/notifications');
+    return response.data;
+  },
+  getUnreadCount: async () => {
+    const response = await api.get('/me/notifications/unread-count');
+    return response.data;
+  },
+  markAsRead: async (notificationId: string) => {
+    const response = await api.post(`/me/notifications/${notificationId}/read`);
+    return response.data;
+  },
+  markAllAsRead: async () => {
+    const response = await api.post('/me/notifications/read-all');
+    return response.data;
+  },
+  delete: async (notificationId: string) => {
+    const response = await api.delete(`/me/notifications/${notificationId}`);
+    return response.data;
+  },
+  deleteAllRead: async () => {
+    const response = await api.delete('/me/notifications/read/all');
     return response.data;
   },
 };

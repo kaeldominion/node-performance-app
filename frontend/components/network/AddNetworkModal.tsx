@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { networkApi } from '@/lib/api';
 import { Icons } from '@/lib/iconMapping';
 import { ShowQRCodeModal } from './ShowQRCodeModal';
+import { QRScanner } from './QRScanner';
 import dynamic from 'next/dynamic';
 
 const QRCodeSVG = dynamic(() => import('qrcode.react').then((mod) => mod.QRCodeSVG), {
@@ -20,7 +21,7 @@ export function AddNetworkModal({ onClose, onNetworkAdded, currentUserNetworkCod
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [activeTab, setActiveTab] = useState<'search' | 'qr'>('search');
+  const [activeTab, setActiveTab] = useState<'search' | 'qr' | 'scan'>('search');
   const [networkCode, setNetworkCode] = useState('');
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
@@ -146,7 +147,17 @@ export function AddNetworkModal({ onClose, onNetworkAdded, currentUserNetworkCod
                 : 'border-transparent text-muted-text hover:text-text-white'
             }`}
           >
-            QR Code
+            My QR Code
+          </button>
+          <button
+            onClick={() => setActiveTab('scan')}
+            className={`px-4 py-2 font-medium transition-colors border-b-2 ${
+              activeTab === 'scan'
+                ? 'border-node-volt text-node-volt'
+                : 'border-transparent text-muted-text hover:text-text-white'
+            }`}
+          >
+            Scan QR
           </button>
         </div>
 
@@ -264,6 +275,29 @@ export function AddNetworkModal({ onClose, onNetworkAdded, currentUserNetworkCod
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Scan QR Code Tab */}
+        {activeTab === 'scan' && (
+          <div className="space-y-4">
+            <QRScanner
+              onScan={async (code) => {
+                try {
+                  setIsSearching(true);
+                  const user = await networkApi.searchByCode(code);
+                  setSearchResults([user]);
+                  setActiveTab('search'); // Switch to search tab to show result
+                } catch (error: any) {
+                  alert(error.response?.data?.message || 'User not found with this code');
+                } finally {
+                  setIsSearching(false);
+                }
+              }}
+              onError={(error) => {
+                console.error('QR Scanner error:', error);
+              }}
+            />
           </div>
         )}
 

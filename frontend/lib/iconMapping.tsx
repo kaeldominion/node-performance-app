@@ -28,6 +28,7 @@ import {
   Trophy,             // Achievement, leaderboard ranks
   Award,              // Secondary achievement icon
   Medal,              // Ranking, recognition
+  Layers,             // Level, progression
   
   // Gamification
   Gamepad2,           // Gamification, game mechanics
@@ -48,11 +49,15 @@ import {
   Menu,               // Menu, navigation
   MoreVertical,      // Three dots menu, more options
   Minimize2,          // Minimize window
+  Bell,               // Notifications
+  Plus,               // Add, create
+  UserPlus,           // Add user, network connection
   Maximize2,          // Maximize window
   ChevronLeft,        // Previous, back navigation
   ChevronRight,       // Next, forward navigation
   Trash2,             // Delete action
   Users,              // People, participants, group
+  Play,               // Play, start, begin
   
   // Training Goals
   TrendingUp,         // Strength, progression
@@ -267,11 +272,18 @@ export const Icons = {
   STREAK: Flame,
   INTENSITY: Zap,
   SESSIONS: Dumbbell,
+  LEVEL: Layers,
   GOAL_STRENGTH: TrendingUp,
   GOAL_HYPERTROPHY: Target,
   GOAL_HYBRID: Zap,
   GOAL_CONDITIONING: Activity,
   GOAL_FAT_LOSS: TrendingDown,
   GOAL_LONGEVITY: Heart,
+  BELL: Bell,
+  PLUS: Plus,
+  USER_PLUS: UserPlus,
+  WORKOUT: Dumbbell,        // Workout icon (same as SESSIONS/PR1ME)
+  PLAY: Play,               // Play/start icon
+  CLIPBOARD_LIST: ClipboardList, // Clipboard list icon (same as PROGRAMS)
 };
 

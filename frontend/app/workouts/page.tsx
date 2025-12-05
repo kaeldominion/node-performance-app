@@ -34,6 +34,23 @@ export default function WorkoutsPage() {
     }
     return 'my-workouts';
   });
+  
+  // Force reload when tab changes or when timestamp param is present (indicates fresh navigation)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('_t') && user) {
+        // Fresh navigation detected, force reload
+        loadWorkouts();
+        // Clean up the timestamp param
+        params.delete('_t');
+        const newUrl = params.toString() 
+          ? `${window.location.pathname}?${params.toString()}`
+          : window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, [user]);
   const [myWorkouts, setMyWorkouts] = useState<Workout[]>([]);
   const [myPrograms, setMyPrograms] = useState<any[]>([]);
   const [recommendedWorkouts, setRecommendedWorkouts] = useState<Workout[]>([]);
@@ -54,11 +71,23 @@ export default function WorkoutsPage() {
     }
   }, [user, authLoading, activeTab]);
 
+  // Refresh workouts when page becomes visible (e.g., when navigating back)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user && activeTab === 'my-workouts') {
+        loadWorkouts();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [user, activeTab]);
+
   const loadWorkouts = async () => {
     try {
       setLoading(true);
       if (activeTab === 'my-workouts') {
         const workouts = await workoutsApi.getMyWorkouts();
+        console.log('Loaded my workouts:', workouts);
         setMyWorkouts(workouts);
       } else if (activeTab === 'programs') {
         const programs = await programsApi.getAll();

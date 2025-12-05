@@ -227,12 +227,47 @@ export function useAuth(): AuthContextType {
         console.log('API call successful, user data received:', { userId: userData?.id, email: userData?.email });
         setDbUser(userData);
       } catch (error: any) {
-        console.error('Failed to fetch user data:', {
-          error,
-          errorMessage: error?.message,
-          errorResponse: error?.response?.data,
-          status: error?.response?.status,
-        });
+        const errorDetails = {
+          message: error?.message || 'Unknown error',
+          response: error?.response ? {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            data: error.response.data,
+          } : null,
+          request: error?.request ? {
+            url: error.request.responseURL || error.config?.url,
+            method: error.config?.method,
+          } : null,
+          code: error?.code,
+          name: error?.name,
+          isNetworkError: !error?.response && error?.request,
+        };
+        
+        console.error('Failed to fetch user data:', errorDetails);
+        
+        // If it's a network error, provide helpful message
+        if (errorDetails.isNetworkError) {
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+          console.error('⚠️ Network Error: Backend server appears to be unavailable');
+          console.error('Expected backend URL:', apiUrl);
+          console.error('Please ensure the backend is running on', apiUrl);
+          
+          // Use Clerk user as fallback if available
+          if (clerkUser) {
+            console.log('Using Clerk user as fallback due to network error');
+            setDbUser({
+              id: clerkUser.id,
+              email: clerkUser.emailAddresses[0]?.emailAddress || '',
+              name: clerkUser.firstName || clerkUser.lastName 
+                ? `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim()
+                : undefined,
+              role: (clerkUser.publicMetadata?.role as string) || 'HOME_USER',
+              isAdmin: (clerkUser.publicMetadata?.isAdmin as boolean) || false,
+            });
+          }
+          // Loading will be set to false in finally block
+          return;
+        }
         
         // If it's a 401, the token might not be valid yet - wait and retry once
         if (error?.response?.status === 401) {

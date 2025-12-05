@@ -83,6 +83,8 @@ export class ProgramsService {
               const { sections, ...workoutData } = workout;
               return {
                 ...workoutData,
+                // Note: createdBy not set here as this endpoint doesn't require auth
+                // Workouts created via this endpoint won't appear in user's "my workouts"
                 sections: {
                   create: sections?.map((section: any) => {
                     const { blocks, ...sectionData } = section;
@@ -184,6 +186,7 @@ export class ProgramsService {
             const { sections, ...workoutData } = workout;
             return {
               ...workoutData,
+              createdBy: data.createdBy, // Set createdBy for all workouts in the program
               sections: {
                 create: sections.map((section: any) => {
                   const { blocks, ...sectionData } = section;
