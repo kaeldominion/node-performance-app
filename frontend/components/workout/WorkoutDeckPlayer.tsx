@@ -121,7 +121,9 @@ export function WorkoutDeckPlayer({ workout, sessionId, onComplete }: WorkoutDec
   }, [handleNextSection, playCue]);
 
   const handleCompleteWorkout = async () => {
-    await onComplete(rpe, notes);
+    if (onComplete) {
+      await onComplete(rpe, notes);
+    }
   };
 
   // Keyboard navigation
