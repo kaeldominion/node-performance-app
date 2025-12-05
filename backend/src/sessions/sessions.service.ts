@@ -33,7 +33,7 @@ export class SessionsService {
     const wasCompleted = session.completed;
     const updateData: any = {
       ...updateDto,
-      completedAt: updateDto.completed ? new Date() : updateDto.completedAt,
+      completedAt: updateDto.completed ? new Date() : (session.completedAt || null),
     };
 
     const updatedSession = await this.prisma.sessionLog.update({
