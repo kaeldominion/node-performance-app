@@ -87,6 +87,7 @@ enum MovementPattern {
   FULL_BODY
   CORE_ANTI_EXTENSION
   CORE_ROTATION
+  CORE_FLEXION
   BREATH_MOBILITY
 }
 
@@ -96,6 +97,7 @@ enum SpaceRequirement {
   LANE_5M
   LANE_10M
   RUN_ROUTE
+  MACHINE_FIXED
 }
 
 enum ImpactLevel {
