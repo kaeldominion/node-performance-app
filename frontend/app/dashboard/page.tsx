@@ -191,7 +191,7 @@ export default function Dashboard() {
       // Find today's workout from schedule
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const todayWorkout = scheduleData.schedule?.find((item: any) => {
+      const todayWorkout = schedule?.schedule?.find((item: any) => {
         const itemDate = new Date(item.date);
         itemDate.setHours(0, 0, 0, 0);
         return itemDate.getTime() === today.getTime();
