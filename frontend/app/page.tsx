@@ -1,53 +1,40 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { workoutsApi } from '@/lib/api';
 import { Logo } from '@/components/Logo';
+import { Icon } from '@/components/icons';
+
+// Landing page is completely public - no Clerk hooks needed
+// If users are logged in, they'll be redirected from protected pages
 
 export default function LandingPage() {
-  const { isSignedIn, isLoaded: clerkLoaded } = useUser();
-  const router = useRouter();
-  const [redirecting, setRedirecting] = useState(false);
   const [recommendedWorkouts, setRecommendedWorkouts] = useState<any[]>([]);
   const [loadingWorkouts, setLoadingWorkouts] = useState(true);
 
-  useEffect(() => {
-    // Wait for Clerk to load
-    if (!clerkLoaded) {
-      return;
-    }
-
-    // Use Clerk's isSignedIn as source of truth - redirect if signed in
-    if (isSignedIn && !redirecting) {
-      setRedirecting(true);
-      // Use replace instead of push to avoid adding to history
-      router.replace('/dashboard');
-    }
-  }, [isSignedIn, clerkLoaded, router, redirecting]);
+  // Landing page is public - no Clerk required
+  // Redirect logic is handled by middleware or individual protected pages
 
   useEffect(() => {
     // Load recommended workouts for display
+    // This is a public endpoint, so failures are expected if backend is unavailable
     const loadRecommended = async () => {
       try {
         const workouts = await workoutsApi.getRecommended();
-        setRecommendedWorkouts(workouts.slice(0, 3)); // Show top 3
+        if (workouts && Array.isArray(workouts)) {
+          setRecommendedWorkouts(workouts.slice(0, 3)); // Show top 3
+        }
       } catch (err) {
-        console.error('Failed to load recommended workouts:', err);
+        // Silently fail for public endpoints - this is expected if backend is down
+        // The section just won't show recommended workouts
+        console.debug('Recommended workouts unavailable (backend may be down)');
       } finally {
         setLoadingWorkouts(false);
       }
     };
     loadRecommended();
   }, []);
-
-  // Always show landing page - redirect happens in background
-  // This prevents flickering
-  if (redirecting) {
-    return null; // Redirecting, don't show anything
-  }
 
   return (
     <div className="min-h-screen bg-dark text-text-white relative overflow-hidden">
@@ -423,7 +410,7 @@ export default function LandingPage() {
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-6">
               <div className="flex items-center gap-3">
-                <span className="text-4xl">🏃</span>
+                <Icon name="hyrox" size={32} color="var(--node-volt)" className="text-node-volt" />
                 <span className="text-node-volt uppercase tracking-[0.25em] text-xs font-heading">HYROX Support</span>
               </div>
               <h2 className="text-4xl sm:text-5xl font-heading font-bold">90-Minute Conditioning Sessions</h2>
@@ -513,12 +500,12 @@ export default function LandingPage() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
             {[
-              { name: 'PR1ME', desc: 'Primary Strength', icon: '💪' },
-              { name: 'FORGE', desc: 'Strength Supersets', icon: '🔥' },
-              { name: 'ENGIN3', desc: 'Hybrid EMOM', icon: '⚡' },
-              { name: 'CIRCUIT_X', desc: 'Anaerobic MetCon', icon: '🏃' },
-              { name: 'CAPAC1TY', desc: 'Long Engine', icon: '🌊' },
-              { name: 'FLOWSTATE', desc: 'Recovery Flow', icon: '🧘' },
+              { name: 'PR1ME', desc: 'Primary Strength', icon: 'PR1ME' },
+              { name: 'FORGE', desc: 'Strength Supersets', icon: 'FORGE' },
+              { name: 'ENGIN3', desc: 'Hybrid EMOM', icon: 'ENGIN3' },
+              { name: 'CIRCUIT_X', desc: 'Anaerobic MetCon', icon: 'CIRCUIT_X' },
+              { name: 'CAPAC1TY', desc: 'Long Engine', icon: 'CAPAC1TY' },
+              { name: 'FLOWSTATE', desc: 'Recovery Flow', icon: 'FLOWSTATE' },
             ].map((archetype, idx) => (
               <div
                 key={archetype.name}
@@ -526,7 +513,7 @@ export default function LandingPage() {
                 style={{ animationDelay: `${idx * 0.1}s` }}
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <span className="text-2xl">{archetype.icon}</span>
+                  <Icon name={archetype.icon} size={32} color="var(--node-volt)" className="text-node-volt flex-shrink-0" />
                   <div>
                     <h3 className="text-xl font-heading font-bold text-node-volt">{archetype.name}</h3>
                     <p className="text-sm text-muted-text font-body">{archetype.desc}</p>

@@ -12,8 +12,35 @@ export class ClerkAuthGuard implements CanActivate {
       throw new UnauthorizedException('No token provided');
     }
 
+    // DEV MODE: Allow mock token in development
+    const isDevMode = process.env.NODE_ENV === 'development' || 
+                      process.env.DEV_MODE === 'true';
+    
+    if (isDevMode && token === 'dev-mock-token') {
+      console.log('🔧 DEV MODE: Using mock authentication (Clerk bypass)');
+      // Use mock user for development
+      request.user = {
+        id: 'dev-user-123',
+        email: 'dev@node.local',
+        role: 'HOME_USER',
+        isAdmin: true, // Make admin for easier testing
+      };
+      return true;
+    }
+
     // Check if CLERK_SECRET_KEY is set
     if (!process.env.CLERK_SECRET_KEY) {
+      // In dev mode, if no Clerk key, allow mock token
+      if (isDevMode) {
+        console.log('🔧 DEV MODE: No CLERK_SECRET_KEY, using mock authentication');
+        request.user = {
+          id: 'dev-user-123',
+          email: 'dev@node.local',
+          role: 'HOME_USER',
+          isAdmin: true,
+        };
+        return true;
+      }
       console.error('❌ CLERK_SECRET_KEY is not set in environment');
       throw new UnauthorizedException('Server configuration error');
     }
@@ -37,6 +64,18 @@ export class ClerkAuthGuard implements CanActivate {
 
       return true;
     } catch (error) {
+      // In dev mode, if Clerk verification fails, fall back to mock user
+      if (isDevMode) {
+        console.warn('⚠️ DEV MODE: Clerk verification failed, using mock authentication:', error.message);
+        request.user = {
+          id: 'dev-user-123',
+          email: 'dev@node.local',
+          role: 'HOME_USER',
+          isAdmin: true,
+        };
+        return true;
+      }
+      
       console.error('❌ Clerk token verification failed:', {
         error: error.message || error,
         errorType: error.constructor?.name,

@@ -66,5 +66,70 @@ export class ProgramsService {
       data: createProgramDto,
     });
   }
+
+  async createWithWorkouts(data: {
+    name: string;
+    description?: string;
+    level?: string;
+    goal?: string;
+    durationWeeks?: number;
+    cycle?: string;
+    workouts: any[];
+    createdBy?: string;
+  }) {
+    const { workouts, ...programData } = data;
+    
+    // Generate slug from name
+    const slug = programData.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      + '-' + Date.now().toString(36);
+
+    return this.prisma.program.create({
+      data: {
+        ...programData,
+        slug,
+        workouts: {
+          create: workouts.map((workout) => {
+            const { sections, ...workoutData } = workout;
+            return {
+              ...workoutData,
+              sections: {
+                create: sections.map((section: any) => {
+                  const { blocks, ...sectionData } = section;
+                  return {
+                    ...sectionData,
+                    blocks: {
+                      create: blocks.map((block: any) => {
+                        const { tierSilver, tierGold, tierBlack, ...blockData } = block;
+                        const tierPrescriptions = [];
+                        if (tierSilver) tierPrescriptions.push({ ...tierSilver, tier: 'SILVER' });
+                        if (tierGold) tierPrescriptions.push({ ...tierGold, tier: 'GOLD' });
+                        if (tierBlack) tierPrescriptions.push({ ...tierBlack, tier: 'BLACK' });
+                        
+                        return {
+                          ...blockData,
+                          tierPrescriptions: tierPrescriptions.length > 0 ? { create: tierPrescriptions } : undefined,
+                        };
+                      }),
+                    },
+                  };
+                }),
+              },
+            };
+          }),
+        },
+      },
+      include: {
+        workouts: {
+          orderBy: [
+            { weekIndex: 'asc' },
+            { dayIndex: 'asc' },
+          ],
+        },
+      },
+    });
+  }
 }
 

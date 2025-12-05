@@ -81,6 +81,8 @@ api.interceptors.request.use((config) => {
       });
     }
     // For public endpoints, continue without token
+    // Store flag for error handler
+    (config as any).isPublicEndpoint = isPublicEndpoint;
   }
   return config;
 });
@@ -89,56 +91,68 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Log error properties individually to avoid serialization issues
-    console.error('API call failed');
-    console.error('Error type:', typeof error);
-    console.error('Error constructor:', error?.constructor?.name);
-    console.error('Error message:', error?.message);
-    console.error('Error response:', error?.response);
-    console.error('Error response data:', error?.response?.data);
-    console.error('Error response status:', error?.response?.status);
-    console.error('Error response statusText:', error?.response?.statusText);
-    console.error('Error request:', error?.request);
-    console.error('Error config:', error?.config);
-    console.error('Error config URL:', error?.config?.url);
-    console.error('Error config method:', error?.config?.method);
-    console.error('Error stack:', error?.stack);
+    // Check if this is a public endpoint - log less verbosely for public endpoints
+    const isPublicEndpoint = (error?.config as any)?.isPublicEndpoint;
     
-    // Try to stringify for debugging
-    try {
-      console.error('Error JSON:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-    } catch (e) {
-      console.error('Could not stringify error:', e);
-    }
-    
-    // Also log in a more readable format
-    if (error?.response) {
-      // Server responded with error
-      console.error('Server Error Response:', {
-        status: error.response.status,
-        statusText: error.response.statusText,
-        data: error.response.data,
-        url: error.config?.url,
-        method: error.config?.method,
-        headers: error.response.headers,
-      });
-      // Log the actual error message from server
-      if (error.response.data?.message) {
-        console.error('Server error message:', error.response.data.message);
-      }
-    } else if (error?.request) {
-      // Request made but no response (network error)
-      console.error('Network Error - No response from server:', {
-        url: error.config?.url,
-        method: error.config?.method,
-        message: error.message,
+    if (isPublicEndpoint) {
+      // For public endpoints, only log a simple message (expected to fail sometimes)
+      console.warn('Public API call failed (this is expected if backend is unavailable):', {
+        url: error?.config?.url,
+        status: error?.response?.status,
+        message: error?.message,
       });
     } else {
-      // Error setting up request
-      console.error('Request Setup Error:', {
-        message: error?.message,
-        error: String(error),
-      });
+      // For protected endpoints, log full error details
+      console.error('API call failed');
+      console.error('Error type:', typeof error);
+      console.error('Error constructor:', error?.constructor?.name);
+      console.error('Error message:', error?.message);
+      console.error('Error response:', error?.response);
+      console.error('Error response data:', error?.response?.data);
+      console.error('Error response status:', error?.response?.status);
+      console.error('Error response statusText:', error?.response?.statusText);
+      console.error('Error request:', error?.request);
+      console.error('Error config:', error?.config);
+      console.error('Error config URL:', error?.config?.url);
+      console.error('Error config method:', error?.config?.method);
+      console.error('Error stack:', error?.stack);
+      
+      // Try to stringify for debugging
+      try {
+        console.error('Error JSON:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+      } catch (e) {
+        console.error('Could not stringify error:', e);
+      }
+      
+      // Also log in a more readable format
+      if (error?.response) {
+        // Server responded with error
+        console.error('Server Error Response:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.response.headers,
+        });
+        // Log the actual error message from server
+        if (error.response.data?.message) {
+          console.error('Server error message:', error.response.data.message);
+        }
+      } else if (error?.request) {
+        // Request made but no response (network error)
+        console.error('Network Error - No response from server:', {
+          url: error.config?.url,
+          method: error.config?.method,
+          message: error.message,
+        });
+      } else {
+        // Error setting up request
+        console.error('Request Setup Error:', {
+          message: error?.message,
+          error: String(error),
+        });
+      }
     }
     
     return Promise.reject(error);

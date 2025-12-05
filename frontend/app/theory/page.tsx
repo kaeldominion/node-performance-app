@@ -2,13 +2,14 @@
 
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+import { Icon } from '@/components/icons';
 
 const ARCHETYPES = [
   {
     name: 'PR1ME',
     code: 'PR1ME',
     color: 'from-yellow-500/20 to-yellow-600/10 border-yellow-500/50',
-    icon: '💪',
+    icon: '',
     description: 'Primary Strength Day',
     purpose: 'Build maximal strength, refined technique, progressive overload.',
     structure: 'Warm-up → Main Lift Wave (Deadlift/Squat/Bench/Strict Press) → Secondary Lift Superset → Optional short finisher',
@@ -23,7 +24,7 @@ const ARCHETYPES = [
     name: 'FORGE',
     code: 'FORGE',
     color: 'from-orange-500/20 to-orange-600/10 border-orange-500/50',
-    icon: '🔥',
+    icon: '',
     description: 'Strength Superset Day',
     purpose: 'Develop muscular balance, body armor, skill under fatigue.',
     structure: 'Warm-up → Block A: Strength superset (push/pull or squat/hinge) → Block B: Accessory pump block',
@@ -38,7 +39,7 @@ const ARCHETYPES = [
     name: 'ENGIN3',
     code: 'ENGIN3',
     color: 'from-blue-500/20 to-blue-600/10 border-blue-500/50',
-    icon: '⚡',
+    icon: '',
     description: 'Hybrid EMOM Day',
     purpose: 'Improve threshold capacity, aerobic power, movement efficiency.',
     structure: 'Warm-up → EMOM/E2MOM (skill + engine + loaded movement) → Optional short burner',
@@ -53,7 +54,7 @@ const ARCHETYPES = [
     name: 'CIRCUIT X',
     code: 'CIRCUIT_X',
     color: 'from-red-500/20 to-red-600/10 border-red-500/50',
-    icon: '💥',
+    icon: '',
     description: 'Anaerobic / MetCon Day',
     purpose: 'Develop fast conditioning, mixed modal capacity, anaerobic durability.',
     structure: 'Warm-up → 1-3 AMRAP blocks (4-8 mins) → Pair work, YGIG, or solo cycles',
@@ -68,7 +69,7 @@ const ARCHETYPES = [
     name: 'CAPAC1TY',
     code: 'CAPAC1TY',
     color: 'from-green-500/20 to-green-600/10 border-green-500/50',
-    icon: '🌊',
+    icon: '',
     description: 'Long Engine Conditioning',
     purpose: 'Build aerobic base, pacing strategy, long-range repeatability.',
     structure: 'Warm-up → One long block (12-20 mins) or two medium blocks',
@@ -83,7 +84,7 @@ const ARCHETYPES = [
     name: 'FLOWSTATE',
     code: 'FLOWSTATE',
     color: 'from-purple-500/20 to-purple-600/10 border-purple-500/50',
-    icon: '🧘',
+    icon: '',
     description: 'Deload, Movement & Mobility',
     purpose: 'Facilitate recovery, mobility, tissue health, longevity.',
     structure: 'Light lifting (tempo) → KB flows → Slow EMOMs → Long cooldown → Breathwork + mobility',
@@ -149,7 +150,7 @@ export default function TheoryPage() {
             >
               <div className="flex flex-col md:flex-row gap-8">
                 <div className="flex-shrink-0">
-                  <div className="text-6xl mb-4">{archetype.icon}</div>
+                  <Icon name={archetype.code} size={64} color="var(--node-volt)" className="mb-4" />
                   <div className="text-4xl font-bold mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                     {archetype.name}
                   </div>

@@ -3,24 +3,24 @@
 import { SignIn } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useSafeClerk } from '@/hooks/useSafeClerk';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { isSignedIn, isLoaded } = useUser();
+  const clerk = useSafeClerk();
 
   useEffect(() => {
-    // Wait for Clerk to load before checking sign-in status
-    if (!isLoaded) {
+    // Only redirect if Clerk is loaded and user is signed in
+    if (!clerk.isLoaded) {
       return;
     }
     
-    if (isSignedIn) {
+    if (clerk.isSignedIn) {
       // Use replace to avoid adding to history stack
       console.log('User is signed in, redirecting to dashboard...');
       router.replace('/dashboard');
     }
-  }, [isSignedIn, isLoaded, router]);
+  }, [clerk.isSignedIn, clerk.isLoaded, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-dark p-6">

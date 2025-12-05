@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { analyticsApi, gamificationApi } from '@/lib/api';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import { Icon } from '@/components/icons';
 import { LevelUpModal } from '@/components/gamification/LevelUpModal';
 
 interface SystemStats {
@@ -225,7 +226,7 @@ export default function AdminDashboard() {
         <div className="bg-panel thin-border rounded-lg p-8 mb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-              🎮 Gamification Preview
+              Gamification Preview
             </h2>
             <button
               onClick={handlePreviewLevelUp}

@@ -364,7 +364,7 @@ export default function WorkoutBuilderPage() {
               <label className="block text-sm font-medium mb-2">Program Type</label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
-                  { value: 'single', label: '1-Off', desc: 'Single workout session', icon: 'sessions' },
+                  { value: 'single', label: '1-Off', desc: 'Single workout session', icon: 'calendar' },
                   { value: 'fourDay', label: '4-Day', desc: '4 workouts per week', icon: 'calendar' },
                   { value: 'week', label: '7-Day', desc: 'Full week with deload', icon: 'calendar' },
                   { value: 'month', label: '4-Week', desc: 'Progressive cycle', icon: 'calendar' },

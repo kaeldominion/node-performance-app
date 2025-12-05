@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { analyticsApi } from '@/lib/api';
 import Navbar from '@/components/Navbar';
+import { Icon } from '@/components/icons';
 
 interface LeaderboardEntry {
   rank: number;
@@ -173,8 +174,9 @@ export default function LeaderboardPage() {
                       <div className="text-xs text-muted-text mb-1" style={{ fontFamily: 'var(--font-manrope)' }}>
                         Streak
                       </div>
-                      <div className="text-2xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                        {entry.streak} 🔥
+                      <div className="text-2xl font-bold text-node-volt flex items-center gap-1" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                        {entry.streak}
+                        <Icon name="streak" size={20} color="var(--node-volt)" />
                       </div>
                     </div>
                     <div className="text-center min-w-[120px]">
@@ -200,7 +202,7 @@ export default function LeaderboardPage() {
         {/* Info Box */}
         <div className="mt-12 bg-concrete-grey border border-border-dark rounded-xl p-6">
           <p className="text-muted-text text-center" style={{ fontFamily: 'var(--font-manrope)' }}>
-            Rankings are updated in real-time. Keep training to climb the leaderboard! 💪
+            Rankings are updated in real-time. Keep training to climb the leaderboard!
           </p>
         </div>
       </div>

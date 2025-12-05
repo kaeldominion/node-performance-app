@@ -9,9 +9,9 @@ interface ExerciseBlock {
   exerciseName: string;
   description?: string;
   repScheme?: string;
-  tierSilver?: { load?: string; targetReps?: number; notes?: string };
-  tierGold?: { load?: string; targetReps?: number; notes?: string };
-  tierBlack?: { load?: string; targetReps?: number; notes?: string };
+  tierSilver?: { load?: string; targetReps?: number; distance?: number; distanceUnit?: string; notes?: string };
+  tierGold?: { load?: string; targetReps?: number; distance?: number; distanceUnit?: string; notes?: string };
+  tierBlack?: { load?: string; targetReps?: number; distance?: number; distanceUnit?: string; notes?: string };
 }
 
 interface SectionAMRAPProps {
@@ -64,31 +64,59 @@ export default function SectionAMRAP({ title, note, blocks, durationSec }: Secti
             {block.description && (
               <p className="text-muted-text mb-4">{block.description}</p>
             )}
-            {block.repScheme && (
-              <div className="text-xl text-node-volt font-bold mb-4">{block.repScheme}</div>
-            )}
+            {(() => {
+              // Check if we should hide repScheme (when tiers have different distance/calories/reps)
+              const hasTierDistance = block.tierSilver?.distance || block.tierGold?.distance || block.tierBlack?.distance;
+              const hasTierReps = block.tierSilver?.targetReps || block.tierGold?.targetReps || block.tierBlack?.targetReps;
+              const repsDiffer = hasTierReps && (
+                block.tierSilver?.targetReps !== block.tierGold?.targetReps ||
+                block.tierGold?.targetReps !== block.tierBlack?.targetReps ||
+                block.tierSilver?.targetReps !== block.tierBlack?.targetReps
+              );
+              const shouldHideRepScheme = hasTierDistance || repsDiffer || 
+                block.repScheme === 'N/A' || block.repScheme === 'n/a' || !block.repScheme;
+
+              return !shouldHideRepScheme && block.repScheme && (
+                <div className="text-xl text-node-volt font-bold mb-4">{block.repScheme}</div>
+              );
+            })()}
 
             {(block.tierSilver || block.tierGold || block.tierBlack) && (
               <div className="grid grid-cols-3 gap-4 mt-4">
                 {block.tierSilver && (
                   <div className="bg-panel thin-border rounded p-3">
                     <div className="text-sm text-muted-text mb-1">SILVER</div>
-                    {block.tierSilver.load && <div className="font-medium">{block.tierSilver.load}</div>}
-                    {block.tierSilver.targetReps && <div className="text-sm text-muted-text">{block.tierSilver.targetReps} reps</div>}
+                    {block.tierSilver.distance && block.tierSilver.distanceUnit ? (
+                      <div className="font-medium">{block.tierSilver.distance}{block.tierSilver.distanceUnit}</div>
+                    ) : block.tierSilver.targetReps ? (
+                      <div className="font-medium">{block.tierSilver.targetReps} reps</div>
+                    ) : block.tierSilver.load ? (
+                      <div className="font-medium">{block.tierSilver.load}</div>
+                    ) : null}
                   </div>
                 )}
                 {block.tierGold && (
                   <div className="bg-panel thin-border rounded p-3">
                     <div className="text-sm text-muted-text mb-1">GOLD</div>
-                    {block.tierGold.load && <div className="font-medium">{block.tierGold.load}</div>}
-                    {block.tierGold.targetReps && <div className="text-sm text-muted-text">{block.tierGold.targetReps} reps</div>}
+                    {block.tierGold.distance && block.tierGold.distanceUnit ? (
+                      <div className="font-medium">{block.tierGold.distance}{block.tierGold.distanceUnit}</div>
+                    ) : block.tierGold.targetReps ? (
+                      <div className="font-medium">{block.tierGold.targetReps} reps</div>
+                    ) : block.tierGold.load ? (
+                      <div className="font-medium">{block.tierGold.load}</div>
+                    ) : null}
                   </div>
                 )}
                 {block.tierBlack && (
                   <div className="bg-panel thin-border rounded p-3 border-node-volt">
                     <div className="text-sm text-node-volt mb-1">BLACK</div>
-                    {block.tierBlack.load && <div className="font-medium text-node-volt">{block.tierBlack.load}</div>}
-                    {block.tierBlack.targetReps && <div className="text-sm text-muted-text">{block.tierBlack.targetReps} reps</div>}
+                    {block.tierBlack.distance && block.tierBlack.distanceUnit ? (
+                      <div className="font-medium text-node-volt">{block.tierBlack.distance}{block.tierBlack.distanceUnit}</div>
+                    ) : block.tierBlack.targetReps ? (
+                      <div className="font-medium text-node-volt">{block.tierBlack.targetReps} reps</div>
+                    ) : block.tierBlack.load ? (
+                      <div className="font-medium text-node-volt">{block.tierBlack.load}</div>
+                    ) : null}
                   </div>
                 )}
               </div>

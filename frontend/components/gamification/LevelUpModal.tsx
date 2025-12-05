@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Icon } from '@/components/icons';
 
 interface LevelUpModalProps {
   level: number;
@@ -99,7 +100,7 @@ export function LevelUpModal({
         </div>
 
         <div className="text-center relative z-10">
-          <div className="text-6xl mb-4 animate-bounce">🎉</div>
+          <Icon name="levelUp" size={96} color="var(--node-volt)" className="mb-4 animate-bounce" />
           <h2 className="text-4xl font-heading font-bold text-node-volt mb-2">
             LEVEL UP!
           </h2>

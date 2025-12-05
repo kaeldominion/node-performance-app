@@ -10,9 +10,9 @@ interface ExerciseBlock {
   exerciseName: string;
   description?: string;
   repScheme?: string;
-  tierSilver?: { load?: string; targetReps?: number; notes?: string };
-  tierGold?: { load?: string; targetReps?: number; notes?: string };
-  tierBlack?: { load?: string; targetReps?: number; notes?: string };
+  tierSilver?: { load?: string; targetReps?: number; distance?: number; distanceUnit?: string; notes?: string };
+  tierGold?: { load?: string; targetReps?: number; distance?: number; distanceUnit?: string; notes?: string };
+  tierBlack?: { load?: string; targetReps?: number; distance?: number; distanceUnit?: string; notes?: string };
 }
 
 interface SectionEMOMProps {
@@ -79,25 +79,56 @@ export default function SectionEMOM({ title, note, blocks, workSec, restSec, rou
             {block.description && (
               <p className="text-sm text-muted-text text-center mb-2">{block.description}</p>
             )}
-            {block.repScheme && (
-              <div className="text-node-volt font-bold text-center">{block.repScheme}</div>
-            )}
+            {(() => {
+              // Check if we should hide repScheme (when tiers have different distance/calories/reps)
+              const hasTierDistance = block.tierSilver?.distance || block.tierGold?.distance || block.tierBlack?.distance;
+              const hasTierReps = block.tierSilver?.targetReps || block.tierGold?.targetReps || block.tierBlack?.targetReps;
+              const repsDiffer = hasTierReps && (
+                block.tierSilver?.targetReps !== block.tierGold?.targetReps ||
+                block.tierGold?.targetReps !== block.tierBlack?.targetReps ||
+                block.tierSilver?.targetReps !== block.tierBlack?.targetReps
+              );
+              const shouldHideRepScheme = hasTierDistance || repsDiffer || 
+                block.repScheme === 'N/A' || block.repScheme === 'n/a' || !block.repScheme;
+
+              return !shouldHideRepScheme && block.repScheme && (
+                <div className="text-node-volt font-bold text-center">{block.repScheme}</div>
+              );
+            })()}
 
             {(block.tierSilver || block.tierGold || block.tierBlack) && (
               <div className="mt-3 space-y-2">
                 {block.tierSilver && (
                   <div className="text-xs bg-panel rounded p-2">
-                    <div className="text-muted-text">SILVER: {block.tierSilver.load || block.tierSilver.targetReps}</div>
+                    <div className="text-muted-text">
+                      SILVER: {block.tierSilver.distance && block.tierSilver.distanceUnit 
+                        ? `${block.tierSilver.distance}${block.tierSilver.distanceUnit}`
+                        : block.tierSilver.targetReps 
+                        ? `${block.tierSilver.targetReps} reps`
+                        : block.tierSilver.load || '—'}
+                    </div>
                   </div>
                 )}
                 {block.tierGold && (
                   <div className="text-xs bg-panel rounded p-2">
-                    <div className="text-muted-text">GOLD: {block.tierGold.load || block.tierGold.targetReps}</div>
+                    <div className="text-muted-text">
+                      GOLD: {block.tierGold.distance && block.tierGold.distanceUnit 
+                        ? `${block.tierGold.distance}${block.tierGold.distanceUnit}`
+                        : block.tierGold.targetReps 
+                        ? `${block.tierGold.targetReps} reps`
+                        : block.tierGold.load || '—'}
+                    </div>
                   </div>
                 )}
                 {block.tierBlack && (
                   <div className="text-xs bg-panel border border-node-volt rounded p-2">
-                    <div className="text-node-volt">BLACK: {block.tierBlack.load || block.tierBlack.targetReps}</div>
+                    <div className="text-node-volt">
+                      BLACK: {block.tierBlack.distance && block.tierBlack.distanceUnit 
+                        ? `${block.tierBlack.distance}${block.tierBlack.distanceUnit}`
+                        : block.tierBlack.targetReps 
+                        ? `${block.tierBlack.targetReps} reps`
+                        : block.tierBlack.load || '—'}
+                    </div>
                   </div>
                 )}
               </div>

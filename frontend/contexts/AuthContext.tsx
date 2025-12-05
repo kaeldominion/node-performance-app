@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser, useAuth as useClerkAuth } from '@clerk/nextjs';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { userApi, setApiToken } from '@/lib/api';
 
 interface User {
@@ -21,30 +21,70 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
 }
 
+// Mock user for dev mode when Clerk is unavailable
+const DEV_MOCK_USER: User = {
+  id: 'dev-user-123',
+  email: 'dev@node.local',
+  name: 'Dev User',
+  role: 'HOME_USER',
+  isAdmin: true,
+};
+
 // Wrapper to maintain compatibility with existing code
 export function useAuth(): AuthContextType {
   const { user: clerkUser, isLoaded: clerkLoaded } = useUser();
   const { signOut, getToken } = useClerkAuth();
+  const [clerkError, setClerkError] = useState(false);
+  const [dbUser, setDbUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Check if we should use dev mode
+  const isDevMode = process.env.NODE_ENV === 'development' || 
+                    process.env.NEXT_PUBLIC_DEV_MODE === 'true';
+  
+  // Detect Clerk failures
+  useEffect(() => {
+    if (!isDevMode) return;
+    
+    // If Clerk hasn't loaded after 5 seconds, assume it's down
+    const timeout = setTimeout(() => {
+      if (!clerkLoaded) {
+        console.warn('⚠️ Clerk not loaded after 5s, enabling dev mode fallback');
+        setClerkError(true);
+      }
+    }, 5000);
+    
+    return () => clearTimeout(timeout);
+  }, [clerkLoaded, isDevMode]);
   
   // Debug: Log user status
   useEffect(() => {
-    console.log('Clerk User Status:', {
-      isLoaded: clerkLoaded,
-      hasUser: !!clerkUser,
-      userId: clerkUser?.id,
-      email: clerkUser?.emailAddresses[0]?.emailAddress,
-    });
-  }, [clerkUser, clerkLoaded]);
-  const [dbUser, setDbUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+    if (!clerkError) {
+      console.log('Clerk User Status:', {
+        isLoaded: clerkLoaded,
+        hasUser: !!clerkUser,
+        userId: clerkUser?.id,
+        email: clerkUser?.emailAddresses[0]?.emailAddress,
+      });
+    }
+  }, [clerkUser, clerkLoaded, clerkError]);
 
   // Update API token when Clerk user changes
   useEffect(() => {
     const updateToken = async () => {
+      // If Clerk is down and we're in dev mode, use mock token
+      if (isDevMode && clerkError) {
+        console.log('🔧 DEV MODE: Using mock token (Clerk unavailable)');
+        setApiToken('dev-mock-token');
+        return;
+      }
+      
       console.log('Token update effect triggered', { 
         hasClerkUser: !!clerkUser, 
         clerkUserId: clerkUser?.id,
         isLoaded: clerkLoaded,
+        clerkError,
       });
       
       if (!clerkLoaded) {
@@ -75,26 +115,62 @@ export function useAuth(): AuthContextType {
             console.log('Token set for API requests');
           } else {
             console.warn('No token received from Clerk (token is null/undefined)');
+            // In dev mode, fall back to mock token
+            if (isDevMode) {
+              console.log('🔧 DEV MODE: Falling back to mock token');
+              setApiToken('dev-mock-token');
+            } else {
+              setApiToken(null);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to get Clerk token:', {
+            error,
+            errorMessage: error instanceof Error ? error.message : String(error),
+            errorStack: error instanceof Error ? error.stack : undefined,
+          });
+          // In dev mode, fall back to mock token
+          if (isDevMode) {
+            console.log('🔧 DEV MODE: Clerk error, using mock token');
+            setApiToken('dev-mock-token');
+            setClerkError(true);
+          } else {
             setApiToken(null);
           }
-              } catch (error) {
-                console.error('Failed to get Clerk token:', {
-                  error,
-                  errorMessage: error instanceof Error ? error.message : String(error),
-                  errorStack: error instanceof Error ? error.stack : undefined,
-                });
-                setApiToken(null);
-              }
+        }
       } else {
         console.log('No Clerk user, clearing token');
-        setApiToken(null);
+        // In dev mode, keep mock token for development
+        if (!isDevMode) {
+          setApiToken(null);
+        }
       }
     };
     updateToken();
-  }, [clerkUser, clerkLoaded, getToken]);
+  }, [clerkUser, clerkLoaded, getToken, clerkError, isDevMode]);
 
   // Sync Clerk user with database user
   useEffect(() => {
+    // If Clerk is down and we're in dev mode, use mock user
+    if (isDevMode && clerkError) {
+      console.log('🔧 DEV MODE: Using mock user (Clerk unavailable)');
+      setApiToken('dev-mock-token');
+      // Try to fetch from backend, but fallback to mock if it fails
+      userApi.getMe()
+        .then((userData) => {
+          console.log('✅ DEV MODE: Backend user found:', userData);
+          setDbUser(userData);
+        })
+        .catch((error) => {
+          console.log('⚠️ DEV MODE: Backend unavailable, using mock user:', error.message);
+          setDbUser(DEV_MOCK_USER);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+      return;
+    }
+    
     if (!clerkLoaded) {
       setLoading(true);
       return;
@@ -173,22 +249,34 @@ export function useAuth(): AuthContextType {
         
         // Fallback to Clerk user data if API fails
         console.log('Using fallback Clerk user data');
-        setDbUser({
-          id: clerkUser.id,
-          email: clerkUser.emailAddresses[0]?.emailAddress || '',
-          name: clerkUser.firstName || clerkUser.lastName 
-            ? `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim()
-            : undefined,
-          role: (clerkUser.publicMetadata?.role as string) || 'HOME_USER',
-          isAdmin: (clerkUser.publicMetadata?.isAdmin as boolean) || false,
-        });
+        // In dev mode, use mock user if backend fails
+        if (isDevMode) {
+          console.log('🔧 DEV MODE: Backend failed, using mock user');
+          setDbUser(DEV_MOCK_USER);
+        } else {
+          setDbUser({
+            id: clerkUser.id,
+            email: clerkUser.emailAddresses[0]?.emailAddress || '',
+            name: clerkUser.firstName || clerkUser.lastName 
+              ? `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim()
+              : undefined,
+            role: (clerkUser.publicMetadata?.role as string) || 'HOME_USER',
+            isAdmin: (clerkUser.publicMetadata?.isAdmin as boolean) || false,
+          });
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchUserData();
-  }, [clerkUser?.id, clerkLoaded]); // Only depend on clerkUser.id, not the whole object
+    
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+      }
+    };
+  }, [clerkUser?.id, clerkLoaded, clerkError, isDevMode]); // Only depend on clerkUser.id, not the whole object
 
   const login = async (email: string, password: string) => {
     // Clerk handles login through their UI components
@@ -203,6 +291,12 @@ export function useAuth(): AuthContextType {
   };
 
   const logout = async () => {
+    if (isDevMode && clerkError) {
+      console.log('🔧 DEV MODE: Mock logout');
+      setDbUser(null);
+      setApiToken(null);
+      return;
+    }
     await signOut();
     setDbUser(null);
   };

@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { workoutsApi, sessionsApi } from '@/lib/api';
 import { WorkoutDeckPlayer } from '@/components/workout/WorkoutDeckPlayer';
 import Navbar from '@/components/Navbar';
+import { Icon } from '@/components/icons';
 import Link from 'next/link';
 import SectionWarmup from '@/components/workout/SectionWarmup';
 import SectionEMOM from '@/components/workout/SectionEMOM';
@@ -207,7 +208,17 @@ export default function WorkoutPlayerPage() {
               }`}
               style={{ fontFamily: 'var(--font-space-grotesk)' }}
             >
-              <span>{workout.isRecommended ? '⭐' : '☆'}</span> {workout.isRecommended ? 'Recommended' : 'Mark as Recommended'}
+              {workout.isRecommended ? (
+                <>
+                  <Icon name="recommended" size={16} color="var(--node-volt)" className="inline-block mr-1" />
+                  Recommended
+                </>
+              ) : (
+                <>
+                  <Icon name="recommended" size={16} color="var(--muted-text)" className="inline-block mr-1 opacity-50" />
+                  Mark as Recommended
+                </>
+              )}
             </button>
           )}
           {workout.shareId && (
