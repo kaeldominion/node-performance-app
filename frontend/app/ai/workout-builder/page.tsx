@@ -10,12 +10,12 @@ import { GenerationTerminal } from '@/components/workout/GenerationTerminal';
 
 const TRAINING_GOALS = ['STRENGTH', 'HYPERTROPHY', 'HYBRID', 'CONDITIONING', 'FAT_LOSS', 'LONGEVITY'];
 const ARCHETYPES = [
-  { code: 'PR1ME', name: 'PR1ME', icon: '💪', description: 'Primary Strength Day' },
-  { code: 'FORGE', name: 'FORGE', icon: '🔥', description: 'Strength Superset Day' },
-  { code: 'ENGIN3', name: 'ENGIN3', icon: '⚡', description: 'Hybrid EMOM Day' },
-  { code: 'CIRCUIT_X', name: 'CIRCUIT X', icon: '💥', description: 'Anaerobic / MetCon Day' },
-  { code: 'CAPAC1TY', name: 'CAPAC1TY', icon: '🌊', description: 'Long Engine Conditioning' },
-  { code: 'FLOWSTATE', name: 'FLOWSTATE', icon: '🧘', description: 'Deload, Movement & Mobility' },
+  { code: 'PR1ME', name: 'PR1ME', icon: '', description: 'Primary Strength Day' },
+  { code: 'FORGE', name: 'FORGE', icon: '', description: 'Strength Superset Day' },
+  { code: 'ENGIN3', name: 'ENGIN3', icon: '', description: 'Hybrid EMOM Day' },
+  { code: 'CIRCUIT_X', name: 'CIRCUIT X', icon: '', description: 'Anaerobic / MetCon Day' },
+  { code: 'CAPAC1TY', name: 'CAPAC1TY', icon: '', description: 'Long Engine Conditioning' },
+  { code: 'FLOWSTATE', name: 'FLOWSTATE', icon: '', description: 'Deload, Movement & Mobility' },
 ];
 const EQUIPMENT_OPTIONS = [
   'dumbbells',
@@ -127,8 +127,7 @@ export default function WorkoutBuilderPage() {
       const availableMinutes = isHyrox ? 90 : 55; // Standard: 50-60min (use 55), HYROX: 90min
       
       // For HYROX, don't send goal/archetype (they don't apply)
-      // Show reviewing status after generation starts
-      setReviewing(true);
+      // Don't set reviewing yet - let the terminal show connecting -> generating first
       
       const workout = await aiApi.generateWorkout({
         goal: isHyrox ? 'CONDITIONING' : formData.goal, // HYROX always uses CONDITIONING
@@ -242,7 +241,7 @@ export default function WorkoutBuilderPage() {
             href="/workouts/recommended"
             className="bg-panel thin-border text-text-white px-4 py-2 rounded hover:border-node-volt transition-colors flex items-center gap-2"
           >
-            <span>⭐</span> Browse Recommended
+Browse Recommended
           </Link>
         </div>
 
@@ -298,7 +297,6 @@ export default function WorkoutBuilderPage() {
                         : 'bg-panel thin-border text-text-white hover:border-node-volt hover:bg-tech-grey'
                     }`}
                   >
-                    <div className="text-2xl mb-2">🏃</div>
                     <div className="font-bold text-lg mb-1">HYROX</div>
                     <div className="text-xs opacity-80">90 minutes</div>
                     <div className="text-xs opacity-60 mt-1">Long conditioning session</div>
@@ -339,10 +337,10 @@ export default function WorkoutBuilderPage() {
               <label className="block text-sm font-medium mb-2">Program Type</label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
-                  { value: 'single', label: '1-Off', desc: 'Single workout session', icon: '💪' },
-                  { value: 'fourDay', label: '4-Day', desc: '4 workouts per week', icon: '📅' },
-                  { value: 'week', label: '7-Day', desc: 'Full week with deload', icon: '📆' },
-                  { value: 'month', label: '4-Week', desc: 'Progressive cycle', icon: '🗓️' },
+                  { value: 'single', label: '1-Off', desc: 'Single workout session' },
+                  { value: 'fourDay', label: '4-Day', desc: '4 workouts per week' },
+                  { value: 'week', label: '7-Day', desc: 'Full week with deload' },
+                  { value: 'month', label: '4-Week', desc: 'Progressive cycle' },
                 ].map((type) => (
                   <button
                     key={type.value}
@@ -353,7 +351,6 @@ export default function WorkoutBuilderPage() {
                         : 'bg-panel thin-border text-text-white hover:border-node-volt hover:bg-tech-grey'
                     }`}
                   >
-                    <div className="text-2xl mb-2">{type.icon}</div>
                     <div className="font-bold text-lg mb-1">{type.label}</div>
                     <div className="text-xs opacity-80">{type.desc}</div>
                   </button>
@@ -411,7 +408,6 @@ export default function WorkoutBuilderPage() {
             {formData.workoutType === 'single' && formData.workoutDuration === 'hyrox' && (
               <div className="bg-node-volt/10 border-2 border-node-volt rounded-lg p-6">
                 <div className="flex items-start gap-3">
-                  <div className="text-3xl">🏃</div>
                   <div>
                     <h3 className="font-bold text-lg mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                       HYROX-Style Conditioning
