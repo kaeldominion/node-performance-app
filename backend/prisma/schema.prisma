@@ -44,6 +44,7 @@ enum SectionType {
   CIRCUIT // For CIRCUIT_X: Multiple AMRAP blocks
   CAPACITY // For CAPAC1TY: Long engine blocks (12-20 min)
   FLOW // For FLOWSTATE: Tempo work, KB flows, slow EMOMs
+  INTERVAL // Sprint/interval sessions: work/rest intervals (e.g., 20s work, 100s rest, 6-10 rounds)
   OTHER
 }
 
@@ -234,6 +235,9 @@ model WorkoutSection {
   emomWorkSec Int?
   emomRestSec Int?
   emomRounds  Int?
+  intervalWorkSec Int? // For INTERVAL: work duration in seconds
+  intervalRestSec Int? // For INTERVAL: rest duration in seconds
+  intervalRounds Int? // For INTERVAL: number of rounds
 
   note String?
 

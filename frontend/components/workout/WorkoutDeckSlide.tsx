@@ -139,6 +139,43 @@ export function WorkoutDeckSlide({
           </div>
         );
 
+      case 'INTERVAL':
+        return (
+          <div className="text-center space-y-8 max-w-5xl">
+            <WorkoutTimer
+              type="INTERVAL"
+              workSec={section.intervalWorkSec || 20}
+              restSec={section.intervalRestSec || 100}
+              rounds={section.intervalRounds || 8}
+              onComplete={() => setTimerComplete(true)}
+            />
+            <div className="space-y-6">
+              {section.blocks.map((block: any, idx: number) => (
+                <div
+                  key={block.id || idx}
+                  className="bg-panel/50 backdrop-blur-sm thin-border rounded-lg p-8 border-l-4 border-node-volt"
+                >
+                  <div className="flex items-center justify-center gap-4 mb-4">
+                    <h3 className="text-4xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                      {block.exerciseName}
+                    </h3>
+                  </div>
+                  {block.description && (
+                    <p className="text-muted-text text-xl mb-4">{block.description}</p>
+                  )}
+                  <div className="text-lg text-node-volt font-bold mb-4">
+                    {section.intervalWorkSec}s MAX EFFORT / {section.intervalRestSec}s REST
+                  </div>
+                  {block.repScheme && (
+                    <div className="text-2xl text-node-volt font-bold mb-4">{block.repScheme}</div>
+                  )}
+                  {renderTierPrescriptions(block)}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
       case 'WAVE':
         return (
           <div className="text-center space-y-8 max-w-5xl">

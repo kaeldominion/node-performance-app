@@ -106,12 +106,15 @@ You MUST respond with ONLY valid JSON that matches this exact schema:
   "sections": [
     {
       "title": "Section Title",
-      "type": "WARMUP" | "EMOM" | "AMRAP" | "FOR_TIME" | "FINISHER" | "COOLDOWN" | "WAVE" | "SUPERSET" | "CIRCUIT" | "CAPACITY" | "FLOW",
+      "type": "WARMUP" | "EMOM" | "AMRAP" | "FOR_TIME" | "FINISHER" | "COOLDOWN" | "WAVE" | "SUPERSET" | "CIRCUIT" | "CAPACITY" | "FLOW" | "INTERVAL",
       "order": 1,
       "durationSec": 720 (for AMRAP/FOR_TIME/CAPACITY),
       "emomWorkSec": 45 (for EMOM),
       "emomRestSec": 15 (for EMOM),
       "emomRounds": 12 (for EMOM),
+      "intervalWorkSec": 20 (for INTERVAL: work duration in seconds),
+      "intervalRestSec": 100 (for INTERVAL: rest duration in seconds),
+      "intervalRounds": 8 (for INTERVAL: number of rounds),
       "note": "Optional section note",
       "blocks": [
         {
@@ -150,6 +153,14 @@ Section Types by Archetype:
 - CIRCUIT_X: WARMUP → AMRAP (4-8 min) → AMRAP (4-8 min) → Optional FINISHER → COOLDOWN
 - CAPAC1TY: WARMUP → CAPACITY (12-20 min long block) → COOLDOWN
 - FLOWSTATE: WARMUP → FLOW (tempo work, KB flows, slow EMOMs) → COOLDOWN
+
+INTERVAL Section Type (Sprint Sessions):
+- Use INTERVAL for sprint/interval work with specific work:rest ratios
+- Examples: 20s max bike, 100s rest, repeat 6-10 rounds
+- Common patterns: 20s/100s, 30s/90s, 40s/80s, 15s/45s
+- Total time = (intervalWorkSec + intervalRestSec) × intervalRounds
+- Perfect for REVL-style sprint sessions, power development, anaerobic capacity
+- Can be used as FINISHER or standalone section
 
 TIME MANAGEMENT GUIDELINES:
 - WARMUP: 5-10 minutes (movement prep, activation, light cardio)
@@ -400,6 +411,39 @@ REVL/HYROX REP SCHEME PATTERNS:
 - Time-based: AMRAP 12:00, FOR_TIME with cap
 - Distance-based: 100m, 200m, 400m, 1km runs/rows
 - Mixed modal: Run → Station → Run → Station pattern
+
+REVL SPRINT SESSION EXAMPLES:
+Example 1 - Bike Sprint Intervals:
+"REVL SPRINT // 01"
+WARMUP: 5 min easy bike
+INTERVAL:
+- Exercise: Bike Erg (Max Effort)
+- intervalWorkSec: 20 (20 seconds max effort)
+- intervalRestSec: 100 (100 seconds rest)
+- intervalRounds: 8
+- Total time: (20 + 100) × 8 = 960 seconds = 16 minutes
+COOLDOWN: 5 min easy bike
+
+Example 2 - Mixed Sprint Session:
+"REVL POWER // 02"
+WARMUP: 5 min
+INTERVAL:
+- Exercise: Assault Bike (Max Effort)
+- intervalWorkSec: 30
+- intervalRestSec: 90
+- intervalRounds: 6
+- Total time: (30 + 90) × 6 = 720 seconds = 12 minutes
+FINISHER: 3 rounds: 10 Cal Bike + 10 KB Swings
+COOLDOWN: 5 min
+
+Common INTERVAL patterns:
+- 20s work / 100s rest (1:5 ratio) - Power development
+- 30s work / 90s rest (1:3 ratio) - Anaerobic capacity
+- 15s work / 45s rest (1:3 ratio) - Speed/power
+- 40s work / 80s rest (1:2 ratio) - Capacity work
+- Rounds typically: 6-10 for power, 8-12 for capacity
+
+Use INTERVAL section type for REVL-style sprint sessions with specific work:rest ratios.
 
 Use these patterns and exercise names when generating workouts.`;
   }

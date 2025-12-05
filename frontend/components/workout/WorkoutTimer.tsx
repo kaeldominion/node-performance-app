@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAudioCues } from '@/hooks/useAudioCues';
 
 interface WorkoutTimerProps {
-  type: 'COUNTDOWN' | 'EMOM' | 'E2MOM' | 'AMRAP';
+  type: 'COUNTDOWN' | 'EMOM' | 'E2MOM' | 'AMRAP' | 'INTERVAL';
   durationSec?: number;
   workSec?: number;
   restSec?: number;
@@ -34,6 +34,10 @@ export function WorkoutTimer({
     if (type === 'COUNTDOWN' || type === 'AMRAP') {
       setTimeLeft(durationSec || 0);
     } else if (type === 'EMOM' || type === 'E2MOM') {
+      setTimeLeft(workSec);
+      setIsWorkPhase(true);
+      setCurrentRound(1);
+    } else if (type === 'INTERVAL') {
       setTimeLeft(workSec);
       setIsWorkPhase(true);
       setCurrentRound(1);
@@ -72,7 +76,7 @@ export function WorkoutTimer({
   }, [isRunning, isPaused, timeLeft, onTick, playCue]);
 
   const handleTimerComplete = () => {
-    if (type === 'EMOM' || type === 'E2MOM') {
+    if (type === 'EMOM' || type === 'E2MOM' || type === 'INTERVAL') {
       if (isWorkPhase) {
         // Switch to rest
         setIsWorkPhase(false);
@@ -159,8 +163,8 @@ export function WorkoutTimer({
         </div>
       </div>
 
-      {/* EMOM/E2MOM Round Indicator */}
-      {(type === 'EMOM' || type === 'E2MOM') && (
+      {/* EMOM/E2MOM/INTERVAL Round Indicator */}
+      {(type === 'EMOM' || type === 'E2MOM' || type === 'INTERVAL') && (
         <div className="flex items-center gap-4">
           <div className="bg-panel/50 backdrop-blur-sm thin-border rounded-lg px-6 py-3">
             <div className="text-muted-text text-sm mb-1">Round</div>
