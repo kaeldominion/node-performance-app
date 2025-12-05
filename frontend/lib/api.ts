@@ -239,6 +239,7 @@ export const aiApi = {
     workoutType?: 'single' | 'week' | 'month' | 'fourDay';
     cycle?: 'BASE' | 'LOAD' | 'INTENSIFY' | 'DELOAD';
     isHyrox?: boolean;
+    includeHyrox?: boolean;
   }) => {
     const response = await api.post('/ai/generate-workout', data);
     return response.data;

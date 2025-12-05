@@ -77,14 +77,14 @@ export function useAuth(): AuthContextType {
             console.warn('⚠️ No token received from Clerk (token is null/undefined)');
             setApiToken(null);
           }
-        } catch (error) {
-          console.error('❌ Failed to get Clerk token:', {
-            error,
-            errorMessage: error?.message,
-            errorStack: error?.stack,
-          });
-          setApiToken(null);
-        }
+              } catch (error) {
+                console.error('❌ Failed to get Clerk token:', {
+                  error,
+                  errorMessage: error instanceof Error ? error.message : String(error),
+                  errorStack: error instanceof Error ? error.stack : undefined,
+                });
+                setApiToken(null);
+              }
       } else {
         console.log('👤 No Clerk user, clearing token');
         setApiToken(null);
