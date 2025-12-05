@@ -13,6 +13,9 @@ import { UserCircle, Save, ArrowLeft } from 'lucide-react';
 export default function AccountSettingsPage() {
   const { user, loading: authLoading } = useAuth();
   const { user: clerkUser } = useUser();
+  
+  // Explicitly type user to ensure TypeScript recognizes username property
+  const typedUser: User | null = user;
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
