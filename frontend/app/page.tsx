@@ -24,6 +24,7 @@ export default function LandingPage() {
   const [xpStats, setXpStats] = useState<any>(null);
   const parallaxRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
+  const platformRef = useRef<HTMLDivElement>(null);
 
   // Parallax scroll effect
   useEffect(() => {
@@ -249,12 +250,14 @@ export default function LandingPage() {
             >
               Start Training
             </Link>
-            <Link
-                href="#platform"
+            <button
+                onClick={() => {
+                  platformRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
                 className="px-8 py-4 thin-border border-text-white/30 text-text-white font-heading font-bold text-sm uppercase tracking-[0.25em] hover:border-node-volt hover:text-node-volt transition-all duration-300 backdrop-blur-sm bg-panel/30 hover:scale-105"
             >
                 Explore Platform
-            </Link>
+            </button>
           </div>
         </div>
 
@@ -272,6 +275,7 @@ export default function LandingPage() {
 
       {/* Platform & Archetypes */}
       <section 
+        ref={platformRef}
         id="platform" 
         className="relative min-h-screen flex items-center py-32 bg-dark/80 backdrop-blur-sm border-t thin-border px-4 sm:px-6 lg:px-8 z-10"
         data-animate
@@ -618,7 +622,7 @@ export default function LandingPage() {
                 Build with AI
               </Link>
               <Link
-                href="/workouts/recommended"
+                href="/recommended"
                 className="inline-block px-8 py-4 bg-panel/50 thin-border border-border-dark text-text-white font-heading font-bold uppercase tracking-[0.25em] hover:border-node-volt hover:text-node-volt transition-all duration-300 hover:scale-105"
               >
                 Browse Recommended
@@ -914,14 +918,14 @@ export default function LandingPage() {
               </ul>
               <div className="flex flex-col sm:flex-row gap-4 mt-8">
                 <Link
-                  href="/ai/workout-builder"
+                  href="/auth/register"
                   className="inline-block px-8 py-4 bg-node-volt text-black font-heading font-bold uppercase tracking-[0.25em] hover:bg-text-white transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-node-volt/20"
                 style={{ color: '#000000' }}
                 >
                   Generate HYROX Workout
                 </Link>
                 <Link
-                  href="/theory"
+                  href="/hyrox-ai-builder"
                   className="inline-block px-8 py-4 thin-border border-text-white/30 text-text-white font-heading font-bold uppercase tracking-[0.25em] hover:border-node-volt hover:text-node-volt transition-all duration-300 hover:scale-105"
                 >
                   Learn More
