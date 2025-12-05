@@ -116,4 +116,18 @@ export class AnalyticsController {
   async getSystemStats() {
     return this.analyticsService.getSystemStats();
   }
+
+  // Get user percentiles compared to network
+  @Get('percentiles')
+  @UseGuards(ClerkAuthGuard)
+  async getPercentiles(@Request() req) {
+    return this.analyticsService.getUserPercentiles(req.user.id);
+  }
+
+  // Get user month-over-month trends (current month vs last month)
+  @Get('month-trends')
+  @UseGuards(ClerkAuthGuard)
+  async getMonthTrends(@Request() req) {
+    return this.analyticsService.getUserTrends(req.user.id);
+  }
 }

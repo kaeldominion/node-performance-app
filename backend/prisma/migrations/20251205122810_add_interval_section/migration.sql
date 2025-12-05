@@ -1,7 +1,11 @@
 -- Add INTERVAL to SectionType enum
 DO $$ 
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumtypid = 'SectionType'::regtype AND enumlabel = 'INTERVAL') THEN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_enum 
+        WHERE enumlabel = 'INTERVAL' 
+        AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'SectionType')
+    ) THEN
         ALTER TYPE "SectionType" ADD VALUE 'INTERVAL';
     END IF;
 END $$;

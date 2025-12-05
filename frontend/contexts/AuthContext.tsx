@@ -40,13 +40,18 @@ export function useAuth(): AuthContextType {
   const [loading, setLoading] = useState(true);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Check if we should use dev mode
-  const isDevMode = process.env.NODE_ENV === 'development' || 
-                    process.env.NEXT_PUBLIC_DEV_MODE === 'true';
+  // Check if we should use dev mode - only when explicitly enabled via env var
+  // Don't auto-enable just because we're in development - Clerk should work in dev too
+  const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true';
   
-  // Detect Clerk failures
+  // Detect Clerk failures - only in dev mode and only if explicitly enabled
   useEffect(() => {
-    if (!isDevMode) return;
+    // Only enable dev mode fallback if explicitly set via env var, not just because we're in development
+    const devModeExplicit = process.env.NEXT_PUBLIC_DEV_MODE === 'true';
+    if (!devModeExplicit) {
+      setClerkError(false);
+      return;
+    }
     
     // If Clerk hasn't loaded after 5 seconds, assume it's down
     const timeout = setTimeout(() => {
@@ -57,7 +62,7 @@ export function useAuth(): AuthContextType {
     }, 5000);
     
     return () => clearTimeout(timeout);
-  }, [clerkLoaded, isDevMode]);
+  }, [clerkLoaded]);
   
   // Debug: Log user status
   useEffect(() => {
@@ -116,9 +121,9 @@ export function useAuth(): AuthContextType {
             console.log('Token set for API requests');
           } else {
             console.warn('No token received from Clerk (token is null/undefined)');
-            // In dev mode, fall back to mock token
-            if (isDevMode) {
-              console.log('🔧 DEV MODE: Falling back to mock token');
+            // Only use dev token if Clerk is actually unavailable (clerkError), not just in dev mode
+            if (isDevMode && clerkError) {
+              console.log('🔧 DEV MODE: Falling back to mock token (Clerk unavailable)');
               setApiToken('dev-mock-token');
             } else {
               setApiToken(null);
@@ -130,7 +135,7 @@ export function useAuth(): AuthContextType {
             errorMessage: error instanceof Error ? error.message : String(error),
             errorStack: error instanceof Error ? error.stack : undefined,
           });
-          // In dev mode, fall back to mock token
+          // Only use dev token if explicitly in dev mode and Clerk is unavailable
           if (isDevMode) {
             console.log('🔧 DEV MODE: Clerk error, using mock token');
             setApiToken('dev-mock-token');
@@ -141,8 +146,10 @@ export function useAuth(): AuthContextType {
         }
       } else {
         console.log('No Clerk user, clearing token');
-        // In dev mode, keep mock token for development
-        if (!isDevMode) {
+        // Only keep mock token if explicitly in dev mode and Clerk is unavailable
+        if (isDevMode && clerkError) {
+          console.log('🔧 DEV MODE: Keeping mock token (Clerk unavailable)');
+        } else {
           setApiToken(null);
         }
       }
@@ -249,22 +256,17 @@ export function useAuth(): AuthContextType {
         }
         
         // Fallback to Clerk user data if API fails
+        // Always use Clerk user data when Clerk is working, even if backend fails
         console.log('Using fallback Clerk user data');
-        // In dev mode, use mock user if backend fails
-        if (isDevMode) {
-          console.log('🔧 DEV MODE: Backend failed, using mock user');
-          setDbUser(DEV_MOCK_USER);
-        } else {
-          setDbUser({
-            id: clerkUser.id,
-            email: clerkUser.emailAddresses[0]?.emailAddress || '',
-            name: clerkUser.firstName || clerkUser.lastName 
-              ? `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim()
-              : undefined,
-            role: (clerkUser.publicMetadata?.role as string) || 'HOME_USER',
-            isAdmin: (clerkUser.publicMetadata?.isAdmin as boolean) || false,
-          });
-        }
+        setDbUser({
+          id: clerkUser.id,
+          email: clerkUser.emailAddresses[0]?.emailAddress || '',
+          name: clerkUser.firstName || clerkUser.lastName 
+            ? `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim()
+            : undefined,
+          role: (clerkUser.publicMetadata?.role as string) || 'HOME_USER',
+          isAdmin: (clerkUser.publicMetadata?.isAdmin as boolean) || false,
+        });
       } finally {
         setLoading(false);
       }

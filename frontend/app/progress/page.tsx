@@ -31,6 +31,7 @@ export default function ProgressPage() {
   const [strengthData, setStrengthData] = useState<any>(null);
   const [engineData, setEngineData] = useState<any>(null);
   const [trends, setTrends] = useState<any>(null);
+  const [percentiles, setPercentiles] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'week' | 'month' | 'all'>('all');
 
@@ -48,17 +49,19 @@ export default function ProgressPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [statsData, strength, engine, trendsData] = await Promise.all([
+      const [statsData, strength, engine, trendsData, percentilesData] = await Promise.all([
         analyticsApi.getStats(),
         analyticsApi.getStrengthProgress(),
         analyticsApi.getEngineProgress(),
         analyticsApi.getTrends(30),
+        analyticsApi.getPercentiles().catch(() => null), // Don't fail if percentiles unavailable
       ]);
 
       setStats(statsData);
       setStrengthData(strength);
       setEngineData(engine);
       setTrends(trendsData);
+      setPercentiles(percentilesData);
     } catch (error) {
       console.error('Failed to load progress data:', error);
     } finally {
@@ -121,27 +124,47 @@ export default function ProgressPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-panel thin-border rounded-lg p-6">
             <div className="text-muted-text text-sm mb-2">Total Sessions</div>
-            <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+            <div className="text-3xl font-bold text-node-volt mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               {stats?.totalSessions || 0}
             </div>
+            {percentiles?.sessionsPerWeek !== null && percentiles?.sessionsPerWeek !== undefined && (
+              <div className="text-sm font-bold text-node-volt">
+                Top {percentiles.sessionsPerWeek}% of NØDE NETWORK
+              </div>
+            )}
           </div>
           <div className="bg-panel thin-border rounded-lg p-6">
             <div className="text-muted-text text-sm mb-2">Total Hours</div>
-            <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+            <div className="text-3xl font-bold text-node-volt mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               {stats?.totalDurationHours ? Math.round(stats.totalDurationHours * 10) / 10 : 0}
             </div>
+            {percentiles?.sessionsPerWeek !== null && percentiles?.sessionsPerWeek !== undefined && (
+              <div className="text-sm font-bold text-node-volt">
+                Top {percentiles.sessionsPerWeek}% of NØDE NETWORK
+              </div>
+            )}
           </div>
           <div className="bg-panel thin-border rounded-lg p-6">
             <div className="text-muted-text text-sm mb-2">Average RPE</div>
-            <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+            <div className="text-3xl font-bold text-node-volt mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               {stats?.avgRPE || 0}
             </div>
+            {percentiles?.avgRPE !== null && percentiles?.avgRPE !== undefined && (
+              <div className="text-sm font-bold text-node-volt">
+                Top {percentiles.avgRPE}% of NØDE NETWORK
+              </div>
+            )}
           </div>
           <div className="bg-panel thin-border rounded-lg p-6">
             <div className="text-muted-text text-sm mb-2">Completion Rate</div>
-            <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+            <div className="text-3xl font-bold text-node-volt mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               {stats?.completionRate || 0}%
             </div>
+            {percentiles?.completionRate !== null && percentiles?.completionRate !== undefined && (
+              <div className="text-sm font-bold text-node-volt">
+                Top {percentiles.completionRate}% of NØDE NETWORK
+              </div>
+            )}
           </div>
         </div>
 

@@ -459,6 +459,14 @@ export const analyticsApi = {
     const response = await api.get(`/analytics/leaderboard?metric=${metric}&limit=${limit}`);
     return response.data;
   },
+  getPercentiles: async () => {
+    const response = await api.get('/analytics/percentiles');
+    return response.data;
+  },
+  getMonthTrends: async () => {
+    const response = await api.get('/analytics/month-trends');
+    return response.data;
+  },
 };
 
 // Coach API

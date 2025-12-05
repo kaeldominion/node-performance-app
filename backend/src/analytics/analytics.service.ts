@@ -525,4 +525,222 @@ export class AnalyticsService {
         rank: index + 1,
       }));
   }
+
+  async getUserTrends(userId: string) {
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+    // Get current month stats
+    const currentStats = await this.getUserStats(userId, currentMonthStart, now);
+    
+    // Get last month stats
+    const lastMonthStats = await this.getUserStats(userId, lastMonthStart, lastMonthEnd);
+
+    // Calculate completion rate for each period separately
+    const currentAllSessions = await this.prisma.sessionLog.count({
+      where: {
+        userId,
+        startedAt: { gte: currentMonthStart, lte: now },
+      },
+    });
+    const currentCompletionRate = currentAllSessions > 0 
+      ? (currentStats.totalSessions / currentAllSessions) * 100 
+      : 0;
+
+    const lastMonthAllSessions = await this.prisma.sessionLog.count({
+      where: {
+        userId,
+        startedAt: { gte: lastMonthStart, lte: lastMonthEnd },
+      },
+    });
+    const lastMonthCompletionRate = lastMonthAllSessions > 0
+      ? (lastMonthStats.totalSessions / lastMonthAllSessions) * 100
+      : 0;
+
+    // Calculate sessions per week for both periods
+    const currentDays = Math.max(1, Math.floor((now.getTime() - currentMonthStart.getTime()) / (1000 * 60 * 60 * 24)));
+    const lastMonthDays = Math.max(1, Math.floor((lastMonthEnd.getTime() - lastMonthStart.getTime()) / (1000 * 60 * 60 * 24)));
+    
+    const currentSessionsPerWeek = (currentStats.totalSessions / currentDays) * 7;
+    const lastMonthSessionsPerWeek = (lastMonthStats.totalSessions / lastMonthDays) * 7;
+
+    // Calculate percentage changes
+    const calculateChange = (current: number, previous: number): number | null => {
+      if (previous === 0) {
+        return current > 0 ? 100 : null; // 100% increase if going from 0 to something
+      }
+      return Math.round(((current - previous) / previous) * 100);
+    };
+
+    return {
+      completionRate: calculateChange(currentCompletionRate, lastMonthCompletionRate),
+      avgRPE: calculateChange(currentStats.avgRPE, lastMonthStats.avgRPE),
+      sessionsPerWeek: calculateChange(currentSessionsPerWeek, lastMonthSessionsPerWeek),
+      // For PRs, we'll count unique exercises with weights in each period
+      prCount: await this.calculatePRTrend(userId, currentMonthStart, now, lastMonthStart, lastMonthEnd),
+    };
+  }
+
+  private async calculatePRTrend(
+    userId: string,
+    currentStart: Date,
+    currentEnd: Date,
+    lastStart: Date,
+    lastEnd: Date
+  ): Promise<number | null> {
+    // Get sessions for both periods
+    const currentSessions = await this.prisma.sessionLog.findMany({
+      where: {
+        userId,
+        completed: true,
+        startedAt: { gte: currentStart, lte: currentEnd },
+      },
+    });
+
+    const lastSessions = await this.prisma.sessionLog.findMany({
+      where: {
+        userId,
+        completed: true,
+        startedAt: { gte: lastStart, lte: lastEnd },
+      },
+    });
+
+    // Count unique exercises with weights
+    const countPRs = (sessions: any[]): number => {
+      const exercises = new Set<string>();
+      sessions.forEach((session) => {
+        if (session.metrics && typeof session.metrics === 'object') {
+          const metrics = session.metrics as any;
+          if (metrics.weights && typeof metrics.weights === 'object') {
+            Object.keys(metrics.weights).forEach((exercise) => {
+              const weight = metrics.weights[exercise];
+              if (weight && Number(weight) > 0) {
+                exercises.add(exercise);
+              }
+            });
+          }
+        }
+      });
+      return exercises.size;
+    };
+
+    const currentPRs = countPRs(currentSessions);
+    const lastPRs = countPRs(lastSessions);
+
+    if (lastPRs === 0) {
+      return currentPRs > 0 ? 100 : null;
+    }
+    return Math.round(((currentPRs - lastPRs) / lastPRs) * 100);
+  }
+
+  async getUserPercentiles(userId: string) {
+    // Get all users with their stats
+    const users = await this.prisma.user.findMany({
+      where: {
+        role: { in: ['HOME_USER', 'COACH'] },
+      },
+      include: {
+        sessions: {
+          where: { completed: true },
+        },
+      },
+    });
+
+    // Calculate stats for all users
+    const userStats = await Promise.all(
+      users.map(async (user) => {
+        const sessions = user.sessions;
+        const totalSessions = sessions.length;
+        
+        // Calculate completion rate
+        const allSessions = await this.prisma.sessionLog.count({
+          where: { userId: user.id },
+        });
+        const completionRate = allSessions > 0 ? (totalSessions / allSessions) * 100 : 0;
+        
+        // Calculate average RPE
+        const avgRPE = sessions.length > 0
+          ? sessions.reduce((sum, s) => sum + (s.rpe || 0), 0) / sessions.length
+          : 0;
+        
+        // Calculate sessions per week (last 30 days)
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const recentSessions = sessions.filter(s => s.startedAt >= thirtyDaysAgo);
+        const daysDiff = Math.max(1, Math.floor((Date.now() - thirtyDaysAgo.getTime()) / (1000 * 60 * 60 * 24)));
+        const sessionsPerWeek = (recentSessions.length / daysDiff) * 7;
+        
+        // Calculate PRs (Personal Records) - count unique exercises where user has set a weight
+        // This is a simplified version - in a real system you'd track actual PRs
+        const exercisesWithWeights = new Set<string>();
+        sessions.forEach((session) => {
+          if (session.metrics && typeof session.metrics === 'object') {
+            const metrics = session.metrics as any;
+            if (metrics.weights && typeof metrics.weights === 'object') {
+              Object.keys(metrics.weights).forEach((exercise) => {
+                const weight = metrics.weights[exercise];
+                if (weight && Number(weight) > 0) {
+                  exercisesWithWeights.add(exercise);
+                }
+              });
+            }
+          }
+        });
+        const prCount = exercisesWithWeights.size;
+
+        return {
+          userId: user.id,
+          completionRate,
+          avgRPE,
+          sessionsPerWeek,
+          prCount,
+        };
+      })
+    );
+
+    // Filter out users with no activity
+    const activeUsers = userStats.filter(u => u.completionRate > 0 || u.avgRPE > 0 || u.sessionsPerWeek > 0 || u.prCount > 0);
+    
+    // Get current user's stats
+    const currentUserStats = userStats.find(u => u.userId === userId);
+    if (!currentUserStats) {
+      return {
+        completionRate: null,
+        avgRPE: null,
+        sessionsPerWeek: null,
+        prCount: null,
+      };
+    }
+
+    // Calculate percentiles
+    const calculatePercentile = (userValue: number, allValues: number[]): number => {
+      if (allValues.length === 0) return 0;
+      const sorted = [...allValues].sort((a, b) => b - a); // Descending (higher is better)
+      const rank = sorted.findIndex(v => v <= userValue);
+      if (rank === -1) return 100; // User is at the top
+      return Math.round((1 - rank / sorted.length) * 100);
+    };
+
+    const completionRates = activeUsers.map(u => u.completionRate).filter(v => v > 0);
+    const avgRPEs = activeUsers.map(u => u.avgRPE).filter(v => v > 0);
+    const sessionsPerWeeks = activeUsers.map(u => u.sessionsPerWeek).filter(v => v > 0);
+    const prCounts = activeUsers.map(u => u.prCount).filter(v => v > 0);
+
+    return {
+      completionRate: completionRates.length > 0
+        ? calculatePercentile(currentUserStats.completionRate, completionRates)
+        : null,
+      avgRPE: avgRPEs.length > 0
+        ? calculatePercentile(currentUserStats.avgRPE, avgRPEs)
+        : null,
+      sessionsPerWeek: sessionsPerWeeks.length > 0
+        ? calculatePercentile(currentUserStats.sessionsPerWeek, sessionsPerWeeks)
+        : null,
+      prCount: prCounts.length > 0
+        ? calculatePercentile(currentUserStats.prCount, prCounts)
+        : null,
+    };
+  }
 }
