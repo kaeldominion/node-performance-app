@@ -74,15 +74,22 @@ api.interceptors.response.use(
     // Check if this is a public endpoint - log less verbosely for public endpoints
     const isPublicEndpoint = (error?.config as any)?.isPublicEndpoint;
     
-    if (isPublicEndpoint) {
-      // For public endpoints, only log a simple message (expected to fail sometimes)
-      console.warn('Public API call failed (this is expected if backend is unavailable):', {
-        url: error?.config?.url,
-        status: error?.response?.status,
-        message: error?.message,
-      });
+    // Check if it's a network error (no response from server)
+    const isNetworkError = !error?.response && error?.request;
+    
+    if (isPublicEndpoint || isNetworkError) {
+      // For public endpoints or network errors, only log a simple warning
+      // Network errors are expected when backend is unavailable
+      if (process.env.NODE_ENV === 'development') {
+        console.debug('API call failed (backend may be unavailable):', {
+          url: error?.config?.url,
+          status: error?.response?.status,
+          message: error?.message,
+        });
+      }
+      // In production, don't log network errors to console to avoid noise
     } else {
-      // For protected endpoints, log full error details
+      // For protected endpoints with server responses, log full error details
       console.error('❌ API call failed');
       console.error('Error type:', typeof error);
       console.error('Error constructor:', error?.constructor?.name);
@@ -121,11 +128,14 @@ api.interceptors.response.use(
         }
       } else if (error?.request) {
         // Request made but no response (network error)
-        console.error('❌ Network Error - No response from server:', {
-          url: error.config?.url,
-          method: error.config?.method,
-          message: error.message,
-        });
+        // Only log as warning for network errors - backend might be unavailable
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Network Error - Backend may be unavailable:', {
+            url: error.config?.url,
+            method: error.config?.method,
+            message: error.message,
+          });
+        }
       } else {
         // Error setting up request
         console.error('❌ Request Setup Error:', {
