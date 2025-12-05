@@ -239,7 +239,7 @@ export default function LandingPage() {
             <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-heading font-bold leading-[0.95] tracking-tight drop-shadow-2xl mb-6">
               BUILDING INFRASTRUCTURE FOR HUMAN <span className="text-node-volt animate-glow">OPTIMIZATION.</span>
             </h1>
-            <p className="text-text-white text-base sm:text-lg max-w-lg border-l-2 border-node-volt/60 pl-5 font-body leading-[2.2] mb-10">
+            <p className="text-text-white text-base sm:text-lg max-w-lg border-l-2 border-node-volt/60 pl-[30px] font-body leading-[2.2] mb-10">
               A brutalist training stack for strength, engine, and recovery. Cinematic player, deep analytics, and AI-built sessions.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
