@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, type User } from '@/contexts/AuthContext';
 import { useUser } from '@clerk/nextjs';
 import { userApi } from '@/lib/api';
 import Navbar from '@/components/Navbar';
