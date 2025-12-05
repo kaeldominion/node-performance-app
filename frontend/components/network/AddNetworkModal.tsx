@@ -156,7 +156,7 @@ export function AddNetworkModal({ onClose, onNetworkAdded, currentUserNetworkCod
             onClick={() => setShowQRModal(true)}
             className="px-4 py-2 bg-node-volt/10 border border-node-volt/30 text-node-volt font-medium rounded-lg hover:bg-node-volt/20 transition-colors flex items-center gap-2 text-sm"
           >
-            <Icons.SHARE2 size={16} />
+            <Icons.SHARE size={16} />
             Show My QR Code
           </button>
         </div>
