@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { workoutsApi, sessionsApi } from '@/lib/api';
 import { WorkoutDeckPlayerV2 } from '@/components/workout/WorkoutDeckPlayerV2';
 import Navbar from '@/components/Navbar';
+import { Icon } from '@/components/icons';
 import Link from 'next/link';
 import { Icons } from '@/lib/iconMapping';
 import SectionWarmup from '@/components/workout/SectionWarmup';

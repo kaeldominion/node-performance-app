@@ -24,9 +24,10 @@ export class AiService {
     isHyrox?: boolean; // Flag for HYROX-style 90-minute conditioning workouts (single workouts only)
     includeHyrox?: boolean; // Flag to include HYROX sessions in multi-day programs
   }) {
-    // Pass archetype to the prompt
-    const archetypeParam = params.archetype || undefined;
-    const archetypeGuidance = this.getArchetypeGuidance(archetypeParam);
+    // Pass archetype to the prompt (only for single workouts)
+    // For multi-day programs, archetype will be randomly selected by AI based on goal
+    const archetypeParam = (params.workoutType === 'single' && params.archetype) ? params.archetype : undefined;
+    const archetypeGuidance = archetypeParam ? this.getArchetypeGuidance(archetypeParam) : '';
     
     // Check if running route is available
     const hasRunningRoute = params.equipment.some((eq) => 
@@ -38,7 +39,7 @@ export class AiService {
     
     const systemPrompt = `You are an elite hybrid coach designing sessions for the NØDE performance training system, following REVL-style programming with extreme detail and precision.
 
-${archetypeGuidance}
+${archetypeGuidance ? archetypeGuidance + '\n\n' : ''}
 
 CRITICAL: Generate exercises FREELY based on:
 - Available equipment: ${params.equipment.join(', ')}
@@ -58,12 +59,25 @@ ${workoutExamples}
 
 You MUST respond with ONLY valid JSON that matches this exact schema:
 
+FOR SINGLE WORKOUTS:
 {
   "name": "Workout Name (use NØDE naming: PR1ME // 01, FORGE // 02, ENGIN3 // 03, etc.)",
   "displayCode": "Optional code like PR1ME-01 or ENGIN3-02",
   "archetype": "PR1ME" | "FORGE" | "ENGIN3" | "CIRCUIT_X" | "CAPAC1TY" | "FLOWSTATE" | null,
   "description": "Brief archetype description",
   "sections": [
+
+FOR MULTI-DAY PROGRAMS (4-day, 7-day, 4-week):
+{
+  "workouts": [
+    {
+      "name": "Workout Name",
+      "displayCode": "Optional code",
+      "dayIndex": 1 (REQUIRED for 4-day and 7-day programs),
+      "weekIndex": 1 (REQUIRED for 4-week programs),
+      "archetype": "PR1ME" | "FORGE" | "ENGIN3" | "CIRCUIT_X" | "CAPAC1TY" | "FLOWSTATE" | null,
+      "description": "Brief description",
+      "sections": [
     {
       "title": "Section Title",
       "type": "WARMUP" | "EMOM" | "AMRAP" | "FOR_TIME" | "FINISHER" | "COOLDOWN" | "WAVE" | "SUPERSET" | "CIRCUIT" | "CAPACITY" | "FLOW" | "INTERVAL",
@@ -111,6 +125,15 @@ You MUST respond with ONLY valid JSON that matches this exact schema:
         }
       ]
     }
+  ]
+}
+
+FOR MULTI-DAY PROGRAMS: Each workout in the workouts array follows the same structure as above, and the response should be:
+{
+  "workouts": [
+    { ...workout structure with dayIndex/weekIndex ... },
+    { ...workout structure ... },
+    ...
   ]
 }
 
@@ -208,7 +231,9 @@ REALISTIC WORKOUT DESIGN:
 Design workouts that are challenging, progressive, realistic, and aligned with the user's goals, equipment, and time constraints.`;
 
     const workoutType = params.workoutType || 'single';
-    const cycle = params.cycle || 'BASE';
+    // For 4-week programs, cycle is automatic (BASE → LOAD → INTENSIFY → DELOAD)
+    // For other multi-day programs, use provided cycle or default to BASE
+    const cycle = (workoutType === 'month') ? undefined : (params.cycle || 'BASE');
     const isHyrox = params.isHyrox || false;
     const includeHyrox = params.includeHyrox || false;
     
@@ -223,12 +248,20 @@ Design workouts that are challenging, progressive, realistic, and aligned with t
       // Multi-day program with HYROX sessions
       const hyroxCount = workoutType === 'fourDay' ? 1 : workoutType === 'week' ? 1 : 4; // 4-week = 4 HYROX sessions
       workoutTypeGuidance = this.getWorkoutTypeGuidance(workoutType, cycle, includeHyrox, hyroxCount);
-      cycleGuidance = this.getCycleGuidance(cycle);
+      // Only show cycle guidance for non-4-week programs
+      cycleGuidance = workoutType !== 'month' ? this.getCycleGuidance(cycle) : undefined;
     } else {
       // Standard workout
       workoutTypeGuidance = this.getWorkoutTypeGuidance(workoutType, cycle);
-      cycleGuidance = this.getCycleGuidance(cycle);
+      // Only show cycle guidance for non-4-week programs
+      cycleGuidance = workoutType !== 'month' ? this.getCycleGuidance(cycle) : undefined;
     }
+    
+    // For multi-day programs, don't use archetype - let AI randomly select based on goal
+    const shouldUseArchetype = workoutType === 'single' && !isHyrox && archetypeParam;
+    
+    // For multi-day programs, don't use archetype - let AI randomly select based on goal
+    const shouldUseArchetype = workoutType === 'single' && !isHyrox && archetypeParam;
     
     const userPrompt = `Generate ${workoutTypeGuidance} with these parameters:
 ${isHyrox ? `
@@ -240,12 +273,30 @@ ${isHyrox ? `
 ` : `
 - Goal: ${params.goal}
 - Training Level: ${params.trainingLevel} (used for workout complexity/duration guidance only)
-${archetypeParam ? `- Archetype: ${archetypeParam} (follow archetype structure exactly)` : ''}
+${shouldUseArchetype ? `- Archetype: ${archetypeParam} (follow archetype structure exactly)` : ''}
+${workoutType !== 'single' ? `
+- Archetype Selection: For each workout in the program, randomly select an appropriate archetype based on the goal (${params.goal}).
+  * STRENGTH goal: Prefer PR1ME, FORGE, ENGIN3
+  * HYPERTROPHY goal: Prefer PR1ME, FORGE, CIRCUIT_X
+  * HYBRID goal: Mix of PR1ME, FORGE, ENGIN3, CIRCUIT_X, CAPAC1TY
+  * CONDITIONING goal: Prefer ENGIN3, CIRCUIT_X, CAPAC1TY
+  * FAT_LOSS goal: Prefer CIRCUIT_X, CAPAC1TY, ENGIN3
+  * LONGEVITY goal: Mix with more FLOWSTATE
+  * IMPORTANT: Only use FLOWSTATE rarely (max 1-2 times in a 4-day program, 1-2 times in a 7-day program, 2-3 times in a 4-week program)
+  * Create variety - don't repeat the same archetype consecutively unless it makes sense for the program structure
+` : ''}
 `}
 - Available Equipment: ${params.equipment.join(', ')}
 - Available Time: ${params.availableMinutes} minutes per session
 - Preferred Sections: ${params.sectionPreferences?.join(', ') || 'Auto-select based on archetype'}
 ${cycleGuidance ? `- Cycle: ${cycle} - ${cycleGuidance}` : ''}
+${workoutType === 'month' ? `
+- IMPORTANT: This is a 4-week program. Each week automatically follows its cycle:
+  * Week 1 workouts = BASE cycle (moderate intensity, establish baseline)
+  * Week 2 workouts = LOAD cycle (increased volume/intensity)
+  * Week 3 workouts = INTENSIFY cycle (peak intensity, lower volume)
+  * Week 4 workouts = DELOAD cycle (recovery, lower intensity, mobility focus)
+  Adjust workout intensity, volume, and complexity accordingly for each week.` : ''}
 
 ${workoutTypeGuidance}
 
@@ -340,12 +391,43 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
       // Handle different workout types
       if (workoutType === 'week' || workoutType === 'month' || workoutType === 'fourDay') {
         // For week/month/fourDay, expect workouts array in response
-        const workouts = workoutJson.workouts || (Array.isArray(workoutJson) ? workoutJson : [workoutJson]);
-        return workouts.map((w: any, idx: number) => ({
-          ...this.validateWorkoutSchema(w),
-          dayIndex: (workoutType === 'week' || workoutType === 'fourDay') ? idx + 1 : undefined,
-          weekIndex: workoutType === 'month' ? Math.floor(idx / 5) + 1 : undefined,
-        }));
+        let workouts = workoutJson.workouts;
+        
+        // Fallback: if workouts is not an array, try to extract it
+        if (!workouts) {
+          if (Array.isArray(workoutJson)) {
+            workouts = workoutJson;
+          } else {
+            // Single workout object - wrap it
+            workouts = [workoutJson];
+          }
+        }
+        
+        // Validate and map workouts with proper dayIndex/weekIndex
+        const validatedWorkouts = workouts.map((w: any, idx: number) => {
+          const validated = this.validateWorkoutSchema(w);
+          
+          // Set dayIndex and weekIndex based on workout type
+          if (workoutType === 'fourDay') {
+            // 4-day: dayIndex 1-4
+            validated.dayIndex = w.dayIndex || idx + 1;
+          } else if (workoutType === 'week') {
+            // 7-day: dayIndex 1-7
+            validated.dayIndex = w.dayIndex || idx + 1;
+          } else if (workoutType === 'month') {
+            // 4-week: weekIndex 1-4, dayIndex 1-6 (typically 5-6 workouts per week)
+            // Calculate weekIndex: assume ~5 workouts per week
+            const calculatedWeekIndex = Math.floor(idx / 5) + 1;
+            validated.weekIndex = w.weekIndex || calculatedWeekIndex;
+            // dayIndex within the week (1-5 or 1-6)
+            const dayInWeek = (idx % 5) + 1;
+            validated.dayIndex = w.dayIndex || dayInWeek;
+          }
+          
+          return validated;
+        });
+        
+        return validatedWorkouts;
       }
 
       // Validate and return single workout
@@ -1328,7 +1410,7 @@ Use INTERVAL section type for REVL-style sprint sessions with specific work:rest
 Use these patterns and exercise names when generating workouts.`;
   }
 
-  private getWorkoutTypeGuidance(workoutType: string, cycle: string = 'BASE', includeHyrox: boolean = false, hyroxCount: number = 0): string {
+  private getWorkoutTypeGuidance(workoutType: string, cycle: string | undefined = 'BASE', includeHyrox: boolean = false, hyroxCount: number = 0): string {
     switch (workoutType) {
       case 'fourDay':
         return `Generate a 4-DAY PROGRAM (4 workouts). Return JSON with this structure:
@@ -1368,19 +1450,21 @@ Perfect for athletes with limited time. Maintains intensity while respecting rec
 Progressive load across the week.`;
       
       case 'month':
-        return `Generate a 4-WEEK PROGRAM with progressive loading. Return JSON with this structure:
+        return `Generate a 4-WEEK PROGRAM with automatic progressive periodization. Return JSON with this structure:
 {
   "workouts": [
     { "name": "Week 1 Day 1", "weekIndex": 1, "dayIndex": 1, ...workout structure... },
     ... (20-24 total workouts)
   ]
 }
-- Week 1: BASE (establish baseline, moderate intensity) - 5-6 workouts
-- Week 2: LOAD (increase volume/intensity) - 5-6 workouts
-- Week 3: INTENSIFY (peak intensity, lower volume) - 5-6 workouts
-- Week 4: DELOAD (recovery week, lower intensity, mobility focus) - 4-5 workouts
+CRITICAL: The program MUST automatically follow this progression (no cycle selection needed):
+- Week 1: BASE cycle (establish baseline, moderate intensity, focus on movement quality) - 5-6 workouts
+- Week 2: LOAD cycle (increase volume/intensity progressively, challenge capacity) - 5-6 workouts
+- Week 3: INTENSIFY cycle (peak intensity, lower volume, maximum effort) - 5-6 workouts
+- Week 4: DELOAD cycle (recovery week, lower intensity, mobility focus, active recovery) - 4-5 workouts
 
-Progressive overload: Week 1 < Week 2 < Week 3 > Week 4.`;
+Progressive overload pattern: Week 1 < Week 2 < Week 3 > Week 4.
+Each week should reflect its cycle in workout intensity, volume, and complexity.`;
       
       default:
         return 'Generate a SINGLE WORKOUT (one-off session).';

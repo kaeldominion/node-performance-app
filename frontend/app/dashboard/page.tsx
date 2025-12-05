@@ -151,7 +151,14 @@ export default function Dashboard() {
   const [currentUserNetworkCode, setCurrentUserNetworkCode] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    // Wait for auth to load
+    if (authLoading) {
+      return;
+    }
+    
+    // Only redirect if we're sure there's no user
+    if (!user) {
+      console.log('No user found, redirecting to login...');
       router.push('/auth/login');
       return;
     }
@@ -159,7 +166,7 @@ export default function Dashboard() {
     if (user) {
       loadDashboardData();
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, router]);
 
   const loadDashboardData = async () => {
     try {
@@ -181,7 +188,15 @@ export default function Dashboard() {
         userApi.getMe().catch(() => null),
       ]);
 
-      setTodaySession(schedule.today || null);
+      // Find today's workout from schedule
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayWorkout = scheduleData.schedule?.find((item: any) => {
+        const itemDate = new Date(item.date);
+        itemDate.setHours(0, 0, 0, 0);
+        return itemDate.getTime() === today.getTime();
+      });
+      setTodaySession(todayWorkout || null);
       setRecentSessions(recent.slice(0, 5) || []);
       setStats(statsData);
       setMyWorkouts(workouts.slice(0, 6) || []);

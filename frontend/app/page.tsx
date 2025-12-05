@@ -108,12 +108,6 @@ export default function LandingPage() {
     }
   }, [redirecting]);
 
-  // Always show landing page - redirect happens in background
-  // This prevents flickering
-  if (redirecting) {
-    return null; // Redirecting, don't show anything
-  }
-
   return (
     <div className="min-h-screen bg-dark text-text-white relative overflow-hidden">
       {/* Animated background particles */}

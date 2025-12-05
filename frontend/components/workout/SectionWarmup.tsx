@@ -8,9 +8,9 @@ interface ExerciseBlock {
   exerciseName: string;
   description?: string;
   repScheme?: string;
-  tierSilver?: { load?: string; targetReps?: number; notes?: string };
-  tierGold?: { load?: string; targetReps?: number; notes?: string };
-  tierBlack?: { load?: string; targetReps?: number; notes?: string };
+  tierSilver?: { load?: string; targetReps?: number; distance?: number; distanceUnit?: string; notes?: string };
+  tierGold?: { load?: string; targetReps?: number; distance?: number; distanceUnit?: string; notes?: string };
+  tierBlack?: { load?: string; targetReps?: number; distance?: number; distanceUnit?: string; notes?: string };
 }
 
 interface SectionWarmupProps {

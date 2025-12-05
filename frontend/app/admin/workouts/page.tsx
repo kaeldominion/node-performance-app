@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { workoutsApi } from '@/lib/api';
 import Navbar from '@/components/Navbar';
+import { Icon } from '@/components/icons';
 import Link from 'next/link';
 import { Icons } from '@/lib/iconMapping';
 

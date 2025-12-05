@@ -186,3 +186,4 @@ The ChatGPT integration is **fully functional** with all parameters:
 5. **Progressive Overload Tracking**: Track load progression across weeks
 
 
+

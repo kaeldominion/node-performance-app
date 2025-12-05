@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { analyticsApi, gamificationApi } from '@/lib/api';
 import Navbar from '@/components/Navbar';
+import { Icon } from '@/components/icons';
 import { LevelUpModal } from '@/components/gamification/LevelUpModal';
 import Link from 'next/link';
 import { Icons } from '@/lib/iconMapping';
@@ -343,7 +344,7 @@ export default function AdminAnalyticsPage() {
         </div>
 
         {/* Level Up Modal Preview */}
-        {showLevelUpPreview && (
+        {showLevelUpPreview && previewStats && (
           <LevelUpModal
             level={previewLevel}
             levelName={`Level ${previewLevel}`}

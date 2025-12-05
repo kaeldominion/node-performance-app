@@ -10,9 +10,9 @@ interface ExerciseBlock {
   exerciseName: string;
   description?: string;
   repScheme?: string;
-  tierSilver?: { load?: string; targetReps?: number; notes?: string };
-  tierGold?: { load?: string; targetReps?: number; notes?: string };
-  tierBlack?: { load?: string; targetReps?: number; notes?: string };
+  tierSilver?: { load?: string; targetReps?: number; distance?: number; distanceUnit?: string; notes?: string };
+  tierGold?: { load?: string; targetReps?: number; distance?: number; distanceUnit?: string; notes?: string };
+  tierBlack?: { load?: string; targetReps?: number; distance?: number; distanceUnit?: string; notes?: string };
 }
 
 interface SectionAMRAPProps {
@@ -65,9 +65,22 @@ export default function SectionAMRAP({ title, note, blocks, durationSec }: Secti
             {block.description && (
               <p className="text-muted-text mb-4">{block.description}</p>
             )}
-            {block.repScheme && (
-              <div className="text-xl text-node-volt font-bold mb-4">{block.repScheme}</div>
-            )}
+            {(() => {
+              // Check if we should hide repScheme (when tiers have different distance/calories/reps)
+              const hasTierDistance = block.tierSilver?.distance || block.tierGold?.distance || block.tierBlack?.distance;
+              const hasTierReps = block.tierSilver?.targetReps || block.tierGold?.targetReps || block.tierBlack?.targetReps;
+              const repsDiffer = hasTierReps && (
+                block.tierSilver?.targetReps !== block.tierGold?.targetReps ||
+                block.tierGold?.targetReps !== block.tierBlack?.targetReps ||
+                block.tierSilver?.targetReps !== block.tierBlack?.targetReps
+              );
+              const shouldHideRepScheme = hasTierDistance || repsDiffer || 
+                block.repScheme === 'N/A' || block.repScheme === 'n/a' || !block.repScheme;
+
+              return !shouldHideRepScheme && block.repScheme && (
+                <div className="text-xl text-node-volt font-bold mb-4">{block.repScheme}</div>
+              );
+            })()}
 
             {(block.tierSilver || block.tierGold || block.tierBlack) && (
               <div className="grid grid-cols-3 gap-4 mt-4">

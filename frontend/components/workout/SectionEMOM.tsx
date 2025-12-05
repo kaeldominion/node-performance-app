@@ -11,9 +11,9 @@ interface ExerciseBlock {
   exerciseName: string;
   description?: string;
   repScheme?: string;
-  tierSilver?: { load?: string; targetReps?: number; notes?: string };
-  tierGold?: { load?: string; targetReps?: number; notes?: string };
-  tierBlack?: { load?: string; targetReps?: number; notes?: string };
+  tierSilver?: { load?: string; targetReps?: number; distance?: number; distanceUnit?: string; notes?: string };
+  tierGold?: { load?: string; targetReps?: number; distance?: number; distanceUnit?: string; notes?: string };
+  tierBlack?: { load?: string; targetReps?: number; distance?: number; distanceUnit?: string; notes?: string };
 }
 
 interface SectionEMOMProps {
@@ -80,9 +80,22 @@ export default function SectionEMOM({ title, note, blocks, workSec, restSec, rou
             {block.description && (
               <p className="text-sm text-muted-text text-center mb-2">{block.description}</p>
             )}
-            {block.repScheme && (
-              <div className="text-node-volt font-bold text-center">{block.repScheme}</div>
-            )}
+            {(() => {
+              // Check if we should hide repScheme (when tiers have different distance/calories/reps)
+              const hasTierDistance = block.tierSilver?.distance || block.tierGold?.distance || block.tierBlack?.distance;
+              const hasTierReps = block.tierSilver?.targetReps || block.tierGold?.targetReps || block.tierBlack?.targetReps;
+              const repsDiffer = hasTierReps && (
+                block.tierSilver?.targetReps !== block.tierGold?.targetReps ||
+                block.tierGold?.targetReps !== block.tierBlack?.targetReps ||
+                block.tierSilver?.targetReps !== block.tierBlack?.targetReps
+              );
+              const shouldHideRepScheme = hasTierDistance || repsDiffer || 
+                block.repScheme === 'N/A' || block.repScheme === 'n/a' || !block.repScheme;
+
+              return !shouldHideRepScheme && block.repScheme && (
+                <div className="text-node-volt font-bold text-center">{block.repScheme}</div>
+              );
+            })()}
 
             {(block.tierSilver || block.tierGold || block.tierBlack) && (
               <div className="mt-3 space-y-2">

@@ -25,13 +25,13 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onComplet
     { id: 'generating', label: 'Generating workout structure & exercise selection...', status: 'pending' },
     { id: 'reviewing', label: 'Running workout review & feasibility check...', status: 'pending' },
     { id: 'optimizing', label: 'Optimizing tier progression & timing...', status: 'pending' },
-    { id: 'complete', label: 'Workout ready for deployment', status: 'pending' },
+    { id: 'complete', label: 'Workout generation complete, loading...', status: 'pending' },
   ]);
   const [progress, setProgress] = useState(5); // Start at 5% (input received)
   const [currentStepProgress, setCurrentStepProgress] = useState(0);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [phaseStartTime, setPhaseStartTime] = useState<number | null>(null);
-  const [currentPhase, setCurrentPhase] = useState<'connecting' | 'generating' | 'reviewing' | 'optimizing' | 'complete' | null>(null);
+  const [currentPhase, setCurrentPhase] = useState<'connecting' | 'generating' | 'reviewing' | 'optimizing' | 'complete' | 'shutting-down' | null>(null);
   const [soundsPlayed, setSoundsPlayed] = useState<Set<string>>(new Set());
   const [isComplete, setIsComplete] = useState(false);
   const [isShuttingDown, setIsShuttingDown] = useState(false);
@@ -189,9 +189,38 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onComplet
         const phaseProgress = Math.min(1, phaseElapsed / reviewDuration);
         setCurrentStepProgress(phaseProgress);
         setProgress(60 + phaseProgress * 25); // 60% to 85%
+        
+        // If review completes, transition to optimizing
+        if (phaseProgress >= 1) {
+          setSteps((prev) =>
+            prev.map((step) => {
+              if (step.id === 'reviewing') return { ...step, status: 'complete' as const };
+              if (step.id === 'optimizing') return { ...step, status: 'active' as const };
+              return step;
+            })
+          );
+          setCurrentPhase('optimizing');
+          setPhaseStartTime(Date.now());
+          setCurrentStepProgress(0);
+          playSound('step');
+        }
       }
       // Phase 4: Optimizing (85% → 95%, ~3 seconds)
-      else if (!isGenerating && !isReviewing && !error && currentPhase !== 'optimizing' && currentPhase !== 'complete') {
+      // Transition to optimizing when reviewing is done OR when both flags are false
+      else if (currentPhase === 'reviewing' && !isReviewing && !error) {
+        // Reviewing phase ended, transition to optimizing
+        setSteps((prev) =>
+          prev.map((step) => {
+            if (step.id === 'reviewing') return { ...step, status: 'complete' as const };
+            if (step.id === 'optimizing') return { ...step, status: 'active' as const };
+            return step;
+          })
+        );
+        setCurrentPhase('optimizing');
+        setPhaseStartTime(Date.now());
+        setCurrentStepProgress(0);
+        playSound('step');
+      } else if (!isGenerating && !isReviewing && !error && currentPhase !== 'optimizing' && currentPhase !== 'complete' && currentPhase !== 'shutting-down') {
         setSteps((prev) =>
           prev.map((step) => {
             if (step.id === 'reviewing') return { ...step, status: 'complete' as const };
@@ -209,8 +238,38 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onComplet
         setProgress(85 + phaseProgress * 10); // 85% to 95%
         
         if (phaseProgress >= 1 && currentPhase === 'optimizing') {
-          // Complete
+          // Transition to complete phase
+          setSteps((prev) =>
+            prev.map((step) => {
+              if (step.id === 'optimizing') return { ...step, status: 'complete' as const };
+              if (step.id === 'complete') return { ...step, status: 'active' as const };
+              return step;
+            })
+          );
+          setCurrentPhase('complete');
+          setPhaseStartTime(Date.now());
+          setCurrentStepProgress(0);
           playSound('complete');
+        }
+      } else if (currentPhase === 'complete') {
+        // Complete phase: show 100% and completion message for 2 seconds
+        const completeDuration = 2000; // 2 seconds to show completion
+        const phaseProgress = Math.min(1, phaseElapsed / completeDuration);
+        setCurrentStepProgress(phaseProgress);
+        setProgress(95 + phaseProgress * 5); // 95% to 100%
+        
+        if (phaseProgress >= 1 && !isShuttingDown) {
+          // Mark complete step as done, then start shutdown
+          setSteps((prev) =>
+            prev.map((step) => {
+              if (step.id === 'complete') return { ...step, status: 'complete' as const };
+              return step;
+            })
+          );
+          setProgress(100);
+          setCurrentStepProgress(1);
+          
+          // Start shutdown animation after a brief pause
           setTimeout(() => {
             setSteps((prev) =>
               prev.map((step) => {
@@ -227,8 +286,14 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onComplet
         }
       }
 
-      // Continue animation if still processing
-      if ((isGenerating || isReviewing) && currentPhase !== 'complete') {
+      // Continue animation if still processing, shutting down, or in any active phase
+      if (currentPhase !== null && (
+        isGenerating || 
+        isReviewing || 
+        currentPhase === 'optimizing' || 
+        currentPhase === 'complete' || 
+        currentPhase === 'shutting-down'
+      )) {
         animationFrameId = requestAnimationFrame(updateProgress);
       }
     };
@@ -240,7 +305,7 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onComplet
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [isGenerating, isReviewing, error, startTime, phaseStartTime, currentPhase]);
+  }, [isGenerating, isReviewing, error, startTime, phaseStartTime, currentPhase, soundsPlayed]);
 
   // Error state
   useEffect(() => {
@@ -439,18 +504,18 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onComplet
                 <div className="ml-auto flex items-center gap-2">
                   <div className="w-16 h-1.5 bg-node-volt/10 rounded-full overflow-hidden border border-node-volt/20">
                     <div
-                      className="h-full bg-node-volt transition-all duration-300"
-                      style={{ width: `${currentStepProgress * 100}%` }}
+                      className="h-full bg-node-volt transition-all duration-300 ease-out"
+                      style={{ width: `${Math.max(0, Math.min(100, currentStepProgress * 100))}%` }}
                     />
                   </div>
                   <span className="text-node-volt/60 text-xs font-mono w-8 text-right">
-                    {Math.round(currentStepProgress * 100)}%
+                    {Math.round(Math.max(0, Math.min(100, currentStepProgress * 100)))}%
                   </span>
                 </div>
               )}
 
-              {/* Active cursor */}
-              {isActive && !currentStepProgress && (
+              {/* Active cursor - only show when step is active but has no progress yet */}
+              {isActive && currentStepProgress === 0 && (
                 <span className="text-node-volt animate-pulse ml-2">▊</span>
               )}
 

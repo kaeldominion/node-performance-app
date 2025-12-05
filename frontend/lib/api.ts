@@ -12,14 +12,14 @@ const api = axios.create({
 let currentToken: string | null = null;
 
 export const setApiToken = (token: string | null) => {
-  console.log('🔧 setApiToken called:', { 
+  console.log('setApiToken called:', { 
     hasToken: !!token, 
     tokenLength: token?.length,
     tokenPreview: token ? token.substring(0, 30) + '...' : null,
     currentTokenBefore: currentToken ? currentToken.substring(0, 20) + '...' : null,
   });
   currentToken = token;
-  console.log('✅ currentToken updated:', { 
+  console.log('currentToken updated:', { 
     hasToken: !!currentToken,
     tokenLength: currentToken?.length,
   });
@@ -169,8 +169,12 @@ export const userApi = {
     const response = await api.put('/me/profile', data);
     return response.data;
   },
-  getSchedule: async () => {
-    const response = await api.get('/me/programs/schedule');
+  getSchedule: async (startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    const queryString = params.toString();
+    const response = await api.get(`/me/programs/schedule${queryString ? `?${queryString}` : ''}`);
     return response.data;
   },
   startProgram: async (data: { programId: string; startDate: string }) => {

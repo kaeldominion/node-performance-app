@@ -27,7 +27,7 @@ export default function LoginPage() {
     if (isSignedIn) {
       router.replace('/dashboard');
     }
-  }, [isSignedIn, router]);
+  }, [clerk.isSignedIn, clerk.isLoaded, router]);
 
   return (
     <div className="min-h-screen bg-dark text-text-white relative overflow-hidden flex items-center justify-center p-6">

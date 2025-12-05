@@ -28,8 +28,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '';
-
   return (
     <ClerkProvider publishableKey={clerkKey}>
       <html lang="en" className="dark" suppressHydrationWarning>
@@ -41,6 +39,6 @@ export default function RootLayout({
           </ThemeProvider>
         </body>
       </html>
-    </ClerkProvider>
+    </ClerkErrorBoundary>
   );
 }

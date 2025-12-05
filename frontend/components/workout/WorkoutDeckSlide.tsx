@@ -34,15 +34,50 @@ export function WorkoutDeckSlide({
     return ergPatterns.some(pattern => pattern.test(exerciseName));
   };
 
-  // Helper to check if repScheme should be hidden (for erg machines with distance)
+  // Helper to detect exercises that should have tier-based values (distance/calories/reps)
+  const shouldUseTierBasedValues = (block: any): boolean => {
+    const exerciseName = block.exerciseName?.toLowerCase() || '';
+    
+    // Erg machines always use tier-based distance/calories
+    if (isErgMachine(exerciseName)) return true;
+    
+    // Running exercises
+    if (/run|jog|sprint/i.test(exerciseName)) return true;
+    
+    // Bodyweight exercises that typically scale by reps
+    if (/pull.?up|chin.?up|push.?up|press.?up|dip|burpee|sit.?up|crunch/i.test(exerciseName)) return true;
+    
+    // Check if tiers have different distance/calories/reps
+    const hasTierDistance = block.tierSilver?.distance || block.tierGold?.distance || block.tierBlack?.distance;
+    const hasTierReps = block.tierSilver?.targetReps || block.tierGold?.targetReps || block.tierBlack?.targetReps;
+    
+    // If tiers have distance or different reps, use tier-based values
+    if (hasTierDistance) return true;
+    
+    // Check if reps differ between tiers
+    if (hasTierReps) {
+      const silverReps = block.tierSilver?.targetReps;
+      const goldReps = block.tierGold?.targetReps;
+      const blackReps = block.tierBlack?.targetReps;
+      if (silverReps !== goldReps || goldReps !== blackReps || silverReps !== blackReps) {
+        return true;
+      }
+    }
+    
+    return false;
+  };
+
+  // Helper to check if repScheme should be hidden (when tiers have different values)
   const shouldHideRepScheme = (block: any): boolean => {
-    if (!isErgMachine(block.exerciseName)) return false;
-    // Hide repScheme if it's "N/A" or if we have distance in tiers
+    // Hide if exercise should use tier-based values
+    if (shouldUseTierBasedValues(block)) return true;
+    
+    // Hide repScheme if it's "N/A"
     if (block.repScheme === 'N/A' || block.repScheme === 'n/a' || block.repScheme === null || block.repScheme === undefined) {
       return true;
     }
-    // If any tier has distance, we can hide repScheme
-    return block.tierSilver?.distance || block.tierGold?.distance || block.tierBlack?.distance;
+    
+    return false;
   };
 
   // Section-specific rendering
@@ -87,9 +122,9 @@ export function WorkoutDeckSlide({
                   {block.repScheme && !shouldHideRepScheme(block) && (
                     <div className="text-2xl text-node-volt font-bold">{block.repScheme}</div>
                   )}
-                  {isErgMachine(block.exerciseName) && shouldHideRepScheme(block) && (
+                  {shouldUseTierBasedValues(block) && shouldHideRepScheme(block) && (
                     <div className="text-sm text-muted-text mb-4 italic">
-                      Choose your tier below for distance/calories
+                      Choose your tier below for distance/calories/reps
                     </div>
                   )}
                   {renderTierPrescriptions(block)}
@@ -216,9 +251,9 @@ export function WorkoutDeckSlide({
                   {block.repScheme && !shouldHideRepScheme(block) && (
                     <div className="text-2xl text-node-volt font-bold mb-4">{block.repScheme}</div>
                   )}
-                  {isErgMachine(block.exerciseName) && shouldHideRepScheme(block) && (
+                  {shouldUseTierBasedValues(block) && shouldHideRepScheme(block) && (
                     <div className="text-sm text-muted-text mb-4 italic">
-                      Choose your tier below for distance/calories
+                      Choose your tier below for distance/calories/reps
                     </div>
                   )}
                   {block.tempo && (
@@ -264,9 +299,9 @@ export function WorkoutDeckSlide({
                   {block.repScheme && !shouldHideRepScheme(block) && (
                     <div className="text-2xl text-node-volt font-bold mb-4">{block.repScheme}</div>
                   )}
-                  {isErgMachine(block.exerciseName) && shouldHideRepScheme(block) && (
+                  {shouldUseTierBasedValues(block) && shouldHideRepScheme(block) && (
                     <div className="text-sm text-muted-text mb-4 italic">
-                      Choose your tier below for distance/calories
+                      Choose your tier below for distance/calories/reps
                     </div>
                   )}
                   {renderTierPrescriptions(block)}
@@ -321,9 +356,9 @@ export function WorkoutDeckSlide({
                   {block.repScheme && !shouldHideRepScheme(block) && (
                     <div className="text-2xl text-node-volt font-bold mb-4">{block.repScheme}</div>
                   )}
-                  {isErgMachine(block.exerciseName) && shouldHideRepScheme(block) && (
+                  {shouldUseTierBasedValues(block) && shouldHideRepScheme(block) && (
                     <div className="text-sm text-muted-text mb-4 italic">
-                      Choose your tier below for distance/calories
+                      Choose your tier below for distance/calories/reps
                     </div>
                   )}
                   {block.tempo && (
@@ -479,51 +514,25 @@ export function WorkoutDeckSlide({
       return '—';
     };
 
+    // Use warm-up section styling: 3-column grid with rounded boxes
     return (
-      <div className="mt-6 flex justify-center gap-3">
+      <div className="grid grid-cols-3 gap-4 mt-4">
         {block.tierSilver && (
-          <div
-            className={`px-4 py-2 rounded-lg border transition-all cursor-pointer ${
-              selectedTier === 'SILVER'
-                ? 'bg-node-volt/20 border-node-volt'
-                : 'bg-panel thin-border'
-            }`}
-            onClick={() => setSelectedTier('SILVER')}
-          >
-            <div className="text-xs text-muted-text mb-1">SILVER</div>
-            <div className="text-sm font-medium">
-              {getTierDisplay(block.tierSilver, block.exerciseName)}
-            </div>
+          <div className="bg-panel thin-border rounded p-3">
+            <div className="text-sm text-muted-text mb-1">SILVER</div>
+            <div className="font-medium">{getTierDisplay(block.tierSilver, block.exerciseName)}</div>
           </div>
         )}
         {block.tierGold && (
-          <div
-            className={`px-4 py-2 rounded-lg border transition-all cursor-pointer ${
-              selectedTier === 'GOLD'
-                ? 'bg-node-volt/20 border-node-volt'
-                : 'bg-panel thin-border'
-            }`}
-            onClick={() => setSelectedTier('GOLD')}
-          >
-            <div className="text-xs text-muted-text mb-1">GOLD</div>
-            <div className="text-sm font-medium">
-              {getTierDisplay(block.tierGold, block.exerciseName)}
-            </div>
+          <div className="bg-panel thin-border rounded p-3">
+            <div className="text-sm text-muted-text mb-1">GOLD</div>
+            <div className="font-medium">{getTierDisplay(block.tierGold, block.exerciseName)}</div>
           </div>
         )}
         {block.tierBlack && (
-          <div
-            className={`px-4 py-2 rounded-lg border transition-all cursor-pointer ${
-              selectedTier === 'BLACK'
-                ? 'bg-node-volt/20 border-node-volt'
-                : 'bg-panel thin-border'
-            }`}
-            onClick={() => setSelectedTier('BLACK')}
-          >
-            <div className="text-xs text-muted-text mb-1">BLACK</div>
-            <div className="text-sm font-medium text-node-volt">
-              {getTierDisplay(block.tierBlack, block.exerciseName)}
-            </div>
+          <div className="bg-panel thin-border rounded p-3 border-node-volt">
+            <div className="text-sm text-node-volt mb-1">BLACK</div>
+            <div className="font-medium text-node-volt">{getTierDisplay(block.tierBlack, block.exerciseName)}</div>
           </div>
         )}
       </div>

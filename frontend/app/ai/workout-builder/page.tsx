@@ -140,7 +140,7 @@ export default function WorkoutBuilderPage() {
   const handleSelectAll = () => {
     setFormData((prev) => ({
       ...prev,
-      equipment: [...EQUIPMENT_OPTIONS],
+      equipment: EQUIPMENT_OPTIONS.map(eq => eq.value),
     }));
   };
 
@@ -453,10 +453,10 @@ export default function WorkoutBuilderPage() {
                 <label className="block text-sm font-medium mb-2">Training Cycle</label>
                 <div className="grid grid-cols-4 gap-2">
                   {[
-                    { value: 'BASE', desc: 'Establish baseline' },
-                    { value: 'LOAD', desc: 'Increase volume' },
-                    { value: 'INTENSIFY', desc: 'Peak intensity' },
-                    { value: 'DELOAD', desc: 'Recovery week' },
+                    { value: 'BASE', icon: 'base', desc: 'Establish baseline' },
+                    { value: 'LOAD', icon: 'load', desc: 'Increase volume' },
+                    { value: 'INTENSIFY', icon: 'intensify', desc: 'Peak intensity' },
+                    { value: 'DELOAD', icon: 'deload', desc: 'Recovery week' },
                   ].map((cycle) => (
                     <button
                       key={cycle.value}
@@ -467,8 +467,16 @@ export default function WorkoutBuilderPage() {
                           : 'bg-panel thin-border text-text-white hover:border-node-volt'
                       }`}
                     >
-                      <div className="font-bold">{cycle.value}</div>
-                      <div className="text-xs opacity-80">{cycle.desc}</div>
+                      <Icon 
+                        name={cycle.icon} 
+                        size={18} 
+                        color={formData.cycle === cycle.value ? 'var(--dark)' : 'var(--muted-text)'} 
+                        className="opacity-70 flex-shrink-0"
+                      />
+                      <div className="flex-1">
+                        <div className="font-bold">{cycle.value}</div>
+                        <div className="text-xs opacity-80">{cycle.desc}</div>
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -837,7 +845,7 @@ export default function WorkoutBuilderPage() {
 
                 <div className="space-y-6">
                   {generatedWorkout.sections?.map((section: any, idx: number) => (
-                <div
+                    <div
                   key={idx}
                   className="bg-panel/50 thin-border rounded-lg p-6 border-l-4"
                   style={{ borderLeftColor: section.type === 'EMOM' ? '#ccff00' : section.type === 'AMRAP' ? '#ccff00' : 'transparent' }}
@@ -1024,6 +1032,8 @@ export default function WorkoutBuilderPage() {
                       ))}
                     </div>
                   )}
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
