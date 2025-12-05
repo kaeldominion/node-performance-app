@@ -10,7 +10,7 @@ import { Logo } from '@/components/Logo';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, isLoaded } = useUser();
   const { theme } = useTheme();
   const [scrollY, setScrollY] = useState(0);
   const isLight = theme === 'light';
@@ -24,10 +24,10 @@ export default function LoginPage() {
   }, []);
 
   useEffect(() => {
-    if (isSignedIn) {
+    if (isLoaded && isSignedIn) {
       router.replace('/dashboard');
     }
-  }, [clerk.isSignedIn, clerk.isLoaded, router]);
+  }, [isSignedIn, isLoaded, router]);
 
   return (
     <div className="min-h-screen bg-dark text-text-white relative overflow-hidden flex items-center justify-center p-6">
