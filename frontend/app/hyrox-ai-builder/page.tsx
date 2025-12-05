@@ -254,7 +254,7 @@ export default function HyroxAIBuilderPage() {
             <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-heading font-bold leading-[0.95] tracking-tight drop-shadow-2xl mb-8">
               AI-Powered <span className="text-node-volt animate-glow">HYROX</span> Training
             </h1>
-            <p className="text-text-white text-base sm:text-lg max-w-lg border-l-2 border-node-volt/60 pl-[40px] font-body leading-loose mb-16">
+            <p className="text-text-white text-base sm:text-lg max-w-lg border-l-2 border-node-volt/60 pl-[50px] font-body leading-loose mb-16">
               Generate personalized HYROX workouts tailored to your equipment, fitness level, and race goals. 
               Race-specific training that prepares you for competition day.
             </p>
