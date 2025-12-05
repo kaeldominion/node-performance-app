@@ -345,6 +345,17 @@ export function WorkoutDeckSlide({
         }
         return (
           <div className="text-center space-y-8 max-w-6xl">
+            {/* Timer for SUPERSET */}
+            {section.durationSec && (
+              <div className="mb-6">
+                <WorkoutTimer
+                  type="COUNTDOWN"
+                  durationSec={section.durationSec}
+                  onComplete={() => setTimerComplete(true)}
+                />
+                <div className="text-sm text-muted-text mt-2">Superset Duration</div>
+              </div>
+            )}
             {/* Instructions Box */}
             {section.note && (
               <div className="bg-node-volt/10 border-2 border-node-volt rounded-lg p-6 text-left mb-6">
