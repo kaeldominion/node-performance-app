@@ -276,7 +276,7 @@ export function WorkoutScheduler({ onScheduleCreated }: WorkoutSchedulerProps) {
                           </div>
                           {workout.workout?.archetype && (
                             <div className="mt-1">
-                              <ArchetypeBadge archetype={workout.workout.archetype} size="xs" />
+                              <ArchetypeBadge archetype={workout.workout.archetype} size="sm" />
                             </div>
                           )}
                           {workout.workout && (
