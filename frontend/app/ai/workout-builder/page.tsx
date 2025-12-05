@@ -429,69 +429,224 @@ export default function WorkoutBuilderPage() {
 
         {/* Generated Workout Preview */}
         {generatedWorkout && (
-          <div className="bg-panel thin-border rounded-lg p-6">
-            <div className="flex items-center justify-between mb-6">
+          <div className="bg-panel thin-border rounded-lg p-8">
+            <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-2xl font-bold mb-2">
+                <div className="flex items-center gap-3 mb-2">
                   {generatedWorkout.displayCode && (
-                    <span className="text-node-volt">{generatedWorkout.displayCode}</span>
-                  )}{' '}
-                  {generatedWorkout.name}
-                </h2>
-                <p className="text-muted-text">
+                    <span className="text-node-volt font-mono text-3xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                      {generatedWorkout.displayCode}
+                    </span>
+                  )}
+                  <h2 className="text-4xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)', letterSpacing: '-0.02em' }}>
+                    {generatedWorkout.name}
+                  </h2>
+                </div>
+                {generatedWorkout.description && (
+                  <p className="text-muted-text text-lg mt-2">{generatedWorkout.description}</p>
+                )}
+                <p className="text-muted-text text-sm mt-1">
                   {generatedWorkout.sections?.length || 0} sections
                 </p>
               </div>
               <button
                 onClick={handleSaveWorkout}
-                className="bg-node-volt text-dark font-bold px-6 py-2 rounded hover:opacity-90"
+                className="bg-node-volt text-dark font-bold px-8 py-3 rounded-lg hover:opacity-90 transition-opacity text-lg"
+                style={{ fontFamily: 'var(--font-space-grotesk)' }}
               >
                 Save Workout
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               {generatedWorkout.sections?.map((section: any, idx: number) => (
                 <div
                   key={idx}
-                  className="bg-panel thin-border rounded-lg p-4"
+                  className="bg-panel/50 thin-border rounded-lg p-6 border-l-4"
+                  style={{ borderLeftColor: section.type === 'EMOM' ? '#ccff00' : section.type === 'AMRAP' ? '#ccff00' : 'transparent' }}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-xl font-bold">{section.title}</h3>
-                    <span className="text-node-volt text-sm font-medium">{section.type}</span>
-                  </div>
-                  {section.note && (
-                    <p className="text-muted-text text-sm mb-3">{section.note}</p>
-                  )}
-                  {section.durationSec && (
-                    <p className="text-muted-text text-sm">
-                      Duration: {Math.floor(section.durationSec / 60)} minutes
-                    </p>
-                  )}
-                  {section.emomRounds && (
-                    <p className="text-muted-text text-sm">
-                      EMOM: {section.emomRounds} rounds ({section.emomWorkSec}s work /{' '}
-                      {section.emomRestSec}s rest)
-                    </p>
-                  )}
-                  <div className="mt-3 space-y-2">
-                    {section.blocks?.map((block: any, blockIdx: number) => (
-                      <div
-                        key={blockIdx}
-                        className="bg-panel rounded p-2 text-sm"
-                      >
-                        <div className="font-medium">
-                          {block.label && (
-                            <span className="text-node-volt mr-2">{block.label}</span>
-                          )}
-                          {block.exerciseName}
-                        </div>
-                        {block.repScheme && (
-                          <div className="text-node-volt">{block.repScheme}</div>
+                  {/* Section Header */}
+                  <div className="flex items-start justify-between mb-4 pb-4 border-b border-tech-grey">
+                    <div>
+                      <h3 className="text-2xl font-bold mb-1" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                        {section.title}
+                      </h3>
+                      <div className="flex items-center gap-3 mt-2">
+                        <span className="text-node-volt text-sm font-medium uppercase tracking-wider">
+                          {section.type}
+                        </span>
+                        {section.emomRounds && (
+                          <span className="text-muted-text text-sm">
+                            EMOM x {section.emomRounds} // {section.emomWorkSec}s work : {section.emomRestSec}s rest
+                          </span>
+                        )}
+                        {section.durationSec && (
+                          <span className="text-muted-text text-sm">
+                            {Math.floor(section.durationSec / 60)}:{(section.durationSec % 60).toString().padStart(2, '0')} CAP
+                          </span>
                         )}
                       </div>
-                    ))}
+                    </div>
                   </div>
+
+                  {section.note && (
+                    <p className="text-muted-text text-sm mb-4 italic">{section.note}</p>
+                  )}
+
+                  {/* Section Content */}
+                  {section.type === 'EMOM' && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {section.blocks?.map((block: any, blockIdx: number) => (
+                        <div
+                          key={blockIdx}
+                          className="bg-panel thin-border rounded-lg p-4 hover:border-node-volt transition-colors"
+                        >
+                          <div className="text-node-volt font-mono text-4xl font-bold mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                            {block.label || String(blockIdx + 1).padStart(2, '0')}
+                          </div>
+                          <h4 className="text-xl font-bold mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                            {block.exerciseName}
+                          </h4>
+                          {block.description && (
+                            <p className="text-node-volt text-xs mb-3 uppercase tracking-wide">{block.description}</p>
+                          )}
+                          {block.repScheme && (
+                            <div className="text-node-volt font-bold text-lg mb-3">{block.repScheme}</div>
+                          )}
+                          {/* Tier Prescriptions */}
+                          {(block.tierSilver || block.tierGold || block.tierBlack) && (
+                            <div className="space-y-2 mt-4 pt-3 border-t border-tech-grey">
+                              {block.tierSilver && (
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="px-2 py-1 bg-zinc-700 text-white text-xs font-bold rounded">SLV</span>
+                                  <strong className="text-white">{block.tierSilver.load || block.tierSilver.targetReps}</strong>
+                                </div>
+                              )}
+                              {block.tierGold && (
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="px-2 py-1 bg-yellow-600 text-black text-xs font-bold rounded">GLD</span>
+                                  <strong className="text-white">{block.tierGold.load || block.tierGold.targetReps}</strong>
+                                </div>
+                              )}
+                              {block.tierBlack && (
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="px-2 py-1 bg-black text-white border border-zinc-700 text-xs font-bold rounded">BLK</span>
+                                  <strong className="text-white">{block.tierBlack.load || block.tierBlack.targetReps}</strong>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {(section.type === 'AMRAP' || section.type === 'FOR_TIME' || section.type === 'CIRCUIT') && (
+                    <div className="space-y-4">
+                      {section.blocks?.map((block: any, blockIdx: number) => (
+                        <div
+                          key={blockIdx}
+                          className="bg-panel/30 thin-border rounded-lg p-6"
+                        >
+                          <div className="flex items-center gap-4 mb-3">
+                            {block.label && (
+                              <span className="text-node-volt font-mono text-5xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                                {block.label}
+                              </span>
+                            )}
+                            <div className="flex-1">
+                              <h4 className="text-2xl font-bold mb-1" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                                {block.exerciseName}
+                              </h4>
+                              {block.description && (
+                                <p className="text-muted-text text-sm">{block.description}</p>
+                              )}
+                            </div>
+                          </div>
+                          {block.repScheme && (
+                            <div className="text-node-volt font-bold text-xl mb-4">{block.repScheme}</div>
+                          )}
+                          {/* Tier Prescriptions Grid */}
+                          {(block.tierSilver || block.tierGold || block.tierBlack) && (
+                            <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-tech-grey bg-zinc-900/50 p-4 rounded">
+                              {block.tierSilver && (
+                                <div className="text-center">
+                                  <span className="text-2xl font-bold text-white block mb-1" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                                    {block.tierSilver.load || block.tierSilver.targetReps}
+                                  </span>
+                                  <span className="text-xs text-zinc-400 uppercase tracking-wider">Silver</span>
+                                </div>
+                              )}
+                              {block.tierGold && (
+                                <div className="text-center">
+                                  <span className="text-2xl font-bold text-yellow-500 block mb-1" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                                    {block.tierGold.load || block.tierGold.targetReps}
+                                  </span>
+                                  <span className="text-xs text-zinc-400 uppercase tracking-wider">Gold</span>
+                                </div>
+                              )}
+                              {block.tierBlack && (
+                                <div className="text-center">
+                                  <span className="text-2xl font-bold text-white block mb-1" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                                    {block.tierBlack.load || block.tierBlack.targetReps}
+                                  </span>
+                                  <span className="text-xs text-zinc-400 uppercase tracking-wider">Black</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {(section.type === 'WAVE' || section.type === 'SUPERSET' || !['EMOM', 'AMRAP', 'FOR_TIME', 'CIRCUIT'].includes(section.type)) && (
+                    <div className="space-y-3">
+                      {section.blocks?.map((block: any, blockIdx: number) => (
+                        <div
+                          key={blockIdx}
+                          className="bg-panel/30 thin-border rounded-lg p-4"
+                        >
+                          <div className="flex items-center gap-3 mb-2">
+                            {block.label && (
+                              <span className="text-node-volt font-mono text-2xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                                {block.label}
+                              </span>
+                            )}
+                            <h4 className="text-xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                              {block.exerciseName}
+                            </h4>
+                          </div>
+                          {block.description && (
+                            <p className="text-muted-text text-sm mb-2">{block.description}</p>
+                          )}
+                          {block.repScheme && (
+                            <div className="text-node-volt font-bold text-lg mb-3">{block.repScheme}</div>
+                          )}
+                          {/* Tier Prescriptions */}
+                          {(block.tierSilver || block.tierGold || block.tierBlack) && (
+                            <div className="flex gap-2 mt-3">
+                              {block.tierSilver && (
+                                <div className="px-3 py-1 bg-zinc-700 text-white text-xs font-bold rounded">
+                                  SLV: {block.tierSilver.load || block.tierSilver.targetReps}
+                                </div>
+                              )}
+                              {block.tierGold && (
+                                <div className="px-3 py-1 bg-yellow-600 text-black text-xs font-bold rounded">
+                                  GLD: {block.tierGold.load || block.tierGold.targetReps}
+                                </div>
+                              )}
+                              {block.tierBlack && (
+                                <div className="px-3 py-1 bg-black text-white border border-zinc-700 text-xs font-bold rounded">
+                                  BLK: {block.tierBlack.load || block.tierBlack.targetReps}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
