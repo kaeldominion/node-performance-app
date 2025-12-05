@@ -339,6 +339,20 @@ export function WorkoutDeckSlide({
   const renderTierPrescriptions = (block: any) => {
     if (!block.tierSilver && !block.tierGold && !block.tierBlack) return null;
 
+    const getTierDisplay = (tier: any) => {
+      // Priority: distance/calories > targetReps > load
+      if (tier.distance !== null && tier.distance !== undefined && tier.distanceUnit) {
+        return `${tier.distance}${tier.distanceUnit}`;
+      }
+      if (tier.targetReps !== null && tier.targetReps !== undefined) {
+        return `${tier.targetReps} reps`;
+      }
+      if (tier.load) {
+        return tier.load;
+      }
+      return '—';
+    };
+
     return (
       <div className="mt-6 flex justify-center gap-3">
         {block.tierSilver && (
@@ -352,7 +366,7 @@ export function WorkoutDeckSlide({
           >
             <div className="text-xs text-muted-text mb-1">SILVER</div>
             <div className="text-sm font-medium">
-              {block.tierSilver.load || block.tierSilver.targetReps}
+              {getTierDisplay(block.tierSilver)}
             </div>
           </div>
         )}
@@ -367,7 +381,7 @@ export function WorkoutDeckSlide({
           >
             <div className="text-xs text-muted-text mb-1">GOLD</div>
             <div className="text-sm font-medium">
-              {block.tierGold.load || block.tierGold.targetReps}
+              {getTierDisplay(block.tierGold)}
             </div>
           </div>
         )}
@@ -382,7 +396,7 @@ export function WorkoutDeckSlide({
           >
             <div className="text-xs text-muted-text mb-1">BLACK</div>
             <div className="text-sm font-medium text-node-volt">
-              {block.tierBlack.load || block.tierBlack.targetReps}
+              {getTierDisplay(block.tierBlack)}
             </div>
           </div>
         )}
