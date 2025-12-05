@@ -4,7 +4,7 @@ import { useUser, useAuth as useClerkAuth } from '@clerk/nextjs';
 import { useEffect, useState, useRef } from 'react';
 import { userApi, setApiToken } from '@/lib/api';
 
-interface User {
+export interface User {
   id: string;
   email: string;
   name?: string;

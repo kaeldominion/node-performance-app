@@ -54,8 +54,11 @@ export default function AccountSettingsPage() {
       // Use Clerk image as default
       const imageUrl = clerkUser?.imageUrl || profileData?.imageUrl || '';
       
+      // Type assertion to ensure username is available
+      const username = (userData as { username?: string } | null)?.username || '';
+      
       setFormData({
-        username: userData?.username || '',
+        username,
         imageUrl,
         weight: profileData?.weight?.toString() || '',
         height: profileData?.height?.toString() || '',
