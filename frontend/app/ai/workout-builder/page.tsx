@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 
 export const dynamic = 'force-dynamic';
 import { Icons } from '@/lib/iconMapping';
@@ -57,7 +57,7 @@ const EQUIPMENT_CATEGORIES = {
 // Flattened list for backward compatibility
 const EQUIPMENT_OPTIONS = Object.values(EQUIPMENT_CATEGORIES).flat();
 
-export default function WorkoutBuilderPage() {
+function WorkoutBuilderPageContent() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1108,6 +1108,18 @@ export default function WorkoutBuilderPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function WorkoutBuilderPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-dark flex items-center justify-center">
+        <div className="text-muted-text">Loading...</div>
+      </div>
+    }>
+      <WorkoutBuilderPageContent />
+    </Suspense>
   );
 }
 
