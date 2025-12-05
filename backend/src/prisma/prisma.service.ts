@@ -85,5 +85,25 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       };
     }
   }
+
+  async resolveMigration(migrationName: string, action: 'applied' | 'rolled_back') {
+    try {
+      const { execSync } = require('child_process');
+      
+      execSync(`npx prisma migrate resolve --${action} ${migrationName}`, { 
+        stdio: 'pipe',
+        env: process.env,
+        cwd: process.cwd()
+      });
+      
+      return { message: `Migration ${migrationName} marked as ${action}` };
+    } catch (error: any) {
+      return { 
+        error: true, 
+        message: `Failed to resolve migration: ${error.message}`,
+        details: error.stdout?.toString() || error.stderr?.toString() || error.stack || ''
+      };
+    }
+  }
 }
 
