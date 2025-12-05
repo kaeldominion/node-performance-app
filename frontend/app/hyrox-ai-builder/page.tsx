@@ -247,14 +247,14 @@ export default function HyroxAIBuilderPage() {
           <div className={`transition-all duration-1000 ${
             isVisible.hero ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
           }`}>
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-8">
               <Icons.AI_BUILDER size={32} className="text-node-volt animate-pulse-slow" />
               <span className="text-node-volt uppercase tracking-[0.25em] text-xs font-heading">AI Builder</span>
             </div>
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-heading font-bold leading-[0.95] tracking-tight drop-shadow-2xl mb-6">
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-heading font-bold leading-[0.95] tracking-tight drop-shadow-2xl mb-8">
               AI-Powered <span className="text-node-volt animate-glow">HYROX</span> Training
             </h1>
-            <p className="text-text-white text-base sm:text-lg max-w-lg border-l-2 border-node-volt/60 pl-[30px] font-body leading-relaxed mb-10">
+            <p className="text-text-white text-base sm:text-lg max-w-lg border-l-2 border-node-volt/60 pl-[30px] font-body leading-relaxed mb-12">
               Generate personalized HYROX workouts tailored to your equipment, fitness level, and race goals. 
               Race-specific training that prepares you for competition day.
             </p>
@@ -291,18 +291,18 @@ export default function HyroxAIBuilderPage() {
                 isVisible.races ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
               }`}
             >
-              <div className="flex items-center justify-center gap-3 mb-6">
+              <div className="flex items-center justify-center gap-3 mb-8">
                 <Calendar size={32} className="text-node-volt animate-pulse-slow" />
                 <span className="text-node-volt uppercase tracking-[0.25em] text-xs font-heading">Upcoming Races</span>
               </div>
-              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold mb-6">
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold mb-8">
                 Are You Ready for <span className="text-node-volt">{nextRace.name}</span>?
               </h2>
-              <p className="text-muted-text font-body text-lg leading-relaxed mb-8 max-w-2xl mx-auto">
+              <p className="text-muted-text font-body text-lg leading-relaxed mb-10 max-w-2xl mx-auto">
                 {nextRace.daysUntil} days until race day. Start your personalized HYROX training program today 
                 and arrive at the start line fully prepared.
               </p>
-              <div className="flex items-center justify-center gap-4 text-muted-text mb-8">
+              <div className="flex items-center justify-center gap-4 text-muted-text mb-10">
                 <div className="flex items-center gap-2">
                   <MapPin size={16} />
                   <span>{nextRace.location}</span>
@@ -367,10 +367,10 @@ export default function HyroxAIBuilderPage() {
                 isVisible['ai-builder'] ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'
               }`}
             >
-              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold mb-6">
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold mb-8">
                 Sessions in Seconds
               </h2>
-              <p className="text-muted-text font-body text-lg leading-relaxed mb-8">
+              <p className="text-muted-text font-body text-lg leading-relaxed mb-10">
                 Choose your equipment and training level, then let the AI create a personalized HYROX workout tailored to your needs.
               </p>
               <div className="bg-panel/50 thin-border rounded-lg p-6">
@@ -383,7 +383,7 @@ export default function HyroxAIBuilderPage() {
                 >
                   {/* Training Level */}
                   <div>
-                    <label className="block text-sm font-heading font-bold mb-3 text-node-volt uppercase tracking-[0.1em]">
+                    <label className="block text-sm font-heading font-bold mb-4 text-node-volt uppercase tracking-[0.1em]">
                       Training Level
                     </label>
                     <select
@@ -400,7 +400,7 @@ export default function HyroxAIBuilderPage() {
 
                   {/* Equipment Selection */}
                   <div>
-                    <label className="block text-sm font-heading font-bold mb-3 text-node-volt uppercase tracking-[0.1em]">
+                    <label className="block text-sm font-heading font-bold mb-4 text-node-volt uppercase tracking-[0.1em]">
                       Equipment Available
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -491,14 +491,14 @@ export default function HyroxAIBuilderPage() {
           >
             {/* Left Side - Text Content */}
             <div>
-              <div className="flex items-center gap-3 mb-6">
-                <Icons.SESSIONS size={32} className="text-node-volt animate-pulse-slow" />
-                <span className="text-node-volt uppercase tracking-[0.25em] text-xs font-heading">Deck Player</span>
-              </div>
-              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold mb-6">
-                Cinematic Training Experience
-              </h2>
-              <p className="text-muted-text font-body text-lg leading-relaxed">
+            <div className="flex items-center gap-3 mb-8">
+              <Icons.SESSIONS size={32} className="text-node-volt animate-pulse-slow" />
+              <span className="text-node-volt uppercase tracking-[0.25em] text-xs font-heading">Deck Player</span>
+            </div>
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold mb-8">
+              Cinematic Training Experience
+            </h2>
+            <p className="text-muted-text font-body text-lg leading-relaxed">
                 Experience your HYROX workouts in cinematic deck mode. Full-screen, distraction-free training with 
                 clear tier prescriptions (Silver, Gold, Black) and smooth transitions between exercises.
               </p>
@@ -578,19 +578,19 @@ export default function HyroxAIBuilderPage() {
               isVisible.network ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'
             }`}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 mb-8">
               <Users size={32} className="text-node-volt animate-pulse-slow" />
               <span className="text-node-volt uppercase tracking-[0.25em] text-xs font-heading">Network</span>
             </div>
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold mb-6">
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold mb-8">
               Train Together. Compete. Elevate.
             </h2>
-            <p className="text-muted-text font-body text-lg leading-relaxed mb-8">
+            <p className="text-muted-text font-body text-lg leading-relaxed mb-10">
               Stay motivated and accountable through NØDE's powerful network features. Connect with training partners, 
               see real-time activity, and compete together—whether you're training in the same gym or remotely across the world.
             </p>
             
-            <ul className="space-y-4 text-text-white font-body leading-[2.0] mb-8">
+            <ul className="space-y-5 text-text-white font-body leading-relaxed mb-10">
               {[
                 'Connect with training partners via QR code or search',
                 'See real-time workout activity from your network',
@@ -653,7 +653,7 @@ export default function HyroxAIBuilderPage() {
               <div className="flex items-start gap-4">
                 <Zap size={24} className="text-node-volt flex-shrink-0 mt-1" />
                 <div>
-                  <h4 className="text-lg font-heading font-bold mb-2 text-node-volt">
+                  <h4 className="text-lg font-heading font-bold mb-4 text-node-volt">
                     The Power of Community Motivation
                   </h4>
                   <p className="text-muted-text leading-relaxed">
@@ -676,7 +676,7 @@ export default function HyroxAIBuilderPage() {
       >
         <div className="absolute inset-0 grid-overlay opacity-15" />
         <div className="relative z-10 max-w-7xl mx-auto w-full">
-          <div className="flex items-center gap-3 mb-12">
+            <div className="flex items-center gap-3 mb-12">
             <Target size={32} className="text-node-volt animate-pulse-slow" />
             <span className="text-node-volt uppercase tracking-[0.25em] text-xs font-heading">Performance</span>
           </div>
@@ -690,17 +690,17 @@ export default function HyroxAIBuilderPage() {
                 isVisible.performance ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
               }`}
             >
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-3 mb-6">
                 <TrendingUp size={24} className="text-node-volt" />
                 <h3 className="text-2xl font-heading font-bold text-node-volt">
                   Race-Specific Training
                 </h3>
               </div>
-              <p className="text-muted-text leading-relaxed mb-4">
+              <p className="text-muted-text leading-relaxed mb-6">
                 Every workout mirrors HYROX race conditions. Running intervals combined with functional movements 
                 build the exact fitness needed for race day.
               </p>
-              <ul className="space-y-2 text-muted-text leading-relaxed">
+              <ul className="space-y-3 text-muted-text leading-relaxed">
                 <li className="flex items-start gap-2">
                   <Icons.CHECK size={16} className="text-node-volt mt-1 flex-shrink-0" />
                   <span>Running intervals matched to HYROX distances</span>
@@ -721,17 +721,17 @@ export default function HyroxAIBuilderPage() {
                 isVisible.performance ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
               }`}
             >
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-3 mb-6">
                 <Clock size={24} className="text-node-volt" />
                 <h3 className="text-2xl font-heading font-bold text-node-volt">
                   Personalized Progression
                 </h3>
               </div>
-              <p className="text-muted-text leading-relaxed mb-4">
+              <p className="text-muted-text leading-relaxed mb-6">
                 The AI adapts to your fitness level, creating workouts that challenge you appropriately. 
                 Continuous progress toward your race goals.
               </p>
-              <ul className="space-y-2 text-muted-text leading-relaxed">
+              <ul className="space-y-3 text-muted-text leading-relaxed">
                 <li className="flex items-start gap-2">
                   <Icons.CHECK size={16} className="text-node-volt mt-1 flex-shrink-0" />
                   <span>Beginner to elite-level sessions</span>
@@ -772,7 +772,7 @@ export default function HyroxAIBuilderPage() {
               isVisible.cta ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
             }`}
           >
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold mb-8">
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold mb-10">
               Ready to Transform Your <span className="text-node-volt">HYROX</span> Training?
             </h2>
             <p className="text-muted-text font-body text-lg leading-relaxed mb-12">
