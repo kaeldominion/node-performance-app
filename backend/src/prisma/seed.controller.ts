@@ -1,4 +1,4 @@
-import { Controller, Post, Get } from '@nestjs/common';
+import { Controller, Post, Get, Param, Body } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 
 @Controller('admin')
@@ -37,5 +37,13 @@ export class SeedController {
   async runMigrations() {
     return this.prisma.runMigrations();
   }
-}
+
+  @Post('migrate/resolve/:migrationName')
+  async resolveMigration(
+    @Param('migrationName') migrationName: string,
+    @Body() body: { action?: 'applied' | 'rolled_back' }
+  ) {
+    const action = body.action || 'applied';
+    return this.prisma.resolveMigration(migrationName, action);
+  }
 
