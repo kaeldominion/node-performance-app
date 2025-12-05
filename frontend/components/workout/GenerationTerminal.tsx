@@ -24,6 +24,8 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
     { id: 'optimizing', label: 'Optimizing tier progression & timing...', status: 'pending' },
     { id: 'complete', label: 'Workout ready for deployment', status: 'pending' },
   ]);
+  const [progress, setProgress] = useState(0);
+  const [currentStepProgress, setCurrentStepProgress] = useState(0);
 
   useEffect(() => {
     if (isGenerating && !isReviewing) {
@@ -35,6 +37,21 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
           return step;
         })
       );
+      // Progress: input (16%) + connecting (16%) + generating (33% with animation)
+      setProgress(16 + 16);
+      // Animate generating step progress (0-33%)
+      let startTime = Date.now();
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const duration = 15000; // 15 seconds for generation
+        const stepProgress = Math.min(1, elapsed / duration);
+        setCurrentStepProgress(stepProgress);
+        setProgress(16 + 16 + stepProgress * 33);
+        if (stepProgress < 1 && isGenerating && !isReviewing) {
+          requestAnimationFrame(animate);
+        }
+      };
+      animate();
     } else if (isReviewing) {
       // Reviewing phase
       setSteps((prev) =>
@@ -44,6 +61,21 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
           return step;
         })
       );
+      // Progress: input (16%) + connecting (16%) + generating (33%) + reviewing (20% with animation)
+      setProgress(16 + 16 + 33);
+      // Animate reviewing step progress (0-20%)
+      let startTime = Date.now();
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const duration = 8000; // 8 seconds for review
+        const stepProgress = Math.min(1, elapsed / duration);
+        setCurrentStepProgress(stepProgress);
+        setProgress(16 + 16 + 33 + stepProgress * 20);
+        if (stepProgress < 1 && isReviewing) {
+          requestAnimationFrame(animate);
+        }
+      };
+      animate();
     } else if (!isGenerating && !isReviewing && !error) {
       // Complete - mark all steps as complete
       setSteps((prev) =>
@@ -54,6 +86,8 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
           return step;
         })
       );
+      setProgress(100);
+      setCurrentStepProgress(1);
     } else if (error) {
       // Error state
       setSteps((prev) =>
@@ -62,6 +96,7 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
           return step;
         })
       );
+      // Keep progress at current state on error
     }
   }, [isGenerating, isReviewing, error]);
 
@@ -83,6 +118,25 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
         </div>
         <div className="ml-auto text-node-volt/40 text-xs font-mono">
           {new Date().toLocaleTimeString()}
+        </div>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-node-volt/60 text-xs font-mono">Progress</span>
+          <span className="text-node-volt font-mono font-bold text-sm">
+            {Math.round(progress)}%
+          </span>
+        </div>
+        <div className="w-full h-2 bg-node-volt/10 rounded-full overflow-hidden border border-node-volt/20">
+          <div
+            className="h-full bg-gradient-to-r from-node-volt/50 to-node-volt transition-all duration-300 ease-out relative"
+            style={{ width: `${progress}%` }}
+          >
+            {/* Animated shimmer effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+          </div>
         </div>
       </div>
 
@@ -121,9 +175,24 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
                 {step.label}
               </span>
 
-              {/* Active cursor */}
+              {/* Step progress indicator for active steps */}
               {isActive && (
-                <span className="text-node-volt animate-pulse">▊</span>
+                <div className="ml-auto flex items-center gap-2">
+                  <div className="w-16 h-1.5 bg-node-volt/10 rounded-full overflow-hidden border border-node-volt/20">
+                    <div
+                      className="h-full bg-node-volt transition-all duration-300"
+                      style={{ width: `${currentStepProgress * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-node-volt/60 text-xs font-mono w-8 text-right">
+                    {Math.round(currentStepProgress * 100)}%
+                  </span>
+                </div>
+              )}
+
+              {/* Active cursor */}
+              {isActive && !currentStepProgress && (
+                <span className="text-node-volt animate-pulse ml-2">▊</span>
               )}
 
               {/* Success checkmark */}
@@ -160,6 +229,14 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
           <span className={`${isGenerating || isReviewing ? 'text-node-volt animate-pulse' : 'text-green-400'}`}>
             {isGenerating || isReviewing ? 'PROCESSING' : error ? 'ERROR' : 'READY'}
           </span>
+          {(isGenerating || isReviewing) && (
+            <>
+              <span>•</span>
+              <span className="text-node-volt">
+                {Math.round(progress)}% Complete
+              </span>
+            </>
+          )}
         </div>
       </div>
     </div>
