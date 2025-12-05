@@ -396,34 +396,85 @@ Select the appropriate archetype based on the user's goals and available time.`;
 
   private getWorkoutExamples(): string {
     return `
-REVL WORKOUT EXAMPLES:
+=== REVL PROGRAM EXAMPLES - STUDY THESE EXACTLY ===
 
-Example 1 - Hyrox-Style MetCon:
-"HYROX PREP // 01"
-WARMUP: 5 min dynamic warmup
-AMRAP 20:00:
-- 100m SkiErg
-- 80 Wall Balls (9/6 kg)
-- 60m Farmers Walk (24/16 kg)
-- 40 Burpee Broad Jumps
-- 20m Sandbag Lunges (20/14 kg)
-- 100m Row
-FINISHER: 3 rounds for time: 10 Cal Bike + 10 KB Swings
+PERFORM TOTAL Example:
+WARMUP (4:00 Cap):
+- 1-2 Sets: 8 × BB Deadlift
+- :30 Plate Deadbug
+- 10 × DB Plank Row
+- 10 × SL Glute Bridge
 
-Example 2 - REVL Strength Circuit:
-"REVL STRENGTH // 02"
-WARMUP: 8 min movement prep
-AMRAP 12:00:
-- 8 DB Thrusters (22.5/15 kg)
-- 12 Pull-ups
-- 16 DB Goblet Squats (22.5/15 kg)
-- 20 Cal Row
-REST 2:00
-AMRAP 10:00:
-- 10 KB Swings (24/16 kg)
-- 15 Box Step-ups (24/20")
-- 20 Cal Bike
-- 25 AbMat Sit-ups
+S1 (1:40 Cap × 4 Rounds):
+- 10 × BB Deadlift @ 40-45-50-55%
+  - First 4 Reps: R1-2 = 2220, R3-4 = 2020
+- 8 × SA DB Strict Press
+- 10 × Weighted OH Sit Up
+- Rest :30-:45
+
+S2 (Every 1:10 × 12):
+- 16-14-12 (descending reps each round)
+1. Alt BB FFE Rev Lunge
+2. DB NG Bench Press
+3. DBall Squat
+4. Pull Up
+
+S3 (In Pairs 1:1 — 6:00 Cap):
+- 120/100 American KB Swing
+- Every 20 Reps: 6 × Synchro Burpee
+- Score = Time
+
+PERFORM LOWER Example:
+WARMUP (4:00 Cap):
+- 1-2 Sets: 10 × BB Back/Front Squat
+- :20 Side Plank Clamshell e/s
+- 8 × Split Stance SA DB RDL
+- :30 Hollow Hold
+
+S1 (1:40 Cap × 4 Rounds):
+- 8-10 × BB Back/Front Squat @ 40-45-50-55%
+  - First 4 Reps: R1-2 = 2120, R3-4 = 2020
+- 8-10 × DBall TNG GTS
+- :30 Dragon Flag (Quality)
+- Rest :30-:45
+
+S2 (Every 1:10 × 12):
+- 12-10-8 (descending reps)
+1. BB Hip Thrust (First 4 reps = 1s pause)
+2. 6-8-8-8 FFE KOT Split Squat
+3. 8-12 KB Bent Over Row
+4. 12-15 Butterfly Sit Up
+
+S3 (In Pairs YGIG — 6:00 AMRAP):
+- 2 × BB/KB Hang Power Clean
+- 3 × BB/KB Front Squat
+
+PERFORM UPPER Example:
+WARMUP (4:00 Cap):
+- 1-2 Sets: 10 × BB Bench Press
+- 8 × 90° DB External Rotation
+- 8 × Hand Release Push Up
+- 8 × SA Gorilla Row
+
+S1 (1:40 Cap × 4 Rounds):
+- 10 × BB Bench Press @ 40-45-50-55%
+  - First 4 Reps: R1-2 = 2220, R3-4 = 2020
+- 12-16 × KB Seesaw Row
+- 8 × DBall Supp Weighted Pull Over
+- Rest :45
+
+S2 (2 Blocks Every 1:10 × 12):
+Block A (14-12-10):
+1. BB Strict Press
+2. 10-12 Incline DB Curl
+
+Block B (12-10-8):
+1. Pull Up
+2. 8-10 DBall Supp DB Pec Fly
+
+S3 (In Pairs 1:1 — 6:00 Cap):
+- 100/100 BB/DB Curl
+- 8-10-12... KB High Pull
 
 HYROX WORKOUT EXAMPLES:
 
