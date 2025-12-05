@@ -6,6 +6,7 @@ interface GenerationTerminalProps {
   isGenerating: boolean;
   isReviewing: boolean;
   error?: string | null;
+  onShutdownComplete?: () => void;
 }
 
 type TerminalStep = {
@@ -15,21 +16,22 @@ type TerminalStep = {
   timestamp?: number;
 };
 
-export function GenerationTerminal({ isGenerating, isReviewing, error }: GenerationTerminalProps) {
+export function GenerationTerminal({ isGenerating, isReviewing, error, onShutdownComplete }: GenerationTerminalProps) {
   const [steps, setSteps] = useState<TerminalStep[]>([
     { id: 'input', label: 'User input received ✓', status: 'complete' },
     { id: 'connecting', label: 'Connecting to NØDE AI systems...', status: 'pending' },
     { id: 'generating', label: 'Generating workout structure & exercise selection...', status: 'pending' },
     { id: 'reviewing', label: 'Running workout review & feasibility check...', status: 'pending' },
     { id: 'optimizing', label: 'Optimizing tier progression & timing...', status: 'pending' },
-    { id: 'complete', label: 'Workout ready for deployment', status: 'pending' },
+    { id: 'complete', label: 'Workout generation complete, loading...', status: 'pending' },
   ]);
   const [progress, setProgress] = useState(5); // Start at 5% (input received)
   const [currentStepProgress, setCurrentStepProgress] = useState(0);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [phaseStartTime, setPhaseStartTime] = useState<number | null>(null);
-  const [currentPhase, setCurrentPhase] = useState<'connecting' | 'generating' | 'reviewing' | 'optimizing' | 'complete' | null>(null);
+  const [currentPhase, setCurrentPhase] = useState<'connecting' | 'generating' | 'reviewing' | 'optimizing' | 'complete' | 'shutting-down' | null>(null);
   const [soundsPlayed, setSoundsPlayed] = useState<Set<string>>(new Set());
+  const [isShuttingDown, setIsShuttingDown] = useState(false);
 
   // Generate techy sound effects using Web Audio API
   const playSound = (type: 'connect' | 'step' | 'complete' | 'error') => {
@@ -221,25 +223,47 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
         setProgress(85 + phaseProgress * 10); // 85% to 95%
         
         if (phaseProgress >= 1 && currentPhase === 'optimizing') {
-          // Complete
+          // Transition to complete phase
+          setSteps((prev) =>
+            prev.map((step) => {
+              if (step.id === 'optimizing') return { ...step, status: 'complete' as const };
+              if (step.id === 'complete') return { ...step, status: 'active' as const };
+              return step;
+            })
+          );
+          setCurrentPhase('complete');
+          setPhaseStartTime(Date.now());
+          setCurrentStepProgress(0);
           playSound('complete');
+        }
+      } else if (currentPhase === 'complete') {
+        // Complete phase: show 100% and completion message for 2 seconds
+        const completeDuration = 2000; // 2 seconds to show completion
+        const phaseProgress = Math.min(1, phaseElapsed / completeDuration);
+        setCurrentStepProgress(phaseProgress);
+        setProgress(95 + phaseProgress * 5); // 95% to 100%
+        
+        if (phaseProgress >= 1 && !isShuttingDown) {
+          // Mark complete step as done, then start shutdown
+          setSteps((prev) =>
+            prev.map((step) => {
+              if (step.id === 'complete') return { ...step, status: 'complete' as const };
+              return step;
+            })
+          );
+          setProgress(100);
+          setCurrentStepProgress(1);
+          
+          // Start shutdown animation after a brief pause
           setTimeout(() => {
-            setSteps((prev) =>
-              prev.map((step) => {
-                if (step.id === 'optimizing') return { ...step, status: 'complete' as const };
-                if (step.id === 'complete') return { ...step, status: 'complete' as const };
-                return step;
-              })
-            );
-            setCurrentPhase('complete');
-            setProgress(100);
-            setCurrentStepProgress(1);
-          }, 300);
+            setIsShuttingDown(true);
+            setCurrentPhase('shutting-down');
+          }, 500);
         }
       }
 
-      // Continue animation if still processing
-      if ((isGenerating || isReviewing) && currentPhase !== 'complete') {
+      // Continue animation if still processing or shutting down
+      if ((isGenerating || isReviewing || currentPhase === 'complete' || currentPhase === 'shutting-down') && currentPhase !== null) {
         animationFrameId = requestAnimationFrame(updateProgress);
       }
     };

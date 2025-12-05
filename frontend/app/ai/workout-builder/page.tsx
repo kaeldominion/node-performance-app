@@ -9,7 +9,14 @@ import Link from 'next/link';
 import { GenerationTerminal } from '@/components/workout/GenerationTerminal';
 import { Icon } from '@/components/icons';
 
-const TRAINING_GOALS = ['STRENGTH', 'HYPERTROPHY', 'HYBRID', 'CONDITIONING', 'FAT_LOSS', 'LONGEVITY'];
+const TRAINING_GOALS = [
+  { value: 'STRENGTH', icon: 'strength', label: 'STRENGTH' },
+  { value: 'HYPERTROPHY', icon: 'hypertrophy', label: 'HYPERTROPHY' },
+  { value: 'HYBRID', icon: 'hybrid', label: 'HYBRID' },
+  { value: 'CONDITIONING', icon: 'conditioning', label: 'CONDITIONING' },
+  { value: 'FAT_LOSS', icon: 'fatLoss', label: 'FAT_LOSS' },
+  { value: 'LONGEVITY', icon: 'longevity', label: 'LONGEVITY' },
+];
 const ARCHETYPES = [
   { code: 'PR1ME', name: 'PR1ME', icon: '', description: 'Primary Strength Day' },
   { code: 'FORGE', name: 'FORGE', icon: '', description: 'Strength Superset Day' },
@@ -19,19 +26,19 @@ const ARCHETYPES = [
   { code: 'FLOWSTATE', name: 'FLOWSTATE', icon: '', description: 'Deload, Movement & Mobility' },
 ];
 const EQUIPMENT_OPTIONS = [
-  'dumbbells',
-  'kettlebell',
-  'barbell',
-  'erg',
-  'rower',
-  'bike',
-  'rings',
-  'pull-up bar',
-  'box',
-  'jump rope',
-  'sandbag',
-  'running route',
-  'bodyweight',
+  { value: 'dumbbells', icon: 'dumbbells', label: 'dumbbells' },
+  { value: 'kettlebell', icon: 'kettlebell', label: 'kettlebell' },
+  { value: 'barbell', icon: 'barbell', label: 'barbell' },
+  { value: 'erg', icon: 'erg', label: 'erg' },
+  { value: 'rower', icon: 'rower', label: 'rower' },
+  { value: 'bike', icon: 'bike', label: 'bike' },
+  { value: 'rings', icon: 'rings', label: 'rings' },
+  { value: 'pull-up bar', icon: 'pullUpBar', label: 'pull-up bar' },
+  { value: 'box', icon: 'box', label: 'box' },
+  { value: 'jump rope', icon: 'jumpRope', label: 'jump rope' },
+  { value: 'sandbag', icon: 'sandbag', label: 'sandbag' },
+  { value: 'running route', icon: 'runningRoute', label: 'running route' },
+  { value: 'bodyweight', icon: 'bodyweight', label: 'bodyweight' },
 ];
 
 export default function WorkoutBuilderPage() {
@@ -98,7 +105,7 @@ export default function WorkoutBuilderPage() {
   const handleSelectAll = () => {
     setFormData((prev) => ({
       ...prev,
-      equipment: [...EQUIPMENT_OPTIONS],
+      equipment: EQUIPMENT_OPTIONS.map(eq => eq.value),
     }));
   };
 
@@ -154,6 +161,8 @@ export default function WorkoutBuilderPage() {
       clearTimeout(reviewTimer);
       setGeneratedWorkout(workout);
       setReviewing(false);
+      // Don't show workout yet - wait for terminal shutdown animation
+      setShowWorkout(false);
     } catch (err: any) {
       console.error('Workout generation error:', err);
       const errorMessage = err.response?.data?.message || err.message || 'Failed to generate workout. Please try again.';
@@ -265,15 +274,21 @@ export default function WorkoutBuilderPage() {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {TRAINING_GOALS.map((goal) => (
                     <button
-                      key={goal}
-                      onClick={() => setFormData({ ...formData, goal: goal as any })}
-                      className={`px-4 py-2 rounded border transition-colors ${
-                        formData.goal === goal
+                      key={goal.value}
+                      onClick={() => setFormData({ ...formData, goal: goal.value as any })}
+                      className={`px-4 py-2 rounded border transition-colors flex items-center gap-2 ${
+                        formData.goal === goal.value
                           ? 'bg-node-volt text-dark border-node-volt'
                           : 'bg-panel thin-border text-text-white hover:border-node-volt'
                       }`}
                     >
-                      {goal}
+                      <Icon 
+                        name={goal.icon} 
+                        size={16} 
+                        color={formData.goal === goal.value ? 'var(--dark)' : 'var(--muted-text)'} 
+                        className="opacity-70"
+                      />
+                      <span>{goal.label}</span>
                     </button>
                   ))}
                 </div>
@@ -293,6 +308,7 @@ export default function WorkoutBuilderPage() {
                         : 'bg-panel thin-border text-text-white hover:border-node-volt hover:bg-tech-grey'
                     }`}
                   >
+                    <Icon name="hours" size={32} color={formData.workoutDuration === 'standard' ? 'var(--dark)' : 'var(--node-volt)'} className="mb-2" />
                     <div className="font-bold text-lg mb-1">Standard</div>
                     <div className="text-xs opacity-80">50-60 minutes</div>
                     <div className="text-xs opacity-60 mt-1">Standard NØDE workout</div>
@@ -380,22 +396,30 @@ export default function WorkoutBuilderPage() {
                 <label className="block text-sm font-medium mb-2">Training Cycle</label>
                 <div className="grid grid-cols-4 gap-2">
                   {[
-                    { value: 'BASE', desc: 'Establish baseline' },
-                    { value: 'LOAD', desc: 'Increase volume' },
-                    { value: 'INTENSIFY', desc: 'Peak intensity' },
-                    { value: 'DELOAD', desc: 'Recovery week' },
+                    { value: 'BASE', icon: 'base', desc: 'Establish baseline' },
+                    { value: 'LOAD', icon: 'load', desc: 'Increase volume' },
+                    { value: 'INTENSIFY', icon: 'intensify', desc: 'Peak intensity' },
+                    { value: 'DELOAD', icon: 'deload', desc: 'Recovery week' },
                   ].map((cycle) => (
                     <button
                       key={cycle.value}
                       onClick={() => setFormData({ ...formData, cycle: cycle.value as any })}
-                      className={`px-4 py-3 rounded border transition-colors text-left ${
+                      className={`px-4 py-3 rounded border transition-colors text-left flex items-center gap-2 ${
                         formData.cycle === cycle.value
                           ? 'bg-node-volt text-dark border-node-volt'
                           : 'bg-panel thin-border text-text-white hover:border-node-volt'
                       }`}
                     >
-                      <div className="font-bold">{cycle.value}</div>
-                      <div className="text-xs opacity-80">{cycle.desc}</div>
+                      <Icon 
+                        name={cycle.icon} 
+                        size={18} 
+                        color={formData.cycle === cycle.value ? 'var(--dark)' : 'var(--muted-text)'} 
+                        className="opacity-70 flex-shrink-0"
+                      />
+                      <div className="flex-1">
+                        <div className="font-bold">{cycle.value}</div>
+                        <div className="text-xs opacity-80">{cycle.desc}</div>
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -451,21 +475,24 @@ export default function WorkoutBuilderPage() {
                       onClick={() => setFormData({ ...formData, archetype: formData.archetype === archetype.code ? undefined : archetype.code })}
                       onMouseEnter={() => setShowArchetypeInfo(archetype.code)}
                       onMouseLeave={() => setShowArchetypeInfo(null)}
-                      className={`w-full px-4 py-2 rounded border transition-colors relative ${
+                      className={`w-full px-4 py-2 rounded border transition-colors relative flex items-center gap-2 ${
                         formData.archetype === archetype.code
                           ? 'bg-node-volt text-dark border-node-volt'
                           : 'bg-panel thin-border text-text-white hover:border-node-volt'
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold">{archetype.name}</span>
-                        <span className="text-lg">{archetype.icon}</span>
-                      </div>
+                      <Icon 
+                        name={archetype.code} 
+                        size={18} 
+                        color={formData.archetype === archetype.code ? 'var(--dark)' : 'var(--muted-text)'} 
+                        className="opacity-70 flex-shrink-0"
+                      />
+                      <span className="font-bold">{archetype.name}</span>
                     </button>
                     {showArchetypeInfo === archetype.code && (
                       <div className="absolute z-50 mt-2 p-4 bg-panel border border-node-volt rounded-lg shadow-xl min-w-[280px] max-w-sm">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-2xl">{archetype.icon}</span>
+                          <Icon name={archetype.code} size={24} color="var(--node-volt)" className="flex-shrink-0" />
                           <div>
                             <div className="font-bold text-node-volt">{archetype.name}</div>
                             <div className="text-xs text-muted-text">{archetype.description}</div>
@@ -534,15 +561,21 @@ export default function WorkoutBuilderPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {EQUIPMENT_OPTIONS.map((equipment) => (
                   <button
-                    key={equipment}
-                    onClick={() => handleEquipmentToggle(equipment)}
-                    className={`px-4 py-2 rounded border transition-colors ${
-                      formData.equipment.includes(equipment)
+                    key={equipment.value}
+                    onClick={() => handleEquipmentToggle(equipment.value)}
+                    className={`px-4 py-2 rounded border transition-colors flex items-center gap-2 ${
+                      formData.equipment.includes(equipment.value)
                         ? 'bg-node-volt text-dark border-node-volt'
                         : 'bg-panel thin-border text-text-white hover:border-node-volt'
                     }`}
                   >
-                    {equipment}
+                    <Icon 
+                      name={equipment.icon} 
+                      size={16} 
+                      color={formData.equipment.includes(equipment.value) ? 'var(--dark)' : 'var(--muted-text)'} 
+                      className="opacity-70 flex-shrink-0"
+                    />
+                    <span className="text-sm">{equipment.label}</span>
                   </button>
                 ))}
               </div>
@@ -592,7 +625,7 @@ export default function WorkoutBuilderPage() {
         )}
 
         {/* Generated Workout Preview */}
-        {generatedWorkout && (
+        {generatedWorkout && showWorkout && (
           <div className="bg-panel thin-border rounded-lg p-8">
             {/* Multi-day Program Display */}
             {(Array.isArray(generatedWorkout) || generatedWorkout.workouts) ? (
