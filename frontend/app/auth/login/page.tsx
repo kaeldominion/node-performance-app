@@ -87,18 +87,19 @@ export default function LoginPage() {
                   main: 'w-full',
                   form: 'w-full',
                   formButtonPrimary: isLight
-                    ? 'bg-node-volt text-dark font-heading font-bold hover:bg-text-white transition-all duration-300 uppercase tracking-[0.2em] text-sm shadow-[0_10px_40px_rgba(204,255,0,0.25)] hover:shadow-[0_15px_50px_rgba(204,255,0,0.4)]'
-                    : 'bg-node-volt text-dark font-heading font-bold hover:bg-text-white transition-all duration-300 uppercase tracking-[0.2em] text-sm shadow-[0_10px_40px_rgba(204,255,0,0.25)] hover:shadow-[0_15px_50px_rgba(204,255,0,0.4)]',
+                    ? 'bg-node-volt text-black font-heading font-bold hover:bg-text-white transition-all duration-300 uppercase tracking-[0.2em] text-sm shadow-[0_10px_40px_rgba(204,255,0,0.25)] hover:shadow-[0_15px_50px_rgba(204,255,0,0.4)]'
+                    : 'bg-node-volt text-black font-heading font-bold hover:bg-text-white transition-all duration-300 uppercase tracking-[0.2em] text-sm shadow-[0_10px_40px_rgba(204,255,0,0.25)] hover:shadow-[0_15px_50px_rgba(204,255,0,0.4)]',
+                  formButtonPrimaryText: 'text-black font-heading',
                   formFieldInput: isLight
-                    ? 'bg-white thin-border border-border-dark text-text-white focus:border-node-volt focus:ring-node-volt/20 transition-all duration-300 font-body'
-                    : 'bg-panel/50 thin-border border-border text-text-white focus:border-node-volt focus:ring-node-volt/20 transition-all duration-300 font-body',
+                    ? 'bg-white border-2 border-zinc-300 text-gray-900 focus:border-node-volt focus:ring-2 focus:ring-node-volt/20 transition-all duration-300 font-body px-4 py-3'
+                    : 'bg-zinc-900 border-2 border-zinc-700 text-white focus:border-node-volt focus:ring-2 focus:ring-node-volt/20 transition-all duration-300 font-body px-4 py-3',
                   formFieldLabel: isLight
-                    ? 'text-text-white font-body font-medium'
-                    : 'text-text-white font-body font-medium',
+                    ? 'text-gray-900 font-body font-medium mb-2'
+                    : 'text-white font-body font-medium mb-2',
                   socialButtonsBlockButton: isLight
-                    ? 'bg-white thin-border border-border-dark text-text-white hover:bg-gray-50 hover:border-node-volt transition-all duration-300 font-heading font-bold text-xs uppercase tracking-[0.2em]'
-                    : 'bg-panel/50 thin-border border-border text-text-white hover:bg-panel/80 hover:border-node-volt transition-all duration-300 font-heading font-bold text-xs uppercase tracking-[0.2em]',
-                  socialButtonsBlockButtonText: 'font-heading',
+                    ? 'bg-white border-2 border-zinc-300 text-gray-900 hover:bg-gray-50 hover:border-node-volt transition-all duration-300 font-heading font-bold text-xs uppercase tracking-[0.2em]'
+                    : 'bg-white border-2 border-zinc-400 text-gray-900 hover:bg-gray-100 hover:border-node-volt transition-all duration-300 font-heading font-bold text-xs uppercase tracking-[0.2em]',
+                  socialButtonsBlockButtonText: 'font-heading text-gray-900',
                   formFieldInputShowPasswordButton: 'text-node-volt hover:text-node-volt/80',
                   formFieldInputShowPasswordIcon: 'text-node-volt',
                   footerActionLink: 'text-node-volt hover:text-node-volt/80 font-heading font-bold transition-colors',
