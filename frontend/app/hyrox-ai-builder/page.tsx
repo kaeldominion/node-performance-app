@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import { Icons } from '@/lib/iconMapping';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Users, Zap, Target, TrendingUp, Clock, Trophy, Activity, Calendar, MapPin, X, Sun, Moon } from 'lucide-react';
+import { Users, Zap, Target, TrendingUp, Clock, Trophy, Activity, Calendar, MapPin, X, Sun, Moon, Footprints, Timer } from 'lucide-react';
 
 interface HyroxRace {
   name: string;
@@ -506,7 +506,7 @@ export default function HyroxAIBuilderPage() {
             
             {/* Right Side - iPhone Container */}
             <div className="flex justify-center lg:justify-end">
-              <div className="relative">
+              <div className="relative scale-75 origin-right">
                 {/* iPhone Frame */}
                 <div className="relative bg-zinc-900 rounded-[3rem] p-2 shadow-2xl">
                   {/* Notch */}
@@ -526,35 +526,75 @@ export default function HyroxAIBuilderPage() {
                     {/* Deck Content */}
                     <div className="h-full flex flex-col pt-12">
                       {/* Header */}
-                      <div className="px-6 pt-4 pb-2 flex items-center justify-between">
+                      <div className="px-6 pt-6 pb-4 flex items-center justify-between border-b border-zinc-800/50">
                         <div>
-                          <div className="text-node-volt font-mono text-2xl font-bold">HX-001</div>
-                          <h3 className="text-lg font-heading font-bold text-white">HYROX Race Prep</h3>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Icons.HYROX size={16} className="text-node-volt" />
+                            <div className="text-node-volt font-mono text-xl font-bold">HX-001</div>
+                          </div>
+                          <h3 className="text-base font-heading font-bold text-white">HYROX Race Prep</h3>
                         </div>
-                        <div className="px-3 py-1 bg-node-volt/20 text-node-volt text-[10px] font-bold uppercase rounded">
-                          HYROX MODE
+                        <div className="px-3 py-1.5 bg-node-volt/20 text-node-volt text-[10px] font-bold uppercase rounded flex items-center gap-1.5">
+                          <Footprints size={10} />
+                          <span>HYROX MODE</span>
+                        </div>
+                      </div>
+                      
+                      {/* Training With Section */}
+                      <div className="px-6 pt-4 pb-3 border-b border-zinc-800/50">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Users size={14} className="text-zinc-400" />
+                          <span className="text-xs text-zinc-400 uppercase tracking-wider font-heading">Training With</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {['Sarah M.', 'Mike T.', 'Emma L.'].map((name, idx) => (
+                            <div key={idx} className="w-8 h-8 bg-node-volt/20 rounded-full flex items-center justify-center border border-node-volt/30">
+                              <span className="text-[10px] font-bold text-node-volt">{name.split(' ')[0][0]}</span>
+                            </div>
+                          ))}
+                          <div className="w-8 h-8 bg-zinc-800/50 rounded-full flex items-center justify-center border border-zinc-700">
+                            <span className="text-[10px] text-zinc-400">+2</span>
+                          </div>
                         </div>
                       </div>
                       
                       {/* Deck Slide Preview */}
-                      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-12">
-                        <div className="text-7xl font-heading font-bold mb-6 text-node-volt">01</div>
-                        <h4 className="text-4xl font-heading font-bold mb-8 text-white">1KM RUN</h4>
-                        <div className="grid grid-cols-3 gap-3 w-full mb-8">
-                          <div className="bg-zinc-800/80 thin-border rounded-lg p-4">
-                            <div className="text-[10px] text-zinc-400 mb-1 uppercase font-heading">SILVER</div>
-                            <div className="text-2xl font-bold text-white">8:00</div>
+                      <div className="flex-1 flex flex-col items-center justify-center px-6 py-8">
+                        <div className="flex items-center gap-3 mb-4">
+                          <Timer size={20} className="text-node-volt" />
+                          <div className="text-6xl font-heading font-bold text-node-volt">01</div>
+                        </div>
+                        <div className="flex items-center gap-2 mb-6">
+                          <Footprints size={24} className="text-white" />
+                          <h4 className="text-3xl font-heading font-bold text-white">1KM RUN</h4>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3 w-full mb-6">
+                          <div className="bg-zinc-800/80 thin-border rounded-lg p-3">
+                            <div className="text-[9px] text-zinc-400 mb-1.5 uppercase font-heading flex items-center gap-1">
+                              <Trophy size={8} />
+                              <span>SILVER</span>
+                            </div>
+                            <div className="text-xl font-bold text-white">8:00</div>
                           </div>
-                          <div className="bg-node-volt/20 thin-border border-node-volt rounded-lg p-4">
-                            <div className="text-[10px] text-node-volt mb-1 uppercase font-heading font-bold">GOLD</div>
-                            <div className="text-2xl font-bold text-node-volt">7:30</div>
+                          <div className="bg-node-volt/20 thin-border border-node-volt rounded-lg p-3">
+                            <div className="text-[9px] text-node-volt mb-1.5 uppercase font-heading font-bold flex items-center gap-1">
+                              <Trophy size={8} />
+                              <span>GOLD</span>
+                            </div>
+                            <div className="text-xl font-bold text-node-volt">7:30</div>
                           </div>
-                          <div className="bg-zinc-900/80 thin-border rounded-lg p-4">
-                            <div className="text-[10px] text-zinc-400 mb-1 uppercase font-heading">BLACK</div>
-                            <div className="text-2xl font-bold text-white">7:00</div>
+                          <div className="bg-zinc-900/80 thin-border rounded-lg p-3">
+                            <div className="text-[9px] text-zinc-400 mb-1.5 uppercase font-heading flex items-center gap-1">
+                              <Trophy size={8} />
+                              <span>BLACK</span>
+                            </div>
+                            <div className="text-xl font-bold text-white">7:00</div>
                           </div>
                         </div>
-                        <div className="text-sm text-zinc-400">Next: 1000m Ski Erg</div>
+                        <div className="flex items-center gap-2 text-sm text-zinc-400">
+                          <Activity size={14} />
+                          <span>Next: 1000m Ski Erg</span>
+                        </div>
                       </div>
                     </div>
                   </div>
