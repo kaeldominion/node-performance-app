@@ -29,6 +29,74 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
   const [startTime, setStartTime] = useState<number | null>(null);
   const [phaseStartTime, setPhaseStartTime] = useState<number | null>(null);
   const [currentPhase, setCurrentPhase] = useState<'connecting' | 'generating' | 'reviewing' | 'optimizing' | 'complete' | null>(null);
+  const [soundsPlayed, setSoundsPlayed] = useState<Set<string>>(new Set());
+
+  // Generate techy sound effects using Web Audio API
+  const playSound = (type: 'connect' | 'step' | 'complete' | 'error') => {
+    if (soundsPlayed.has(type)) return; // Don't play same sound multiple times
+    
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      switch (type) {
+        case 'connect':
+          // Short beep for connection
+          oscillator.frequency.value = 800;
+          oscillator.type = 'sine';
+          gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.15);
+          break;
+        case 'step':
+          // Subtle tick for step progress
+          oscillator.frequency.value = 1200;
+          oscillator.type = 'square';
+          gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.1);
+          break;
+        case 'complete':
+          // Techy completion sound (ascending tones)
+          const frequencies = [400, 600, 800, 1000, 1200];
+          frequencies.forEach((freq, idx) => {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.frequency.value = freq;
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0, audioContext.currentTime + idx * 0.1);
+            gain.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + idx * 0.1 + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + idx * 0.1 + 0.2);
+            osc.start(audioContext.currentTime + idx * 0.1);
+            osc.stop(audioContext.currentTime + idx * 0.1 + 0.2);
+          });
+          break;
+        case 'error':
+          // Error sound (low descending tone)
+          oscillator.frequency.value = 300;
+          oscillator.type = 'sawtooth';
+          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+          oscillator.frequency.exponentialRampToValueAtTime(150, audioContext.currentTime + 0.3);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.3);
+          break;
+      }
+      
+      setSoundsPlayed(prev => new Set(prev).add(type));
+    } catch (e) {
+      // Sound failed, continue silently
+      console.debug('Sound playback failed:', e);
+    }
+  };
 
   // Reset when starting
   useEffect(() => {
@@ -39,12 +107,14 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
       setCurrentPhase('connecting');
       setProgress(5);
       setCurrentStepProgress(0);
+      setSoundsPlayed(new Set());
       setSteps((prev) =>
         prev.map((step) => {
           if (step.id === 'connecting') return { ...step, status: 'active' as const };
           return step;
         })
       );
+      playSound('connect');
     }
   }, [isGenerating, startTime]);
 
@@ -80,6 +150,7 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
           setCurrentPhase('generating');
           setPhaseStartTime(Date.now());
           setCurrentStepProgress(0);
+          playSound('step');
         }
       }
       // Phase 2: Generating (15% → 60%, ~20-25 seconds)
@@ -101,6 +172,7 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
         setCurrentPhase('reviewing');
         setPhaseStartTime(Date.now());
         setCurrentStepProgress(0);
+        playSound('step');
       } else if (currentPhase === 'reviewing' && isReviewing) {
         const reviewDuration = 12000; // 12 seconds for review
         const phaseProgress = Math.min(1, phaseElapsed / reviewDuration);
@@ -127,6 +199,7 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
         
         if (phaseProgress >= 1 && currentPhase === 'optimizing') {
           // Complete
+          playSound('complete');
           setTimeout(() => {
             setSteps((prev) =>
               prev.map((step) => {
@@ -160,6 +233,7 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
   // Error state
   useEffect(() => {
     if (error) {
+      playSound('error');
       setSteps((prev) =>
         prev.map((step) => {
           if (step.status === 'active') return { ...step, status: 'error' as const };

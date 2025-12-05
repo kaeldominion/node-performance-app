@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { aiApi, workoutsApi } from '@/lib/api';
+import { aiApi, workoutsApi, programsApi, userApi } from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 import { GenerationTerminal } from '@/components/workout/GenerationTerminal';
@@ -40,6 +40,12 @@ export default function WorkoutBuilderPage() {
   const [reviewing, setReviewing] = useState(false);
   const [generatedWorkout, setGeneratedWorkout] = useState<any>(null);
   const [error, setError] = useState('');
+  const [startDate, setStartDate] = useState<string>(() => {
+    // Default to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  });
 
   const [formData, setFormData] = useState({
     goal: 'HYBRID',
@@ -129,10 +135,13 @@ export default function WorkoutBuilderPage() {
         trainingLevel: 'ADVANCED', // Used only for workout complexity/duration guidance
         equipment: formData.equipment,
         availableMinutes: availableMinutes,
-        archetype: isHyrox ? undefined : formData.archetype, // No archetype for HYROX
+        // Only pass archetype for single workouts (not HYROX, not multi-day)
+        // For multi-day programs, AI will randomly select archetypes based on goal
+        archetype: (formData.workoutType === 'single' && !isHyrox) ? formData.archetype : undefined,
         sectionPreferences: formData.sectionPreferences,
         workoutType: formData.workoutType,
-        cycle: formData.cycle,
+        // Don't pass cycle for 4-week programs (automatic progression)
+        cycle: formData.workoutType === 'month' ? undefined : formData.cycle,
         isHyrox: isHyrox, // Only true for single HYROX workouts
         includeHyrox: formData.workoutType !== 'single' ? formData.includeHyrox : undefined, // For multi-day programs
       });
@@ -156,12 +165,46 @@ export default function WorkoutBuilderPage() {
       
       // Handle arrays (week/month programs) vs single workout
       if (Array.isArray(generatedWorkout)) {
-        // Save each workout in the program
-        const savedWorkouts = await Promise.all(
-          generatedWorkout.map((workout) => workoutsApi.create(workout))
-        );
-        // Navigate to first workout or programs page
-        router.push(`/workouts/${savedWorkouts[0].id}`);
+        // Determine program details based on workout type
+        const workoutCount = generatedWorkout.length;
+        let programName = '';
+        let durationWeeks = 1;
+        
+        if (formData.workoutType === 'fourDay') {
+          programName = `4-Day Program - ${formData.goal}`;
+          durationWeeks = 1;
+        } else if (formData.workoutType === 'week') {
+          programName = `7-Day Program - ${formData.goal}`;
+          durationWeeks = 1;
+        } else if (formData.workoutType === 'month') {
+          programName = `4-Week Program - ${formData.goal}`;
+          durationWeeks = 4;
+        }
+        
+        // Create program with all workouts
+        const program = await programsApi.createWithWorkouts({
+          name: programName,
+          description: `AI-generated ${formData.workoutType === 'fourDay' ? '4-day' : formData.workoutType === 'week' ? '7-day' : '4-week'} program`,
+          level: 'ADVANCED',
+          goal: formData.goal,
+          durationWeeks,
+          cycle: formData.cycle,
+          workouts: generatedWorkout,
+        });
+        
+        // Optionally start the program with the selected start date
+        try {
+          await userApi.startProgram({
+            programId: program.id,
+            startDate: startDate,
+          });
+        } catch (err) {
+          console.warn('Could not auto-start program:', err);
+          // Continue anyway - user can start it manually
+        }
+        
+        // Navigate to programs page or the program detail
+        router.push(`/programs/${program.slug}`);
       } else {
         // Single workout
         const savedWorkout = await workoutsApi.create(generatedWorkout);
@@ -324,8 +367,8 @@ export default function WorkoutBuilderPage() {
               </p>
             </div>
 
-            {/* Cycle Selection (for multi-day programs) */}
-            {formData.workoutType !== 'single' && (
+            {/* Cycle Selection (for 4-day and 7-day programs, not 4-week) */}
+            {formData.workoutType !== 'single' && formData.workoutType !== 'month' && (
               <div>
                 <label className="block text-sm font-medium mb-2">Training Cycle</label>
                 <div className="grid grid-cols-4 gap-2">
@@ -352,6 +395,18 @@ export default function WorkoutBuilderPage() {
               </div>
             )}
 
+            {/* Info for 4-week programs */}
+            {formData.workoutType === 'month' && (
+              <div className="bg-node-volt/10 border border-node-volt rounded-lg p-4">
+                <p className="text-sm text-text-white">
+                  <strong>4-Week Program:</strong> Automatically follows progressive periodization:
+                  <br />
+                  Week 1: <strong>BASE</strong> (establish baseline) → Week 2: <strong>LOAD</strong> (increase volume) → 
+                  Week 3: <strong>INTENSIFY</strong> (peak intensity) → Week 4: <strong>DELOAD</strong> (recovery)
+                </p>
+              </div>
+            )}
+
             {/* HYROX Info (when HYROX is selected) */}
             {formData.workoutType === 'single' && formData.workoutDuration === 'hyrox' && (
               <div className="bg-node-volt/10 border-2 border-node-volt rounded-lg p-6">
@@ -373,8 +428,8 @@ export default function WorkoutBuilderPage() {
               </div>
             )}
 
-            {/* Archetype (hidden for HYROX) */}
-            {!(formData.workoutType === 'single' && formData.workoutDuration === 'hyrox') && (
+            {/* Archetype (only for single workouts, hidden for HYROX and multi-day programs) */}
+            {formData.workoutType === 'single' && formData.workoutDuration !== 'hyrox' && (
               <div>
                 <label className="block text-sm font-medium mb-2">
                   NØDE Archetype (Optional)
@@ -437,6 +492,16 @@ export default function WorkoutBuilderPage() {
               >
                 Clear selection
               </button>
+              </div>
+            )}
+
+            {/* Info for multi-day programs */}
+            {formData.workoutType !== 'single' && (
+              <div className="bg-node-volt/10 border border-node-volt rounded-lg p-4">
+                <p className="text-sm text-text-white">
+                  <strong>Note:</strong> For multi-day programs, archetypes will be automatically selected based on your primary goal. 
+                  The system will create a balanced program with varied workout types.
+                </p>
               </div>
             )}
 
@@ -522,36 +587,149 @@ export default function WorkoutBuilderPage() {
         {/* Generated Workout Preview */}
         {generatedWorkout && (
           <div className="bg-panel thin-border rounded-lg p-8">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  {generatedWorkout.displayCode && (
-                    <span className="text-node-volt font-mono text-3xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                      {generatedWorkout.displayCode}
-                    </span>
-                  )}
-                  <h2 className="text-4xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)', letterSpacing: '-0.02em' }}>
-                    {generatedWorkout.name}
-                  </h2>
+            {/* Multi-day Program Display */}
+            {(Array.isArray(generatedWorkout) || generatedWorkout.workouts) ? (
+              <>
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h2 className="text-4xl font-bold mb-2" style={{ fontFamily: 'var(--font-space-grotesk)', letterSpacing: '-0.02em' }}>
+                      {formData.workoutType === 'fourDay' ? '4-Day Program' : 
+                       formData.workoutType === 'week' ? '7-Day Program' : 
+                       '4-Week Program'}
+                    </h2>
+                    <p className="text-muted-text text-lg">
+                      {formData.goal} • {formData.cycle || 'Progressive Periodization'}
+                    </p>
+                    <p className="text-muted-text text-sm mt-1">
+                      {(Array.isArray(generatedWorkout) ? generatedWorkout : generatedWorkout.workouts)?.length || 0} workouts
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-muted-text">Start Date:</label>
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        min={new Date().toISOString().split('T')[0]}
+                        className="bg-panel thin-border text-text-white px-3 py-2 rounded"
+                      />
+                    </div>
+                    <button
+                      onClick={handleSaveWorkout}
+                      className="bg-node-volt text-dark font-bold px-8 py-3 rounded-lg hover:opacity-90 transition-opacity text-lg"
+                      style={{ fontFamily: 'var(--font-space-grotesk)' }}
+                    >
+                      Save Program
+                    </button>
+                  </div>
                 </div>
-                {generatedWorkout.description && (
-                  <p className="text-muted-text text-lg mt-2">{generatedWorkout.description}</p>
-                )}
-                <p className="text-muted-text text-sm mt-1">
-                  {generatedWorkout.sections?.length || 0} sections
-                </p>
-              </div>
-              <button
-                onClick={handleSaveWorkout}
-                className="bg-node-volt text-dark font-bold px-8 py-3 rounded-lg hover:opacity-90 transition-opacity text-lg"
-                style={{ fontFamily: 'var(--font-space-grotesk)' }}
-              >
-                Save Workout
-              </button>
-            </div>
 
-            <div className="space-y-6">
-              {generatedWorkout.sections?.map((section: any, idx: number) => (
+                <div className="space-y-6">
+                  {(Array.isArray(generatedWorkout) ? generatedWorkout : generatedWorkout.workouts)?.map((workout: any, workoutIdx: number) => (
+                    <div key={workoutIdx} className="bg-panel/50 thin-border rounded-lg p-6 border-l-4 border-node-volt">
+                      <div className="flex items-center justify-between mb-4 pb-4 border-b border-tech-grey">
+                        <div>
+                          <div className="flex items-center gap-3 mb-2">
+                            {workout.displayCode && (
+                              <span className="text-node-volt font-mono text-2xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                                {workout.displayCode}
+                              </span>
+                            )}
+                            <h3 className="text-3xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)', letterSpacing: '-0.02em' }}>
+                              {workout.name}
+                            </h3>
+                          </div>
+                          {workout.description && (
+                            <p className="text-muted-text text-sm mt-1">{workout.description}</p>
+                          )}
+                          <div className="flex items-center gap-3 mt-2">
+                            {workout.dayIndex && (
+                              <span className="text-node-volt text-sm font-medium">Day {workout.dayIndex}</span>
+                            )}
+                            {workout.weekIndex && (
+                              <span className="text-node-volt text-sm font-medium">Week {workout.weekIndex}</span>
+                            )}
+                            {workout.archetype && (
+                              <span className="text-muted-text text-sm">• {workout.archetype}</span>
+                            )}
+                            <span className="text-muted-text text-sm">
+                              • {workout.sections?.length || 0} sections
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        {workout.sections?.map((section: any, sectionIdx: number) => (
+                          <div
+                            key={sectionIdx}
+                            className="bg-panel/30 thin-border rounded-lg p-4 border-l-2"
+                            style={{ borderLeftColor: section.type === 'EMOM' ? '#ccff00' : section.type === 'AMRAP' ? '#ccff00' : 'transparent' }}
+                          >
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="text-xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                                {section.title}
+                              </h4>
+                              <div className="flex items-center gap-2">
+                                <span className="text-node-volt text-xs font-medium uppercase tracking-wider">
+                                  {section.type}
+                                </span>
+                                {section.durationSec && (
+                                  <span className="text-muted-text text-xs">
+                                    {Math.floor(section.durationSec / 60)}:{(section.durationSec % 60).toString().padStart(2, '0')}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {section.note && (
+                              <p className="text-muted-text text-xs mb-3 italic">{section.note}</p>
+                            )}
+                            <div className="text-sm text-muted-text">
+                              {section.blocks?.length || 0} exercises
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Single Workout Display */}
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      {generatedWorkout.displayCode && (
+                        <span className="text-node-volt font-mono text-3xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                          {generatedWorkout.displayCode}
+                        </span>
+                      )}
+                      <h2 className="text-4xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)', letterSpacing: '-0.02em' }}>
+                        {generatedWorkout.name}
+                      </h2>
+                    </div>
+                    {generatedWorkout.description && (
+                      <p className="text-muted-text text-lg mt-2">{generatedWorkout.description}</p>
+                    )}
+                    <p className="text-muted-text text-sm mt-1">
+                      {generatedWorkout.sections?.length || 0} sections
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={handleSaveWorkout}
+                      className="bg-node-volt text-dark font-bold px-8 py-3 rounded-lg hover:opacity-90 transition-opacity text-lg"
+                      style={{ fontFamily: 'var(--font-space-grotesk)' }}
+                    >
+                      Save Workout
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  {generatedWorkout.sections?.map((section: any, idx: number) => (
                 <div
                   key={idx}
                   className="bg-panel/50 thin-border rounded-lg p-6 border-l-4"
