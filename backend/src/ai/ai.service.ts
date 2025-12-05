@@ -576,6 +576,137 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
     return workout;
   }
 
+  private async reviewAndAdjustWorkout(workout: any, params: any): Promise<any> {
+    console.log('🔍 Reviewing workout for feasibility and adjustments...');
+    
+    const issues: string[] = [];
+    const adjustments: any = {};
+    
+    // Calculate total workout time
+    let totalTime = 0;
+    
+    workout.sections.forEach((section: any) => {
+      if (section.type === 'WARMUP') {
+        totalTime += 5 * 60; // 5-10 min warmup
+      } else if (section.type === 'COOLDOWN') {
+        totalTime += 5 * 60; // 5 min cooldown
+      } else if (section.type === 'EMOM') {
+        totalTime += (section.emomWorkSec + section.emomRestSec) * (section.emomRounds || 12);
+      } else if (section.type === 'INTERVAL') {
+        totalTime += (section.intervalWorkSec + section.intervalRestSec) * (section.intervalRounds || 8);
+      } else if (section.durationSec) {
+        totalTime += section.durationSec;
+        // Add rest between rounds if applicable
+        if (section.rounds && section.restBetweenRounds) {
+          totalTime += section.restBetweenRounds * (section.rounds - 1);
+        }
+      }
+    });
+    
+    const availableTime = params.availableMinutes * 60;
+    const timeDifference = totalTime - availableTime;
+    
+    // Check time feasibility
+    if (totalTime > availableTime * 1.1) {
+      issues.push(`Workout is ${Math.round(timeDifference / 60)} minutes too long (${Math.round(totalTime / 60)}min vs ${params.availableMinutes}min available)`);
+      adjustments.timeReduction = Math.round(timeDifference / 60);
+    } else if (totalTime < availableTime * 0.6) {
+      issues.push(`Workout is too short (${Math.round(totalTime / 60)}min vs ${params.availableMinutes}min available)`);
+      adjustments.timeIncrease = Math.round((availableTime - totalTime) / 60);
+    }
+    
+    // Check tier progression (SILVER ≤ GOLD ≤ BLACK)
+    workout.sections.forEach((section: any, sectionIdx: number) => {
+      section.blocks?.forEach((block: any, blockIdx: number) => {
+        const silver = block.tierSilver;
+        const gold = block.tierGold;
+        const black = block.tierBlack;
+        
+        // Check rep progression
+        if (silver?.targetReps && gold?.targetReps && silver.targetReps > gold.targetReps) {
+          issues.push(`Block ${block.label || blockIdx + 1}: SILVER reps (${silver.targetReps}) should be ≤ GOLD reps (${gold.targetReps})`);
+          adjustments[`section_${sectionIdx}_block_${blockIdx}_rep_progression`] = true;
+        }
+        if (gold?.targetReps && black?.targetReps && gold.targetReps > black.targetReps) {
+          issues.push(`Block ${block.label || blockIdx + 1}: GOLD reps (${gold.targetReps}) should be ≤ BLACK reps (${black.targetReps})`);
+          adjustments[`section_${sectionIdx}_block_${blockIdx}_rep_progression`] = true;
+        }
+        
+        // Check distance progression for erg machines
+        if (silver?.distance && gold?.distance && silver.distance > gold.distance) {
+          issues.push(`Block ${block.label || blockIdx + 1}: SILVER distance (${silver.distance}${silver.distanceUnit}) should be ≤ GOLD distance (${gold.distance}${gold.distanceUnit})`);
+          adjustments[`section_${sectionIdx}_block_${blockIdx}_distance_progression`] = true;
+        }
+        if (gold?.distance && black?.distance && gold.distance > black.distance) {
+          issues.push(`Block ${block.label || blockIdx + 1}: GOLD distance (${gold.distance}${gold.distanceUnit}) should be ≤ BLACK distance (${black.distance}${black.distanceUnit})`);
+          adjustments[`section_${sectionIdx}_block_${blockIdx}_distance_progression`] = true;
+        }
+      });
+    });
+    
+    // If there are issues, ask AI to fix them
+    if (issues.length > 0) {
+      console.log(`⚠️  Found ${issues.length} issues, requesting AI adjustments...`);
+      console.log('Issues:', issues);
+      
+      try {
+        const adjustedWorkout = await this.adjustWorkout(workout, issues, adjustments, params);
+        console.log('✅ Workout adjusted successfully');
+        return adjustedWorkout;
+      } catch (error) {
+        console.error('❌ Failed to adjust workout, returning original:', error);
+        return workout; // Return original if adjustment fails
+      }
+    }
+    
+    console.log('✅ Workout review passed - no adjustments needed');
+    return workout;
+  }
+
+  private async adjustWorkout(workout: any, issues: string[], adjustments: any, params: any): Promise<any> {
+    const totalTime = workout.sections.reduce((acc: number, s: any) => {
+      if (s.type === 'EMOM') return acc + (s.emomWorkSec + s.emomRestSec) * (s.emomRounds || 12);
+      if (s.type === 'INTERVAL') return acc + (s.intervalWorkSec + s.intervalRestSec) * (s.intervalRounds || 8);
+      if (s.durationSec) return acc + s.durationSec + (s.rounds && s.restBetweenRounds ? s.restBetweenRounds * (s.rounds - 1) : 0);
+      return acc;
+    }, 600); // Add 10 min for warmup/cooldown
+    
+    const adjustmentPrompt = `You are reviewing a workout that has been flagged for issues. Please fix the following problems:
+
+ISSUES FOUND:
+${issues.map((issue, idx) => `${idx + 1}. ${issue}`).join('\n')}
+
+ADJUSTMENTS NEEDED:
+${JSON.stringify(adjustments, null, 2)}
+
+ORIGINAL WORKOUT:
+${JSON.stringify(workout, null, 2)}
+
+REQUIREMENTS:
+- Total workout time must be approximately ${params.availableMinutes} minutes (currently ${Math.round(totalTime / 60)} minutes)
+- Tier progression must be: SILVER ≤ GOLD ≤ BLACK (for reps, distances, loads)
+- Maintain workout structure and exercise selection
+- Adjust durations, reps, distances, or loads as needed
+- Keep the same JSON schema
+
+Return ONLY the corrected workout JSON, no explanations.`;
+
+    const completion = await this.openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: 'You are a workout review system that fixes timing, difficulty progression, and feasibility issues. Return only valid JSON.' },
+        { role: 'user', content: adjustmentPrompt },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.3, // Lower temperature for more consistent adjustments
+    });
+
+    const adjustedWorkoutJson = JSON.parse(completion.choices[0].message.content || '{}');
+    
+    // Validate the adjusted workout
+    return this.validateWorkoutSchema(adjustedWorkoutJson);
+  }
+
   private getArchetypeGuidance(archetype?: string): string {
     const archetypes = {
       PR1ME: `NØDE // PR1ME - Primary Strength Day

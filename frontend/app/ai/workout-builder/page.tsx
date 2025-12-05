@@ -136,10 +136,12 @@ export default function WorkoutBuilderPage() {
         includeHyrox: formData.workoutType !== 'single' ? formData.includeHyrox : undefined, // For multi-day programs
       });
       setGeneratedWorkout(workout);
+      setReviewing(false);
     } catch (err: any) {
       console.error('Workout generation error:', err);
       const errorMessage = err.response?.data?.message || err.message || 'Failed to generate workout. Please try again.';
       setError(errorMessage);
+      setReviewing(false);
     } finally {
       setLoading(false);
     }
