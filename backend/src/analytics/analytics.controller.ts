@@ -2,6 +2,7 @@ import { Controller, Get, Query, UseGuards, Request, Param } from '@nestjs/commo
 import { AnalyticsService } from './analytics.service';
 import { ClerkAuthGuard } from '../auth/clerk.guard';
 import { ClerkAdminGuard } from '../auth/clerk-admin.guard';
+import { ClerkAdminGuard } from '../auth/clerk-admin.guard';
 
 @Controller('analytics')
 export class AnalyticsController {
@@ -109,5 +110,12 @@ export class AnalyticsController {
       metric || 'sessions',
       limit ? parseInt(limit) : 50,
     );
+  }
+
+  // Admin-only system stats
+  @Get('admin/system')
+  @UseGuards(ClerkAdminGuard)
+  async getSystemStats() {
+    return this.analyticsService.getSystemStats();
   }
 }
