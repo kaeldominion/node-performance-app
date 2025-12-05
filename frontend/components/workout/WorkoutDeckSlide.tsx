@@ -27,6 +27,23 @@ export function WorkoutDeckSlide({
   const [selectedTier, setSelectedTier] = useState<'SILVER' | 'GOLD' | 'BLACK'>('GOLD');
   const [timerComplete, setTimerComplete] = useState(false);
 
+  // Helper to detect erg machines
+  const isErgMachine = (exerciseName: string): boolean => {
+    const ergPatterns = [/row/i, /bike/i, /ski/i, /erg/i, /assault/i, /echo/i, /airdyne/i];
+    return ergPatterns.some(pattern => pattern.test(exerciseName));
+  };
+
+  // Helper to check if repScheme should be hidden (for erg machines with distance)
+  const shouldHideRepScheme = (block: any): boolean => {
+    if (!isErgMachine(block.exerciseName)) return false;
+    // Hide repScheme if it's "N/A" or if we have distance in tiers
+    if (block.repScheme === 'N/A' || block.repScheme === 'n/a' || block.repScheme === null || block.repScheme === undefined) {
+      return true;
+    }
+    // If any tier has distance, we can hide repScheme
+    return block.tierSilver?.distance || block.tierGold?.distance || block.tierBlack?.distance;
+  };
+
   // Section-specific rendering
   const renderSectionContent = () => {
     switch (section.type) {
@@ -53,8 +70,13 @@ export function WorkoutDeckSlide({
                   {block.description && (
                     <p className="text-muted-text text-xl mb-4">{block.description}</p>
                   )}
-                  {block.repScheme && (
+                  {block.repScheme && !shouldHideRepScheme(block) && (
                     <div className="text-2xl text-node-volt font-bold">{block.repScheme}</div>
+                  )}
+                  {isErgMachine(block.exerciseName) && shouldHideRepScheme(block) && (
+                    <div className="text-sm text-muted-text mb-4 italic">
+                      Choose your tier below for distance/calories
+                    </div>
                   )}
                   {renderTierPrescriptions(block)}
                 </div>
@@ -90,8 +112,13 @@ export function WorkoutDeckSlide({
                   {block.description && (
                     <p className="text-muted-text text-sm mb-3">{block.description}</p>
                   )}
-                  {block.repScheme && (
+                  {block.repScheme && !shouldHideRepScheme(block) && (
                     <div className="text-xl text-node-volt font-bold mb-3">{block.repScheme}</div>
+                  )}
+                  {isErgMachine(block.exerciseName) && shouldHideRepScheme(block) && (
+                    <div className="text-sm text-muted-text mb-3 italic">
+                      Choose your tier below for distance/calories
+                    </div>
                   )}
                   {renderTierPrescriptions(block)}
                 </div>
@@ -215,8 +242,13 @@ export function WorkoutDeckSlide({
                   <div className="text-lg text-node-volt font-bold mb-4">
                     {section.intervalWorkSec}s MAX EFFORT / {section.intervalRestSec}s REST
                   </div>
-                  {block.repScheme && (
+                  {block.repScheme && !shouldHideRepScheme(block) && (
                     <div className="text-2xl text-node-volt font-bold mb-4">{block.repScheme}</div>
+                  )}
+                  {isErgMachine(block.exerciseName) && shouldHideRepScheme(block) && (
+                    <div className="text-sm text-muted-text mb-4 italic">
+                      Choose your tier below for distance/calories
+                    </div>
                   )}
                   {renderTierPrescriptions(block)}
                 </div>
@@ -308,8 +340,13 @@ export function WorkoutDeckSlide({
                         {block.description && (
                           <p className="text-muted-text mb-3">{block.description}</p>
                         )}
-                        {block.repScheme && (
+                        {block.repScheme && !shouldHideRepScheme(block) && (
                           <div className="text-xl text-node-volt font-bold mb-3">{block.repScheme}</div>
+                        )}
+                        {isErgMachine(block.exerciseName) && shouldHideRepScheme(block) && (
+                          <div className="text-xs text-muted-text mb-3 italic">
+                            Choose tier for distance/cal
+                          </div>
                         )}
                         {block.tempo && (
                           <div className="text-sm text-muted-text mb-3">Tempo: <span className="text-node-volt font-semibold">{block.tempo}</span></div>
@@ -339,8 +376,25 @@ export function WorkoutDeckSlide({
   const renderTierPrescriptions = (block: any) => {
     if (!block.tierSilver && !block.tierGold && !block.tierBlack) return null;
 
-    const getTierDisplay = (tier: any) => {
-      // Priority: distance/calories > targetReps > load
+    // Detect if this is an erg machine
+    const isErgMachine = (exerciseName: string): boolean => {
+      const ergPatterns = [/row/i, /bike/i, /ski/i, /erg/i, /assault/i, /echo/i];
+      return ergPatterns.some(pattern => pattern.test(exerciseName));
+    };
+
+    const getTierDisplay = (tier: any, exerciseName: string) => {
+      const isErg = isErgMachine(exerciseName);
+      
+      // For erg machines, distance/calories are required
+      if (isErg) {
+        if (tier.distance !== null && tier.distance !== undefined && tier.distanceUnit) {
+          return `${tier.distance}${tier.distanceUnit}`;
+        }
+        // Show helpful instruction if missing
+        return 'Choose tier for distance/cal';
+      }
+      
+      // For non-erg exercises, use normal priority
       if (tier.distance !== null && tier.distance !== undefined && tier.distanceUnit) {
         return `${tier.distance}${tier.distanceUnit}`;
       }
@@ -366,7 +420,7 @@ export function WorkoutDeckSlide({
           >
             <div className="text-xs text-muted-text mb-1">SILVER</div>
             <div className="text-sm font-medium">
-              {getTierDisplay(block.tierSilver)}
+              {getTierDisplay(block.tierSilver, block.exerciseName)}
             </div>
           </div>
         )}
@@ -381,7 +435,7 @@ export function WorkoutDeckSlide({
           >
             <div className="text-xs text-muted-text mb-1">GOLD</div>
             <div className="text-sm font-medium">
-              {getTierDisplay(block.tierGold)}
+              {getTierDisplay(block.tierGold, block.exerciseName)}
             </div>
           </div>
         )}
@@ -396,7 +450,7 @@ export function WorkoutDeckSlide({
           >
             <div className="text-xs text-muted-text mb-1">BLACK</div>
             <div className="text-sm font-medium text-node-volt">
-              {getTierDisplay(block.tierBlack)}
+              {getTierDisplay(block.tierBlack, block.exerciseName)}
             </div>
           </div>
         )}

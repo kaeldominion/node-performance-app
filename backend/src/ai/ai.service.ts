@@ -150,16 +150,19 @@ TIER PRESCRIPTION GUIDELINES:
   * Typical use (CONDITIONING exercises = higher reps, FINISHER = max effort)
 - ALWAYS generate all three tiers (SILVER, GOLD, BLACK) for each exercise block so users can scale up/down
 
-CRITICAL: ERG MACHINES & DISTANCE-BASED EXERCISES:
-- For erg machines (Rower, SkiErg, Bike, Assault Bike, Echo Bike, BikeErg):
-  * DO NOT use a single distance/calories at the block level
-  * MUST specify different distance/calories in EACH tier (tierSilver, tierGold, tierBlack)
-  * tierSilver: Lower distance/calories (e.g., 500m row, 12 cals bike, 400m ski)
-  * tierGold: Medium distance/calories (e.g., 800m row, 15 cals bike, 600m ski)
-  * tierBlack: Higher distance/calories (e.g., 1000m row, 18 cals bike, 800m ski)
-  * Alternate between meters (m) and calories (cal) - use calories for bike/assault bike, meters for rower/ski erg
+CRITICAL: ERG MACHINES & DISTANCE-BASED EXERCISES - MANDATORY RULES:
+- For erg machines (Rower, Row, SkiErg, Ski, Bike, Bike Erg, Assault Bike, Echo Bike, BikeErg, or any exercise name containing "row", "bike", "ski", "erg"):
+  * ⚠️ MANDATORY: You MUST include distance/calories in ALL THREE tiers (tierSilver, tierGold, tierBlack)
+  * ⚠️ DO NOT use "N/A", "null", or leave distance empty for erg machines
+  * ⚠️ DO NOT use a single distance/calories at the block level - each tier MUST be different
+  * tierSilver: Lower distance/calories (e.g., 500m row, 12 cal bike, 400m ski)
+  * tierGold: Medium distance/calories (e.g., 800m row, 15 cal bike, 600m ski)
+  * tierBlack: Higher distance/calories (e.g., 1000m row, 18 cal bike, 800m ski)
+  * Use calories (cal) for bike/assault bike exercises
+  * Use meters (m) for rower/ski erg exercises
   * Example progression: SILVER: 12 cal, GOLD: 15 cal, BLACK: 18 cal (bike)
   * Example progression: SILVER: 500m, GOLD: 800m, BLACK: 1000m (rower)
+  * If you see "Bike Erg", "Row", "SkiErg", "Bike", etc. in exerciseName, distance/calories are REQUIRED in all tiers
 - For bodyweight exercises that use distance (Burpee Broad Jumps, Shuttle Runs, etc.):
   * tierSilver: Shorter distance (e.g., 20m, 30m)
   * tierGold: Medium distance (e.g., 40m, 50m)
@@ -428,14 +431,73 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
       throw new Error('Invalid workout schema: missing required fields');
     }
 
-    // Ensure sections have proper structure
+    // Erg machine detection patterns
+    const ergMachinePatterns = [
+      /row/i, /bike/i, /ski/i, /erg/i, /assault/i, /echo/i, /airdyne/i, /concept2/i
+    ];
+
+    const isErgMachine = (exerciseName: string): boolean => {
+      return ergMachinePatterns.some(pattern => pattern.test(exerciseName));
+    };
+
+    // Ensure sections have proper structure and validate erg machines
     workout.sections = workout.sections.map((section: any, index: number) => ({
       ...section,
       order: section.order || index + 1,
-      blocks: (section.blocks || []).map((block: any, blockIndex: number) => ({
-        ...block,
-        order: block.order || blockIndex + 1,
-      })),
+      blocks: (section.blocks || []).map((block: any, blockIndex: number) => {
+        const updatedBlock = {
+          ...block,
+          order: block.order || blockIndex + 1,
+        };
+
+        // Validate erg machines have distance/calories in all tiers
+        if (isErgMachine(block.exerciseName)) {
+          const tiers = ['tierSilver', 'tierGold', 'tierBlack'];
+          tiers.forEach((tierKey) => {
+            const tier = updatedBlock[tierKey];
+            if (tier) {
+              // If distance is missing or null, add default values based on exercise type
+              if (tier.distance === null || tier.distance === undefined || !tier.distanceUnit) {
+                const exerciseName = block.exerciseName.toLowerCase();
+                let defaultDistance: number;
+                let defaultUnit: string;
+
+                if (exerciseName.includes('bike') || exerciseName.includes('assault') || exerciseName.includes('echo')) {
+                  // Bike exercises use calories
+                  defaultUnit = 'cal';
+                  if (tierKey === 'tierSilver') defaultDistance = 12;
+                  else if (tierKey === 'tierGold') defaultDistance = 15;
+                  else defaultDistance = 18;
+                } else if (exerciseName.includes('row')) {
+                  // Rower uses meters
+                  defaultUnit = 'm';
+                  if (tierKey === 'tierSilver') defaultDistance = 500;
+                  else if (tierKey === 'tierGold') defaultDistance = 800;
+                  else defaultDistance = 1000;
+                } else if (exerciseName.includes('ski')) {
+                  // SkiErg uses meters
+                  defaultUnit = 'm';
+                  if (tierKey === 'tierSilver') defaultDistance = 400;
+                  else if (tierKey === 'tierGold') defaultDistance = 600;
+                  else defaultDistance = 800;
+                } else {
+                  // Default to meters
+                  defaultUnit = 'm';
+                  if (tierKey === 'tierSilver') defaultDistance = 500;
+                  else if (tierKey === 'tierGold') defaultDistance = 800;
+                  else defaultDistance = 1000;
+                }
+
+                tier.distance = defaultDistance;
+                tier.distanceUnit = defaultUnit;
+                console.log(`✅ Auto-added distance for ${block.exerciseName} ${tierKey}: ${defaultDistance}${defaultUnit}`);
+              }
+            }
+          });
+        }
+
+        return updatedBlock;
+      }),
     }));
 
     return workout;
