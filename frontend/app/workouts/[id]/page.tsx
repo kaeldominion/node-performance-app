@@ -325,7 +325,7 @@ export default function WorkoutPlayerPage() {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={handleEnterDeckMode}
+              onClick={() => setDeckMode(true)}
               className="bg-node-volt text-dark font-bold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity text-sm"
               style={{ fontFamily: 'var(--font-space-grotesk)' }}
             >
