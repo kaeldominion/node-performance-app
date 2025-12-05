@@ -45,14 +45,17 @@ export default function AccountSettingsPage() {
   const loadProfile = async () => {
     try {
       setLoading(true);
-      const profileData = await userApi.getProfile();
+      const [profileData, userData] = await Promise.all([
+        userApi.getProfile().catch(() => null),
+        userApi.getMe().catch(() => null),
+      ]);
       setProfile(profileData);
       
       // Use Clerk image as default
       const imageUrl = clerkUser?.imageUrl || profileData?.imageUrl || '';
       
       setFormData({
-        username: user?.username || '',
+        username: userData?.username || user?.username || '',
         imageUrl,
         weight: profileData?.weight?.toString() || '',
         height: profileData?.height?.toString() || '',

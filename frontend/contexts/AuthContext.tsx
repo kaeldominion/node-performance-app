@@ -8,6 +8,7 @@ interface User {
   id: string;
   email: string;
   name?: string;
+  username?: string;
   isAdmin?: boolean;
   role?: string;
   networkCode?: string;
