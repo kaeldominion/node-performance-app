@@ -249,7 +249,8 @@ export default function WorkoutBuilderPage() {
             href="/workouts/recommended"
             className="bg-panel thin-border text-text-white px-4 py-2 rounded hover:border-node-volt transition-colors flex items-center gap-2"
           >
-Browse Recommended
+            <Icon name="recommended" size={16} color="var(--node-volt)" className="text-node-volt" />
+            <span>Browse Recommended</span>
           </Link>
         </div>
 
@@ -304,6 +305,7 @@ Browse Recommended
                         : 'bg-panel thin-border text-text-white hover:border-node-volt hover:bg-tech-grey'
                     }`}
                   >
+                    <Icon name="hyrox" size={32} color={formData.workoutDuration === 'hyrox' ? 'var(--dark)' : 'var(--node-volt)'} className="mb-2" />
                     <div className="font-bold text-lg mb-1">HYROX</div>
                     <div className="text-xs opacity-80">90 minutes</div>
                     <div className="text-xs opacity-60 mt-1">Long conditioning session</div>
@@ -344,10 +346,10 @@ Browse Recommended
               <label className="block text-sm font-medium mb-2">Program Type</label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
-                  { value: 'single', label: '1-Off', desc: 'Single workout session' },
-                  { value: 'fourDay', label: '4-Day', desc: '4 workouts per week' },
-                  { value: 'week', label: '7-Day', desc: 'Full week with deload' },
-                  { value: 'month', label: '4-Week', desc: 'Progressive cycle' },
+                  { value: 'single', label: '1-Off', desc: 'Single workout session', icon: 'sessions' },
+                  { value: 'fourDay', label: '4-Day', desc: '4 workouts per week', icon: 'calendar' },
+                  { value: 'week', label: '7-Day', desc: 'Full week with deload', icon: 'calendar' },
+                  { value: 'month', label: '4-Week', desc: 'Progressive cycle', icon: 'calendar' },
                 ].map((type) => (
                   <button
                     key={type.value}
@@ -358,6 +360,7 @@ Browse Recommended
                         : 'bg-panel thin-border text-text-white hover:border-node-volt hover:bg-tech-grey'
                     }`}
                   >
+                    <Icon name={type.icon} size={32} color={formData.workoutType === type.value ? 'var(--dark)' : 'var(--node-volt)'} className="mb-2" />
                     <div className="font-bold text-lg mb-1">{type.label}</div>
                     <div className="text-xs opacity-80">{type.desc}</div>
                   </button>
@@ -415,6 +418,7 @@ Browse Recommended
             {formData.workoutType === 'single' && formData.workoutDuration === 'hyrox' && (
               <div className="bg-node-volt/10 border-2 border-node-volt rounded-lg p-6">
                 <div className="flex items-start gap-3">
+                  <Icon name="hyrox" size={48} color="var(--node-volt)" className="mb-3 flex-shrink-0" />
                   <div>
                     <h3 className="font-bold text-lg mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                       HYROX-Style Conditioning
@@ -920,8 +924,8 @@ Browse Recommended
                       ))}
                     </div>
                   )}
-                </div>
-              ))}
+                    </div>
+                  ))}
                 </div>
               </>
             )}

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { analyticsApi, gamificationApi } from '@/lib/api';
 import Navbar from '@/components/Navbar';
+import { Icon } from '@/components/icons';
 import { LevelUpModal } from '@/components/gamification/LevelUpModal';
 import Link from 'next/link';
 
