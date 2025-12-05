@@ -78,41 +78,41 @@ export default function RegisterPage() {
             <p className="text-muted-text text-base font-body">Create your account and start training</p>
           </div>
 
-          <div className="flex justify-center">
+          <div className="w-full">
             <SignUp
               appearance={{
                 elements: {
-                  rootBox: 'w-full max-w-full',
+                  rootBox: 'w-full max-w-full mx-auto',
                   card: 'bg-transparent shadow-none border-none p-0 w-full',
-                  main: 'w-full',
-                  form: 'w-full',
+                  main: 'w-full mx-auto',
+                  form: 'w-full mx-auto',
                   formButtonPrimary: isLight
                     ? 'bg-node-volt text-dark font-heading font-bold hover:bg-text-white transition-all duration-300 uppercase tracking-[0.2em] text-sm shadow-[0_10px_40px_rgba(204,255,0,0.25)] hover:shadow-[0_15px_50px_rgba(204,255,0,0.4)]'
                     : 'bg-node-volt text-dark font-heading font-bold hover:bg-text-white transition-all duration-300 uppercase tracking-[0.2em] text-sm shadow-[0_10px_40px_rgba(204,255,0,0.25)] hover:shadow-[0_15px_50px_rgba(204,255,0,0.4)]',
                   formFieldInput: isLight
-                    ? 'bg-white thin-border border-border-dark text-text-white focus:border-node-volt focus:ring-node-volt/20 transition-all duration-300 font-body'
-                    : 'bg-panel/50 thin-border border-border text-text-white focus:border-node-volt focus:ring-node-volt/20 transition-all duration-300 font-body',
+                    ? 'bg-white border-2 border-zinc-300 text-gray-900 focus:border-node-volt focus:ring-2 focus:ring-node-volt/20 transition-all duration-300 font-body px-4 py-3'
+                    : 'bg-zinc-900 border-2 border-zinc-700 text-white focus:border-node-volt focus:ring-2 focus:ring-node-volt/20 transition-all duration-300 font-body px-4 py-3',
                   formFieldLabel: isLight
-                    ? 'text-text-white font-body font-medium'
-                    : 'text-text-white font-body font-medium',
+                    ? 'text-gray-900 font-body font-medium mb-2'
+                    : 'text-white font-body font-medium mb-2',
                   socialButtonsBlockButton: isLight
-                    ? 'bg-white thin-border border-border-dark text-text-white hover:bg-gray-50 hover:border-node-volt transition-all duration-300 font-heading font-bold text-xs uppercase tracking-[0.2em]'
-                    : 'bg-panel/50 thin-border border-border text-text-white hover:bg-panel/80 hover:border-node-volt transition-all duration-300 font-heading font-bold text-xs uppercase tracking-[0.2em]',
-                  socialButtonsBlockButtonText: 'font-heading',
+                    ? 'bg-white border-2 border-zinc-300 text-gray-900 hover:bg-gray-50 hover:border-node-volt transition-all duration-300 font-heading font-bold text-xs uppercase tracking-[0.2em]'
+                    : 'bg-zinc-900 border-2 border-zinc-700 text-white hover:bg-zinc-800 hover:border-node-volt transition-all duration-300 font-heading font-bold text-xs uppercase tracking-[0.2em]',
+                  socialButtonsBlockButtonText: 'font-heading text-inherit',
                   formFieldInputShowPasswordButton: 'text-node-volt hover:text-node-volt/80',
                   formFieldInputShowPasswordIcon: 'text-node-volt',
                   footerActionLink: 'text-node-volt hover:text-node-volt/80 font-heading font-bold transition-colors',
-                  footerAction: isLight ? 'text-muted-text font-body' : 'text-muted-text font-body',
-                  identityPreviewText: isLight ? 'text-text-white font-body' : 'text-text-white font-body',
+                  footerAction: isLight ? 'text-gray-600 font-body' : 'text-zinc-400 font-body',
+                  identityPreviewText: isLight ? 'text-gray-900 font-body' : 'text-white font-body',
                   identityPreviewEditButton: 'text-node-volt hover:text-node-volt/80',
                   formResendCodeLink: 'text-node-volt hover:text-node-volt/80 font-heading',
-                  alertText: isLight ? 'text-muted-text font-body' : 'text-muted-text font-body',
+                  alertText: isLight ? 'text-gray-600 font-body' : 'text-zinc-400 font-body',
                   formFieldErrorText: 'text-red-400 font-body text-sm',
                   formFieldSuccessText: 'text-node-volt font-body text-sm',
                   selectButton: isLight
-                    ? 'bg-white thin-border border-border-dark text-text-white hover:bg-gray-50 hover:border-node-volt'
-                    : 'bg-panel/50 thin-border border-border text-text-white hover:bg-panel/80 hover:border-node-volt',
-                  selectButtonText: 'font-body',
+                    ? 'bg-white border-2 border-zinc-300 text-gray-900 hover:bg-gray-50 hover:border-node-volt'
+                    : 'bg-zinc-900 border-2 border-zinc-700 text-white hover:bg-zinc-800 hover:border-node-volt',
+                  selectButtonText: 'font-body text-inherit',
                   headerTitle: 'hidden',
                   headerSubtitle: 'hidden',
                 },
@@ -121,7 +121,7 @@ export default function RegisterPage() {
                   colorText: isLight ? '#111827' : '#ffffff',
                   colorTextSecondary: isLight ? '#6b7280' : '#a0a0a0',
                   colorBackground: isLight ? '#ffffff' : '#0a0a0a',
-                  colorInputBackground: isLight ? '#ffffff' : '#0a0a0a',
+                  colorInputBackground: isLight ? '#ffffff' : '#18181b',
                   colorInputText: isLight ? '#111827' : '#ffffff',
                   borderRadius: '0',
                   fontFamily: 'var(--font-space-grotesk)',
