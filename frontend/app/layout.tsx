@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, Manrope } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { ClerkErrorBoundary } from '@/components/ClerkErrorBoundary';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AchievementNotificationProvider } from '@/contexts/AchievementNotificationContext';
@@ -40,6 +41,7 @@ export default function RootLayout({
               {children}
             </AchievementNotificationProvider>
           </ThemeProvider>
+          <Analytics />
         </body>
       </html>
     </ClerkErrorBoundary>
