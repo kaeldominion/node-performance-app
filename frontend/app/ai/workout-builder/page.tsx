@@ -31,19 +31,6 @@ const EQUIPMENT_OPTIONS = [
   'sandbag',
   'bodyweight',
 ];
-// Machine equipment (excluded from "Select All (No Machines)")
-const MACHINE_EQUIPMENT = [
-  'lat_pulldown_machine',
-  'leg_press',
-  'leg_extension_machine',
-  'leg_curl_machine',
-  'hip_abduction_machine',
-  'hip_adduction_machine',
-  'seated_calf_raise_machine',
-  'standing_calf_machine',
-  'cable_machine',
-  'ghd',
-];
 
 export default function WorkoutBuilderPage() {
   const { user, loading: authLoading } = useAuth();
@@ -107,14 +94,8 @@ export default function WorkoutBuilderPage() {
   };
 
   const handleSelectAllNoMachines = () => {
-    // Select all equipment except machines, but keep ergs (rower, bike, erg)
-    const noMachineOptions = EQUIPMENT_OPTIONS.filter(
-      (eq) => !MACHINE_EQUIPMENT.some((machine) => eq.toLowerCase().includes(machine.toLowerCase()))
-    );
-    setFormData((prev) => ({
-      ...prev,
-      equipment: noMachineOptions,
-    }));
+    // Since we removed machines from the list, this is the same as Select All
+    handleSelectAll();
   };
 
   const handleClearEquipment = () => {
