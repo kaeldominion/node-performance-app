@@ -1032,11 +1032,9 @@ export default function WorkoutBuilderPage() {
                       ))}
                     </div>
                   )}
-                    </div>
+                </div>
                   ))}
                 </div>
-              ))}
-            </div>
               </>
             )}
           </div>
