@@ -47,6 +47,7 @@ export default function WorkoutBuilderPage() {
   const [loading, setLoading] = useState(false);
   const [reviewing, setReviewing] = useState(false);
   const [generatedWorkout, setGeneratedWorkout] = useState<any>(null);
+  const [showWorkout, setShowWorkout] = useState(false);
   const [error, setError] = useState('');
   const [startDate, setStartDate] = useState<string>(() => {
     // Default to tomorrow
