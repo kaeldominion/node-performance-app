@@ -37,9 +37,20 @@ export function XPDisplay({ userId, className = '' }: XPDisplayProps) {
       
       setPreviousLevel(newStats.level);
       setLoading(false);
-    } catch (error) {
-      console.error('Failed to load XP stats:', error);
-      setLoading(false);
+    } catch (error: any) {
+      // Only log if it's not a network error (backend might be down)
+      if (error?.response) {
+        // Server responded with error - log it
+        console.error('Failed to load XP stats:', error.response?.status, error.response?.data);
+      } else if (error?.code !== 'ERR_NETWORK' && error?.message !== 'Network Error') {
+        // Not a network error - log it
+        console.error('Failed to load XP stats:', error);
+      }
+      // Don't set loading to false on first error - keep showing loading state
+      // This prevents flickering when backend is temporarily unavailable
+      if (stats === null) {
+        setLoading(false);
+      }
     }
   };
 

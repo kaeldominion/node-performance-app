@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { workoutsApi } from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+import { Icons } from '@/lib/iconMapping';
 
 interface Workout {
   id: string;
@@ -72,7 +73,7 @@ export default function RecommendedWorkoutsPage() {
 
         {workouts.length === 0 ? (
           <div className="bg-panel thin-border rounded-lg p-12 text-center">
-            <div className="text-6xl mb-4">💪</div>
+            <div className="mb-4 flex justify-center"><Icons.SESSIONS size={64} className="text-node-volt" /></div>
             <h2 className="text-2xl font-bold mb-2">No Recommended Workouts Yet</h2>
             <p className="text-muted-text mb-6">
               Check back soon for curated workouts from our team.

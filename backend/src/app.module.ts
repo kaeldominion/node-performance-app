@@ -12,6 +12,8 @@ import { CoachesModule } from './coaches/coaches.module';
 import { GymsModule } from './gyms/gyms.module';
 import { TemplatesModule } from './templates/templates.module';
 import { GamificationModule } from './gamification/gamification.module';
+import { ScheduleModule } from './schedule/schedule.module';
+import { NetworkModule } from './network/network.module';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { GamificationModule } from './gamification/gamification.module';
     TemplatesModule,
     AnalyticsModule,
     GamificationModule,
+    ScheduleModule,
+    NetworkModule,
   ],
 })
 export class AppModule {}

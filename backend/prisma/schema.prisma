@@ -141,19 +141,23 @@ model User {
   subscriptionTier SubscriptionTier @default(FREE)
   subscriptionEnds DateTime?
   xp               Int              @default(0) // Experience points for gamification
-  level             Int              @default(1) // User level (1-100+)
+  level            Int              @default(1) // User level (1-100+)
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
-  profile         UserProfile?
-  programs        UserProgram[]
-  sessions        SessionLog[]
-  coachProfile    CoachProfile?
-  gymProfile      GymProfile?
-  clients         CoachClient[]        @relation("CoachClients")
-  assignedBy      CoachClient[]        @relation("AssignedBy")
-  gymMemberships  GymMember[]
-  classAttendance GymClassAttendance[]
+  profile           UserProfile?
+  programs          UserProgram[]
+  sessions          SessionLog[]
+  scheduledWorkouts ScheduledWorkout[]   @relation("ScheduledWorkouts")
+  coachProfile      CoachProfile?
+  gymProfile        GymProfile?
+  clients           CoachClient[]        @relation("CoachClients")
+  assignedBy        CoachClient[]        @relation("AssignedBy")
+  gymMemberships    GymMember[]
+  classAttendance   GymClassAttendance[]
+  networkAsRequester Network[]            @relation("NetworkRequester")
+  networkAsAddressee Network[]             @relation("NetworkAddressee")
+  networkCode        String?              @unique // QR code for adding to network
 
   @@map("users")
 }
@@ -163,6 +167,16 @@ model UserProfile {
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Profile picture (from Clerk or custom upload)
+  imageUrl      String?
+  
+  // Physical stats
+  weight        Float?   // in kg
+  height        Float?   // in cm
+  location      String?  // City, Country, etc.
+  bio           String?  // About me / bio
+  
+  // Training info
   trainingLevel  TrainingLevel
   primaryGoal    TrainingGoal?
   equipment      String[]
@@ -189,10 +203,11 @@ model Program {
   coachId       String? // If created by a coach
   coach         CoachProfile?  @relation("CoachPrograms", fields: [coachId], references: [id], onDelete: SetNull)
 
-  workouts     Workout[]
-  userPrograms UserProgram[]
-  assignments  ProgramAssignment[]
-  sessions     SessionLog[]
+  workouts          Workout[]
+  userPrograms      UserProgram[]
+  assignments       ProgramAssignment[]
+  sessions          SessionLog[]
+  scheduledWorkouts ScheduledWorkout[]  @relation("ScheduledPrograms")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -215,9 +230,10 @@ model Workout {
   shareId       String?           @unique // For shareable workouts
   isRecommended Boolean           @default(false) // Admin-curated recommended workouts
 
-  sections   WorkoutSection[]
-  sessions   SessionLog[]
-  gymClasses GymClass[]
+  sections          WorkoutSection[]
+  sessions          SessionLog[]
+  gymClasses        GymClass[]
+  scheduledWorkouts ScheduledWorkout[] @relation("ScheduledWorkouts")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -300,6 +316,31 @@ model UserProgram {
   isActive    Boolean  @default(true)
 
   @@map("user_programs")
+}
+
+model ScheduledWorkout {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation("ScheduledWorkouts", fields: [userId], references: [id], onDelete: Cascade)
+
+  workoutId String?
+  workout   Workout? @relation("ScheduledWorkouts", fields: [workoutId], references: [id], onDelete: Cascade)
+
+  programId String?
+  program   Program? @relation("ScheduledPrograms", fields: [programId], references: [id], onDelete: Cascade)
+
+  scheduledDate DateTime // Date and time for the workout
+  duration      Int? // Expected duration in minutes
+  notes         String?
+
+  order       Int     @default(0) // For ordering on the same day
+  isCompleted Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, scheduledDate])
+  @@map("scheduled_workouts")
 }
 
 model SessionLog {
@@ -534,4 +575,24 @@ model WorkoutTemplate {
   updatedAt DateTime @updatedAt
 
   @@map("workout_templates")
+}
+
+model Network {
+  id        String   @id @default(cuid())
+  requesterId String
+  requester  User    @relation("NetworkRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addresseeId String
+  addressee  User    @relation("NetworkAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+  status    NetworkStatus @default(PENDING) // PENDING, ACCEPTED, BLOCKED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([requesterId, addresseeId])
+  @@map("network")
+}
+
+enum NetworkStatus {
+  PENDING
+  ACCEPTED
+  BLOCKED
 }

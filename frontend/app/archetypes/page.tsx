@@ -1,7 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import Navbar from '@/components/Navbar';
+import { useAuth } from '@/contexts/AuthContext';
+import { Logo } from '@/components/Logo';
+import { adminApi } from '@/lib/api';
+import { useEffect, useState } from 'react';
 
 const ARCHETYPES = [
   {
@@ -112,19 +115,114 @@ const SECTION_TYPES = [
   },
 ];
 
+interface Exercise {
+  id: string;
+  name: string;
+  category: string;
+  movementPattern: string;
+  equipment: string[];
+  suitableArchetypes: string[];
+}
+
 export default function ArchetypesPage() {
+  const { user } = useAuth();
+  const [exampleExercises, setExampleExercises] = useState<Exercise[]>([]);
+  const [loadingExercises, setLoadingExercises] = useState(true);
+
+  useEffect(() => {
+    // Try to load a few example exercises, but don't fail if it doesn't work
+    const loadExamples = async () => {
+      try {
+        const exercises = await adminApi.getExercises();
+        // Get a diverse sample of exercises
+        const categories = ['STRENGTH', 'ENGINE', 'MIXED'];
+        const examples: Exercise[] = [];
+        
+        categories.forEach((cat) => {
+          const catExercises = exercises.filter((ex: Exercise) => ex.category === cat);
+          if (catExercises.length > 0) {
+            examples.push(catExercises[Math.floor(Math.random() * catExercises.length)]);
+          }
+        });
+        
+        // Fill up to 6 examples
+        while (examples.length < 6 && exercises.length > examples.length) {
+          const remaining = exercises.filter((ex: Exercise) => !examples.find((e) => e.id === ex.id));
+          if (remaining.length > 0) {
+            examples.push(remaining[Math.floor(Math.random() * remaining.length)]);
+          } else {
+            break;
+          }
+        }
+        
+        setExampleExercises(examples.slice(0, 6));
+      } catch (error) {
+        console.error('Failed to load exercises:', error);
+        // Use fallback examples
+        setExampleExercises([
+          { id: '1', name: 'Barbell Back Squat', category: 'STRENGTH', movementPattern: 'SQUAT', equipment: ['barbell'], suitableArchetypes: ['PR1ME', 'FORGE'] },
+          { id: '2', name: 'EMOM Burpees', category: 'ENGINE', movementPattern: 'FULL_BODY', equipment: [], suitableArchetypes: ['ENGIN3', 'CIRCUIT_X'] },
+          { id: '3', name: 'Dumbbell Bench Press', category: 'STRENGTH', movementPattern: 'HORIZONTAL_PUSH', equipment: ['dumbbell'], suitableArchetypes: ['PR1ME', 'FORGE'] },
+        ]);
+      } finally {
+        setLoadingExercises(false);
+      }
+    };
+    
+    loadExamples();
+  }, []);
+
   return (
     <div className="min-h-screen bg-dark">
-      <Navbar />
+      {/* Simple Navbar for public pages */}
+      <nav className="border-b thin-border bg-panel/80 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Logo />
+            <div className="flex items-center gap-4">
+              <Link href="/" className="text-sm text-muted-text hover:text-text-white transition-colors">
+                Home
+              </Link>
+              {user ? (
+                <Link href="/dashboard" className="text-sm text-muted-text hover:text-text-white transition-colors">
+                  Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link href="/auth/login" className="text-sm text-muted-text hover:text-text-white transition-colors">
+                    Login
+                  </Link>
+                  <Link
+                    href="/auth/register"
+                    className="px-4 py-2 thin-border border-node-volt text-node-volt font-heading font-bold text-xs uppercase tracking-[0.2em] hover:bg-node-volt hover:text-dark transition-all duration-300"
+                  >
+                    Join
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </nav>
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-12">
-          <h1 className="text-5xl font-bold mb-4 font-heading">
-            NØDE <span className="text-node-volt">Archetypes</span>
-          </h1>
-          <p className="text-xl text-muted-text font-body">
-            Six core workout structures designed for elite hybrid performance
-          </p>
+          <div className="flex items-start justify-between mb-6">
+            <div className="flex-1">
+              <h1 className="text-5xl font-bold mb-4 font-heading">
+                NØDE <span className="text-node-volt">Archetypes</span>
+              </h1>
+              <p className="text-xl text-muted-text font-body">
+                Six core workout structures designed for elite hybrid performance
+              </p>
+            </div>
+            <Link
+              href="/"
+              className="ml-6 px-6 py-3 thin-border border-node-volt text-node-volt font-heading font-bold text-sm uppercase tracking-[0.2em] hover:bg-node-volt hover:text-dark transition-all duration-300 whitespace-nowrap"
+            >
+              ← Home
+            </Link>
+          </div>
         </div>
 
         {/* Archetypes Grid */}
@@ -181,6 +279,89 @@ export default function ArchetypesPage() {
                 <p className="text-sm text-muted-text font-body">Duration: {section.duration}</p>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Exercise Database Section */}
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-4xl font-bold mb-2 font-heading">
+                Exercise <span className="text-node-volt">Database</span>
+              </h2>
+              <p className="text-muted-text font-body text-lg">
+                Comprehensive library of exercises with tier prescriptions, movement patterns, and archetype compatibility
+              </p>
+            </div>
+            <Link
+              href="/exercises"
+              className="px-6 py-3 thin-border border-node-volt text-node-volt font-heading font-bold text-sm uppercase tracking-[0.2em] hover:bg-node-volt hover:text-dark transition-all duration-300 whitespace-nowrap"
+            >
+              View All →
+            </Link>
+          </div>
+
+          {loadingExercises ? (
+            <div className="text-center py-12 text-muted-text">Loading exercises...</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              {exampleExercises.map((exercise) => (
+                <div
+                  key={exercise.id}
+                  className="bg-panel thin-border rounded-lg p-6 hover:border-node-volt transition-all duration-300 hover:scale-[1.02]"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="text-xl font-bold text-text-white font-heading">
+                      {exercise.name}
+                    </h3>
+                    <span className="text-xs bg-node-volt/20 text-node-volt px-2 py-1 rounded uppercase">
+                      {exercise.category}
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="text-muted-text">Pattern:</span>{' '}
+                      <span className="text-text-white">
+                        {exercise.movementPattern.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-text">Equipment:</span>{' '}
+                      <span className="text-text-white">
+                        {exercise.equipment && exercise.equipment.length > 0
+                          ? exercise.equipment.join(', ')
+                          : 'Bodyweight'}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {exercise.suitableArchetypes.slice(0, 3).map((arch) => (
+                        <span
+                          key={arch}
+                          className="text-xs bg-dark/80 thin-border px-2 py-1 rounded text-node-volt"
+                        >
+                          {arch}
+                        </span>
+                      ))}
+                      {exercise.suitableArchetypes.length > 3 && (
+                        <span className="text-xs text-muted-text">
+                          +{exercise.suitableArchetypes.length - 3}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="text-center">
+            <Link
+              href="/exercises"
+              className="inline-block px-8 py-4 bg-node-volt text-dark font-heading font-bold uppercase tracking-[0.25em] hover:bg-text-white transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-node-volt/20"
+            >
+              Browse Full Exercise Library
+            </Link>
           </div>
         </div>
 

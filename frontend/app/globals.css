@@ -8,6 +8,18 @@
   --border: #333333;
   --text-white: #ffffff;
   --muted-text: #a0a0a0;
+  --dark-contrast: #1a1a1a; /* For dark elements in light mode */
+}
+
+/* Light Mode Variables */
+:root.light {
+  --node-volt: #0066ff; /* Deep blue accent - better for light mode */
+  --dark: #f8f9fa; /* Very light gray background */
+  --panel: #ffffff; /* Pure white panels */
+  --border: #d1d5db; /* Subtle gray borders */
+  --text-white: #111827; /* Dark text for readability */
+  --muted-text: #6b7280; /* Medium gray for muted text */
+  --dark-contrast: #1f2937; /* Dark elements for contrast (cards, sections) */
 }
 
 @theme inline {
@@ -17,6 +29,7 @@
   --color-border: var(--border);
   --color-text-white: var(--text-white);
   --color-muted-text: var(--muted-text);
+  --color-dark-contrast: var(--dark-contrast);
 }
 
 /* Typography System */
@@ -33,6 +46,33 @@
   border: 1px solid var(--border);
 }
 
+/* Dark Contrast Elements (for light mode) */
+.dark-contrast {
+  background-color: var(--dark-contrast);
+  color: var(--text-white);
+}
+
+/* RGB values for opacity calculations */
+:root {
+  --dark-rgb: 5, 5, 5;
+  --panel-rgb: 10, 10, 10;
+}
+
+/* Light mode specific adjustments */
+:root.light {
+  /* Exercise cards and modals get dark contrast for better visibility */
+  --card-bg: var(--dark-contrast);
+  --card-text: #ffffff;
+  --dark-rgb: 31, 41, 55; /* dark-contrast RGB */
+  --panel-rgb: 255, 255, 255;
+}
+
+/* Dark mode keeps original styling */
+:root:not(.light) {
+  --card-bg: rgba(10, 10, 10, 0.5);
+  --card-text: var(--text-white);
+}
+
 /* Grid Overlay System */
 .grid-overlay {
   position: absolute;
@@ -42,6 +82,12 @@
                     linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
   z-index: 10;
   pointer-events: none;
+}
+
+/* Light mode grid overlay - darker lines for visibility */
+:root.light .grid-overlay {
+  background-image: linear-gradient(to right, rgba(0, 0, 0, 0.08) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(0, 0, 0, 0.08) 1px, transparent 1px);
 }
 
 /* Dark Tint for Image Overlays */
@@ -112,6 +158,11 @@ input:focus, textarea:focus, select:focus {
   background: var(--dark);
 }
 
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
 /* Animations */
 @keyframes pulse-glow {
   0%, 100% {
@@ -121,6 +172,15 @@ input:focus, textarea:focus, select:focus {
   50% {
     opacity: 0.8;
     transform: scale(1.05);
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
   }
 }
 
@@ -141,6 +201,24 @@ input:focus, textarea:focus, select:focus {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-slow {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    text-shadow: 0 0 20px rgba(204, 255, 0, 0.5), 0 0 40px rgba(204, 255, 0, 0.3);
+  }
+  50% {
+    text-shadow: 0 0 30px rgba(204, 255, 0, 0.8), 0 0 60px rgba(204, 255, 0, 0.5);
   }
 }
 
@@ -168,12 +246,24 @@ input:focus, textarea:focus, select:focus {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
+.animate-pulse-slow {
+  animation: pulse-slow 4s ease-in-out infinite;
+}
+
 .animate-spin-slow {
   animation: spin-slow 3s linear infinite;
 }
 
 .animate-fade-in {
   animation: fade-in 0.5s ease-out;
+}
+
+.animate-fade-in-slow {
+  animation: fade-in-slow 2s ease-out;
+}
+
+.animate-glow {
+  animation: glow 3s ease-in-out infinite;
 }
 
 .animate-slide-in {

@@ -9,20 +9,34 @@ import Navbar from '@/components/Navbar';
 const TRAINING_LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'ELITE'];
 const TRAINING_GOALS = ['STRENGTH', 'HYPERTROPHY', 'HYBRID', 'CONDITIONING', 'FAT_LOSS', 'LONGEVITY'];
 const ARCHETYPES = ['PR1ME', 'FORGE', 'ENGIN3', 'CIRCUIT_X', 'CAPAC1TY', 'FLOWSTATE'];
-const EQUIPMENT_OPTIONS = [
-  'dumbbells',
-  'kettlebell',
-  'barbell',
-  'erg',
-  'rower',
-  'bike',
-  'rings',
-  'pull-up bar',
-  'box',
-  'jump rope',
-  'sandbag',
-  'bodyweight',
-];
+// Equipment organized by category
+const EQUIPMENT_CATEGORIES = {
+  'Strength Equipment': [
+    'dumbbells',
+    'kettlebell',
+    'barbell',
+  ],
+  'Erg Machines': [
+    'rower',
+    'bike_erg', // Concept2 BikeErg
+    'ski_erg',
+    'air_bike', // Assault/Echo Bike
+  ],
+  'Bodyweight & Accessories': [
+    'rings',
+    'pull-up bar',
+    'box',
+    'jump rope',
+    'sandbag',
+    'slam balls',
+  ],
+  'Space & Environment': [
+    'running route',
+  ],
+};
+
+// Flattened list for backward compatibility
+const EQUIPMENT_OPTIONS = Object.values(EQUIPMENT_CATEGORIES).flat();
 
 const CYCLES = ['BASE', 'LOAD', 'INTENSIFY', 'DELOAD'];
 
@@ -477,19 +491,38 @@ export default function GymWorkoutBuilderPage() {
               {/* Equipment */}
               <div>
                 <label className="block text-sm font-medium mb-2 text-muted-text">Available Equipment</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {EQUIPMENT_OPTIONS.map((equipment) => (
-                    <button
-                      key={equipment}
-                      onClick={() => handleEquipmentToggle(equipment)}
-                      className={`px-4 py-2 rounded border transition-colors ${
-                        formData.equipment.includes(equipment)
-                          ? 'bg-node-volt text-dark border-node-volt'
-                          : 'bg-tech-grey border-border-dark text-text-white hover:border-node-volt'
-                      }`}
-                    >
-                      {equipment}
-                    </button>
+                <div className="space-y-4">
+                  {Object.entries(EQUIPMENT_CATEGORIES).map(([category, items]) => (
+                    <div key={category}>
+                      <div className="text-xs text-muted-text uppercase tracking-wide mb-2 font-semibold">
+                        {category}
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        {items.map((equipment) => {
+                          // Format display name
+                          const displayName = equipment
+                            .replace(/_/g, ' ')
+                            .replace(/\b\w/g, (l) => l.toUpperCase())
+                            .replace('Bike Erg', 'BikeErg (Concept2)')
+                            .replace('Air Bike', 'Assault/Echo Bike')
+                            .replace('Ski Erg', 'SkiErg');
+                          
+                          return (
+                            <button
+                              key={equipment}
+                              onClick={() => handleEquipmentToggle(equipment)}
+                              className={`px-4 py-2 rounded border transition-colors text-sm ${
+                                formData.equipment.includes(equipment)
+                                  ? 'bg-node-volt text-dark border-node-volt'
+                                  : 'bg-tech-grey border-border-dark text-text-white hover:border-node-volt'
+                              }`}
+                            >
+                              {displayName}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>

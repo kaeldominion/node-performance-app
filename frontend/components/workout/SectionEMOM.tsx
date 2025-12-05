@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import EmomTimer from '@/components/timers/EmomTimer';
 import { useVoice } from '@/hooks/useVoice';
+import { getTierDisplayValue } from './tierDisplayUtils';
 
 interface ExerciseBlock {
   id: string;
@@ -87,17 +88,17 @@ export default function SectionEMOM({ title, note, blocks, workSec, restSec, rou
               <div className="mt-3 space-y-2">
                 {block.tierSilver && (
                   <div className="text-xs bg-panel rounded p-2">
-                    <div className="text-muted-text">SILVER: {block.tierSilver.load || block.tierSilver.targetReps}</div>
+                    <div className="text-muted-text">SILVER: {getTierDisplayValue(block.tierSilver, block.exerciseName)}</div>
                   </div>
                 )}
                 {block.tierGold && (
                   <div className="text-xs bg-panel rounded p-2">
-                    <div className="text-muted-text">GOLD: {block.tierGold.load || block.tierGold.targetReps}</div>
+                    <div className="text-muted-text">GOLD: {getTierDisplayValue(block.tierGold, block.exerciseName)}</div>
                   </div>
                 )}
                 {block.tierBlack && (
                   <div className="text-xs bg-panel border border-node-volt rounded p-2">
-                    <div className="text-node-volt">BLACK: {block.tierBlack.load || block.tierBlack.targetReps}</div>
+                    <div className="text-node-volt">BLACK: {getTierDisplayValue(block.tierBlack, block.exerciseName)}</div>
                   </div>
                 )}
               </div>

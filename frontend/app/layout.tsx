@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, Manrope } from "next/font/google";
 import { ClerkProvider } from '@clerk/nextjs';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -31,11 +32,13 @@ export default function RootLayout({
 
   return (
     <ClerkProvider publishableKey={clerkKey}>
-      <html lang="en" className="dark">
+      <html lang="en" className="dark" suppressHydrationWarning>
         <body
           className={`${spaceGrotesk.variable} ${manrope.variable} antialiased bg-dark text-text-white`}
         >
-          {children}
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>

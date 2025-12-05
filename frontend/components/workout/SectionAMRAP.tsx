@@ -2,6 +2,7 @@
 
 import CountdownTimer from '@/components/timers/CountdownTimer';
 import { useVoice } from '@/hooks/useVoice';
+import { getTierDisplayValue } from './tierDisplayUtils';
 
 interface ExerciseBlock {
   id: string;
@@ -73,22 +74,19 @@ export default function SectionAMRAP({ title, note, blocks, durationSec }: Secti
                 {block.tierSilver && (
                   <div className="bg-panel thin-border rounded p-3">
                     <div className="text-sm text-muted-text mb-1">SILVER</div>
-                    {block.tierSilver.load && <div className="font-medium">{block.tierSilver.load}</div>}
-                    {block.tierSilver.targetReps && <div className="text-sm text-muted-text">{block.tierSilver.targetReps} reps</div>}
+                    <div className="font-medium">{getTierDisplayValue(block.tierSilver, block.exerciseName)}</div>
                   </div>
                 )}
                 {block.tierGold && (
                   <div className="bg-panel thin-border rounded p-3">
                     <div className="text-sm text-muted-text mb-1">GOLD</div>
-                    {block.tierGold.load && <div className="font-medium">{block.tierGold.load}</div>}
-                    {block.tierGold.targetReps && <div className="text-sm text-muted-text">{block.tierGold.targetReps} reps</div>}
+                    <div className="font-medium">{getTierDisplayValue(block.tierGold, block.exerciseName)}</div>
                   </div>
                 )}
                 {block.tierBlack && (
                   <div className="bg-panel thin-border rounded p-3 border-node-volt">
                     <div className="text-sm text-node-volt mb-1">BLACK</div>
-                    {block.tierBlack.load && <div className="font-medium text-node-volt">{block.tierBlack.load}</div>}
-                    {block.tierBlack.targetReps && <div className="text-sm text-muted-text">{block.tierBlack.targetReps} reps</div>}
+                    <div className="font-medium text-node-volt">{getTierDisplayValue(block.tierBlack, block.exerciseName)}</div>
                   </div>
                 )}
               </div>

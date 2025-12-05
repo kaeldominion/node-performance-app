@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { workoutsApi } from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+import { Icons } from '@/lib/iconMapping';
 
 interface Workout {
   id: string;
@@ -113,7 +114,7 @@ export default function AdminWorkoutsPage() {
 
         {workouts.length === 0 ? (
           <div className="bg-panel thin-border rounded-lg p-12 text-center">
-            <div className="text-6xl mb-4">💪</div>
+            <div className="mb-4 flex justify-center"><Icons.SESSIONS size={64} className="text-node-volt" /></div>
             <h2 className="text-2xl font-bold mb-2">No Workouts Found</h2>
             <p className="text-muted-text mb-6">
               Workout management features coming soon. For now, mark workouts as recommended from their detail pages.
@@ -152,8 +153,8 @@ export default function AdminWorkoutsPage() {
                       )}
                       <h3 className="text-xl font-bold">{workout.name}</h3>
                       {workout.isRecommended && (
-                        <span className="px-2 py-1 bg-node-volt/20 text-node-volt text-xs rounded">
-                          ⭐ Recommended
+                        <span className="px-2 py-1 bg-node-volt/20 text-node-volt text-xs rounded flex items-center gap-1">
+                          <Icons.RECOMMENDED size={14} /> Recommended
                         </span>
                       )}
                       {workout.archetype && (
@@ -181,7 +182,13 @@ export default function AdminWorkoutsPage() {
                           : 'bg-panel text-muted-text border border-border-dark hover:border-node-volt'
                       }`}
                     >
-                      {workout.isRecommended ? '⭐ Recommended' : 'Mark as Recommended'}
+                      {workout.isRecommended ? (
+                        <>
+                          <Icons.RECOMMENDED size={16} /> Recommended
+                        </>
+                      ) : (
+                        'Mark as Recommended'
+                      )}
                     </button>
                   </div>
                 </div>

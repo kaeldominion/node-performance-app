@@ -1,5 +1,7 @@
 'use client';
 
+import { getTierDisplayValue } from './tierDisplayUtils';
+
 interface ExerciseBlock {
   id: string;
   label?: string;
@@ -52,17 +54,17 @@ export default function SectionSuperset({ title, note, blocks }: SectionSuperset
                     <div className="space-y-2 mt-4">
                       {block.tierSilver && (
                         <div className="bg-panel rounded p-2 text-sm">
-                          <div className="text-muted-text">SILVER: {block.tierSilver.load || block.tierSilver.targetReps}</div>
+                          <div className="text-muted-text">SILVER: {getTierDisplayValue(block.tierSilver, block.exerciseName)}</div>
                         </div>
                       )}
                       {block.tierGold && (
                         <div className="bg-panel rounded p-2 text-sm">
-                          <div className="text-muted-text">GOLD: {block.tierGold.load || block.tierGold.targetReps}</div>
+                          <div className="text-muted-text">GOLD: {getTierDisplayValue(block.tierGold, block.exerciseName)}</div>
                         </div>
                       )}
                       {block.tierBlack && (
                         <div className="bg-panel border border-node-volt rounded p-2 text-sm">
-                          <div className="text-node-volt">BLACK: {block.tierBlack.load || block.tierBlack.targetReps}</div>
+                          <div className="text-node-volt">BLACK: {getTierDisplayValue(block.tierBlack, block.exerciseName)}</div>
                         </div>
                       )}
                     </div>

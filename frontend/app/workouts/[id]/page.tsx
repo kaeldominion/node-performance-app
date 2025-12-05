@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { workoutsApi, sessionsApi } from '@/lib/api';
-import { WorkoutDeckPlayer } from '@/components/workout/WorkoutDeckPlayer';
+import { WorkoutDeckPlayerV2 } from '@/components/workout/WorkoutDeckPlayerV2';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+import { Icons } from '@/lib/iconMapping';
 import SectionWarmup from '@/components/workout/SectionWarmup';
 import SectionEMOM from '@/components/workout/SectionEMOM';
 import SectionAMRAP from '@/components/workout/SectionAMRAP';
@@ -55,6 +56,14 @@ export default function WorkoutPlayerPage() {
   const [rpe, setRpe] = useState(5);
   const [notes, setNotes] = useState('');
   const [deckMode, setDeckMode] = useState(true);
+  
+  // Check URL params for view mode
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('view') === 'detail') {
+      setDeckMode(false);
+    }
+  }, []);
   const [togglingRecommended, setTogglingRecommended] = useState(false);
 
   useEffect(() => {
@@ -152,7 +161,7 @@ export default function WorkoutPlayerPage() {
             </div>
             <Link
               href="/auth/register"
-              className="bg-node-volt text-deep-asphalt font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
+              className="bg-node-volt text-dark font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
             >
               Sign Up to Train
             </Link>
@@ -176,10 +185,12 @@ export default function WorkoutPlayerPage() {
   if (deckMode) {
     return (
       <>
-        <WorkoutDeckPlayer
+        <WorkoutDeckPlayerV2
           workout={workout}
           sessionId={sessionId}
-          onWorkoutComplete={() => router.push('/')}
+          onComplete={async (rpe: number, notes: string) => {
+            await handleCompleteWorkout(rpe, notes);
+          }}
         />
         {/* Admin Actions & Share Button - Fixed Position */}
         <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
@@ -207,7 +218,13 @@ export default function WorkoutPlayerPage() {
               }`}
               style={{ fontFamily: 'var(--font-space-grotesk)' }}
             >
-              <span>{workout.isRecommended ? '⭐' : '☆'}</span> {workout.isRecommended ? 'Recommended' : 'Mark as Recommended'}
+              {workout.isRecommended ? (
+                <>
+                  <Icons.RECOMMENDED size={20} /> Recommended
+                </>
+              ) : (
+                'Mark as Recommended'
+              )}
             </button>
           )}
           {workout.shareId && (
@@ -231,7 +248,7 @@ export default function WorkoutPlayerPage() {
               className="bg-node-volt text-deep-asphalt font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity shadow-lg flex items-center gap-2"
               style={{ fontFamily: 'var(--font-space-grotesk)' }}
             >
-              <span>📤</span> Share Workout
+              <Icons.SHARE size={20} /> Share Workout
             </button>
           )}
         </div>
@@ -305,12 +322,21 @@ export default function WorkoutPlayerPage() {
             </h1>
             {workout.archetype && <ArchetypeBadge archetype={workout.archetype} size="sm" />}
           </div>
-          <button
-            onClick={() => router.push('/')}
-            className="text-muted-text hover:text-text-white transition-colors"
-          >
-            Exit
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleEnterDeckMode}
+              className="bg-node-volt text-dark font-bold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity text-sm"
+              style={{ fontFamily: 'var(--font-space-grotesk)' }}
+            >
+              Enter Deck Mode
+            </button>
+            <button
+              onClick={() => router.push('/')}
+              className="text-muted-text hover:text-text-white transition-colors"
+            >
+              Exit
+            </button>
+          </div>
         </div>
         {workout.description && (
           <p className="text-muted-text text-sm mb-2 italic">{workout.description}</p>

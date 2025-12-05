@@ -4,6 +4,7 @@ import {
   IsArray,
   IsString,
   IsInt,
+  IsNumber,
   Min,
   Max,
 } from 'class-validator';
@@ -31,5 +32,28 @@ export class UpdateUserProfileDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  // New profile fields
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  weight?: number; // in kg
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  height?: number; // in cm
+
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @IsOptional()
+  @IsString()
+  bio?: string;
 }
 

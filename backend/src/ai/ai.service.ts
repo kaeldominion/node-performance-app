@@ -46,6 +46,13 @@ CRITICAL: Generate exercises FREELY based on:
 - REVL-style naming conventions (e.g., "BB FFE Rev Lunge", "SA DB Strict Press", "DBall TNG GTS")
 - Compound movements and variations
 
+IMPORTANT EXERCISES TO KNOW:
+- WALL BALL: Essential for HYROX workouts. Squat to target, throw ball to wall target. Standard weights: 9kg (men) / 6kg (women). Use in high-rep conditioning blocks (20-100 reps per set).
+- SLAM BALL: Explosive overhead slam to ground. Great for power and conditioning. Use in circuits, finishers, and conditioning blocks.
+- BALLS TO OVERHEAD (or Balls Over Shoulder): Carry ball from ground to overhead/shoulder position. Excellent for grip, core, and shoulder stability. Use in carry circuits and conditioning blocks.
+- When "slam balls" equipment is available, you can use: Slam Ball, Balls to Overhead, Balls Over Shoulder exercises
+- When "wall ball" or similar equipment is available, you can use: Wall Ball Shot exercises
+
 REVL WORKOUT FORMATTING EXAMPLES (study these EXACTLY):
 ${workoutExamples}
 
@@ -165,18 +172,19 @@ TIER PRESCRIPTION GUIDELINES:
 - ALWAYS generate all three tiers (SILVER, GOLD, BLACK) for each exercise block so users can scale up/down
 
 CRITICAL: ERG MACHINES & DISTANCE-BASED EXERCISES - MANDATORY RULES:
-- For erg machines (Rower, Row, SkiErg, Ski, Bike, Bike Erg, Assault Bike, Echo Bike, BikeErg, or any exercise name containing "row", "bike", "ski", "erg"):
+- For erg machines (Rower, Row, SkiErg, Ski, BikeErg/Concept2 Bike, Assault Bike, Echo Bike, or any exercise name containing "row", "bike", "ski", "erg"):
+- NOTE: BikeErg (Concept2) and Assault/Echo Bike are DIFFERENT machines - use "BikeErg" for Concept2, "Assault Bike" or "Echo Bike" for fan bikes
   * ⚠️ MANDATORY: You MUST include distance/calories in ALL THREE tiers (tierSilver, tierGold, tierBlack)
   * ⚠️ DO NOT use "N/A", "null", or leave distance empty for erg machines
   * ⚠️ DO NOT use a single distance/calories at the block level - each tier MUST be different
   * tierSilver: Lower distance/calories (e.g., 500m row, 12 cal bike, 400m ski)
   * tierGold: Medium distance/calories (e.g., 800m row, 15 cal bike, 600m ski)
   * tierBlack: Higher distance/calories (e.g., 1000m row, 18 cal bike, 800m ski)
-  * Use calories (cal) for bike/assault bike exercises
-  * Use meters (m) for rower/ski erg exercises
-  * Example progression: SILVER: 12 cal, GOLD: 15 cal, BLACK: 18 cal (bike)
-  * Example progression: SILVER: 500m, GOLD: 800m, BLACK: 1000m (rower)
-  * If you see "Bike Erg", "Row", "SkiErg", "Bike", etc. in exerciseName, distance/calories are REQUIRED in all tiers
+  * Use calories (cal) for BikeErg and Assault/Echo Bike exercises
+  * Use meters (m) for rower and ski erg exercises
+  * Example progression: SILVER: 12 cal, GOLD: 15 cal, BLACK: 18 cal (BikeErg or Assault Bike)
+  * Example progression: SILVER: 500m, GOLD: 800m, BLACK: 1000m (rower or ski erg)
+  * If you see "BikeErg", "Bike Erg", "Assault Bike", "Echo Bike", "Row", "SkiErg", etc. in exerciseName, distance/calories are REQUIRED in all tiers
 - For bodyweight exercises that use distance (Burpee Broad Jumps, Shuttle Runs, etc.):
   * tierSilver: Shorter distance (e.g., 20m, 30m)
   * tierGold: Medium distance (e.g., 40m, 50m)
@@ -228,6 +236,7 @@ ${isHyrox ? `
 - Focus: Endurance, pacing, sustained effort, aerobic capacity
 - Structure: Extended warmup (10-15 min) → Long conditioning blocks (30-60 min) → Cooldown (5-10 min)
 - NO archetype or goal needed - this is pure conditioning
+- CRITICAL: WALL BALL is a mandatory exercise for HYROX workouts. Always include Wall Ball exercises (typically 20-100 reps per set, 9kg/6kg weights). It's one of the core HYROX race stations.
 ` : `
 - Goal: ${params.goal}
 - Training Level: ${params.trainingLevel} (used for workout complexity/duration guidance only)
@@ -365,6 +374,7 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
     // Equipment patterns
     if (name.includes('bb ') || name.includes('barbell') || name.includes('bar ')) {
       equipment.push('barbell');
+      equipment.push('plates');
     }
     if (name.includes('db ') || name.includes('dumbbell') || name.includes('dumbbell')) {
       equipment.push('dumbbell');
@@ -378,20 +388,30 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
     if (name.includes('row') && (name.includes('erg') || name.includes('machine'))) {
       equipment.push('rower');
     }
-    if (name.includes('bike') || name.includes('erg') && name.includes('bike')) {
-      equipment.push('bike');
+    // Distinguish between BikeErg (Concept2) and Assault/Echo Bike
+    if (name.includes('assault bike') || name.includes('airdyne') || name.includes('echo bike') || name.includes('air bike')) {
+      equipment.push('air_bike');
+    } else if (name.includes('bike') && (name.includes('erg') || name.includes('bikeerg') || name.includes('concept2'))) {
+      // Concept2 BikeErg
+      equipment.push('bike_erg');
+    } else if (name.includes('bike') && name.includes('erg')) {
+      // Generic bike erg - default to bike_erg
+      equipment.push('bike_erg');
     }
     if (name.includes('ski') && name.includes('erg')) {
       equipment.push('ski_erg');
-    }
-    if (name.includes('assault bike') || name.includes('airdyne')) {
-      equipment.push('assault_bike');
     }
     if (name.includes('sled')) {
       equipment.push('sled');
     }
     if (name.includes('wall ball') || name.includes('wallball')) {
       equipment.push('wall_ball');
+    }
+    if (name.includes('slam ball') || name.includes('slamball') || name.includes('ball slam')) {
+      equipment.push('slam_ball');
+    }
+    if (name.includes('balls to overhead') || name.includes('balls over shoulder') || name.includes('ball overhead') || name.includes('ball over shoulder')) {
+      equipment.push('slam_ball');
     }
     if (name.includes('sandbag')) {
       equipment.push('sandbag');
@@ -400,21 +420,24 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
       equipment.push('dumbbell'); // Farmers walk typically uses DBs or KBs
     }
     if (name.includes('pull') && (name.includes('up') || name.includes('down'))) {
-      equipment.push('pull_up_bar');
+      equipment.push('rig');
     }
     if (name.includes('dip')) {
-      equipment.push('dip_bar');
+      equipment.push('rig');
     }
     if (name.includes('ghd') || name.includes('glute ham')) {
       equipment.push('ghd');
     }
+    if (name.includes('squat') && (name.includes('rack') || name.includes('bb ') || name.includes('barbell'))) {
+      if (!equipment.includes('rack')) equipment.push('rack');
+    }
     
     // If no equipment inferred and it's not bodyweight, try to match from workout equipment
-    if (equipment.length === 0 && workoutEquipment.length > 0) {
+    if (equipment.length === 0 && workoutEquipment && workoutEquipment.length > 0) {
       // Check if exercise name contains any workout equipment keywords
-      const workoutEqLower = workoutEquipment.map(eq => eq.toLowerCase());
+      const workoutEqLower = workoutEquipment.map(eq => eq?.toLowerCase() || '').filter(Boolean);
       for (const eq of workoutEqLower) {
-        if (name.includes(eq.replace(/_/g, ' ')) || name.includes(eq.replace(/_/g, ''))) {
+        if (eq && (name.includes(eq.replace(/_/g, ' ')) || name.includes(eq.replace(/_/g, '')))) {
           equipment.push(eq);
         }
       }
@@ -423,6 +446,210 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
     // If still no equipment, it's likely bodyweight
     // Return empty array to indicate bodyweight (frontend will display "Bodyweight")
     return equipment;
+  }
+
+  /**
+   * Infer exercise category from exercise name
+   */
+  private inferCategoryFromName(exerciseName: string): 'STRENGTH' | 'MIXED' | 'SKILL' | 'ENGINE' | 'CORE' | 'MOBILITY' {
+    const name = exerciseName.toLowerCase();
+    
+    // ENGINE: Cardio/conditioning exercises
+    if (name.includes('run') || name.includes('jog') || name.includes('sprint') || 
+        name.includes('row') && (name.includes('erg') || name.includes('machine')) ||
+        name.includes('bike') && (name.includes('erg') || name.includes('assault') || name.includes('echo') || name.includes('air')) ||
+        name.includes('ski') && name.includes('erg') ||
+        name.includes('shuttle') || name.includes('burpee') ||
+        name.includes('jump rope') || name.includes('double under') || name.includes('single under')) {
+      return 'ENGINE';
+    }
+    
+    // SKILL: Technical movements
+    if (name.includes('snatch') || name.includes('clean') || name.includes('jerk') ||
+        name.includes('muscle up') || name.includes('handstand') || name.includes('kip') ||
+        name.includes('double under') || name.includes('turkish getup') || name.includes('tgu')) {
+      return 'SKILL';
+    }
+    
+    // CORE: Core-specific exercises
+    if (name.includes('plank') || name.includes('hollow') || name.includes('dead bug') ||
+        name.includes('pallof') || name.includes('russian twist') || name.includes('situp') ||
+        name.includes('crunch') || name.includes('leg raise') || name.includes('knees to chest') ||
+        name.includes('ttb') || name.includes('toes to bar') || name.includes('ghd situp')) {
+      return 'CORE';
+    }
+    
+    // MOBILITY: Mobility/flexibility exercises
+    if (name.includes('stretch') || name.includes('mobility') || name.includes('cossack') ||
+        name.includes('worlds greatest') || name.includes('inchworm') || name.includes('frog squat')) {
+      return 'MOBILITY';
+    }
+    
+    // MIXED: Hybrid exercises that combine strength and conditioning
+    if (name.includes('thruster') || name.includes('wall ball') || name.includes('sandbag') ||
+        name.includes('sled') || name.includes('carry') || name.includes('bear crawl') ||
+        name.includes('push press') || name.includes('kettlebell swing')) {
+      return 'MIXED';
+    }
+    
+    // Default to STRENGTH for most other exercises
+    return 'STRENGTH';
+  }
+
+  /**
+   * Infer movement pattern from exercise name
+   */
+  private inferMovementPatternFromName(exerciseName: string): 'HORIZONTAL_PUSH' | 'HORIZONTAL_PULL' | 'VERTICAL_PUSH' | 'VERTICAL_PULL' | 'SQUAT' | 'HINGE' | 'LUNGE' | 'CARRY' | 'LOC0MOTION' | 'FULL_BODY' | 'CORE_ANTI_EXTENSION' | 'CORE_ROTATION' | 'BREATH_MOBILITY' {
+    const name = exerciseName.toLowerCase();
+    
+    // HORIZONTAL_PUSH: Bench press, push-ups, dips (horizontal)
+    if (name.includes('bench') || name.includes('push up') || name.includes('pushup') ||
+        name.includes('floor press') || name.includes('chest press') || name.includes('fly')) {
+      return 'HORIZONTAL_PUSH';
+    }
+    
+    // HORIZONTAL_PULL: Rows, face pulls
+    if (name.includes('row') && !name.includes('erg') && !name.includes('machine') ||
+        name.includes('face pull') || name.includes('cable row')) {
+      return 'HORIZONTAL_PULL';
+    }
+    
+    // VERTICAL_PUSH: Overhead press, push press, strict press
+    if (name.includes('press') && (name.includes('overhead') || name.includes('ohp') || name.includes('strict') || name.includes('push press'))) {
+      return 'VERTICAL_PUSH';
+    }
+    
+    // VERTICAL_PULL: Pull-ups, lat pulldowns, chin-ups
+    if (name.includes('pull up') || name.includes('pullup') || name.includes('chin up') ||
+        name.includes('lat pull') || name.includes('pulldown') || name.includes('ski erg')) {
+      return 'VERTICAL_PULL';
+    }
+    
+    // SQUAT: All squat variations
+    if (name.includes('squat') || name.includes('wall ball') || name.includes('thruster') ||
+        name.includes('goblet') || name.includes('front squat') || name.includes('back squat')) {
+      return 'SQUAT';
+    }
+    
+    // HINGE: Deadlifts, RDLs, good mornings, swings
+    if (name.includes('deadlift') || name.includes('rdl') || name.includes('romanian') ||
+        name.includes('good morning') || name.includes('swing') || name.includes('hip thrust') ||
+        name.includes('ghd back extension')) {
+      return 'HINGE';
+    }
+    
+    // LUNGE: All lunge variations
+    if (name.includes('lunge') || name.includes('step up') || name.includes('step-up') ||
+        name.includes('split squat') || name.includes('bulgarian')) {
+      return 'LUNGE';
+    }
+    
+    // CARRY: Carrying exercises
+    if (name.includes('carry') || name.includes('farmer') || name.includes('walk')) {
+      return 'CARRY';
+    }
+    
+    // LOC0MOTION: Running, crawling, locomotion
+    if (name.includes('run') || name.includes('jog') || name.includes('sprint') ||
+        name.includes('crawl') || name.includes('shuttle') || name.includes('row') && name.includes('erg') ||
+        name.includes('bike') && (name.includes('erg') || name.includes('assault') || name.includes('echo'))) {
+      return 'LOC0MOTION';
+    }
+    
+    // CORE_ANTI_EXTENSION: Planks, dead bugs, hollow holds
+    if (name.includes('plank') || name.includes('dead bug') || name.includes('hollow') ||
+        name.includes('bear hold') || name.includes('bear crawl')) {
+      return 'CORE_ANTI_EXTENSION';
+    }
+    
+    // CORE_ROTATION: Russian twists, pallof presses
+    if (name.includes('russian twist') || name.includes('pallof') || name.includes('side plank')) {
+      return 'CORE_ROTATION';
+    }
+    
+    // BREATH_MOBILITY: Mobility/breathing exercises
+    if (name.includes('stretch') || name.includes('mobility') || name.includes('breath') ||
+        name.includes('worlds greatest') || name.includes('cossack')) {
+      return 'BREATH_MOBILITY';
+    }
+    
+    // FULL_BODY: Complex movements that use multiple patterns
+    if (name.includes('burpee') || name.includes('thruster') || name.includes('turkish getup') ||
+        name.includes('tgu') || name.includes('muscle up') || name.includes('clean') ||
+        name.includes('snatch') || name.includes('wall ball')) {
+      return 'FULL_BODY';
+    }
+    
+    // Default fallback
+    return 'FULL_BODY';
+  }
+
+  /**
+   * Infer primary muscles from exercise name
+   */
+  private inferPrimaryMusclesFromName(exerciseName: string): string[] {
+    const name = exerciseName.toLowerCase();
+    const muscles: string[] = [];
+    
+    // Chest exercises
+    if (name.includes('bench') || name.includes('push up') || name.includes('pushup') ||
+        name.includes('chest press') || name.includes('fly') || name.includes('dip') && !name.includes('hip')) {
+      muscles.push('chest');
+    }
+    
+    // Back/Lat exercises
+    if (name.includes('row') && !name.includes('erg') || name.includes('pull up') || name.includes('pullup') ||
+        name.includes('lat pull') || name.includes('pulldown') || name.includes('deadlift')) {
+      if (name.includes('lat') || name.includes('pull')) {
+        muscles.push('lats');
+      } else {
+        muscles.push('lats', 'mid_back');
+      }
+    }
+    
+    // Shoulder exercises
+    if (name.includes('press') && (name.includes('overhead') || name.includes('ohp') || name.includes('strict') || name.includes('push press')) ||
+        name.includes('lateral raise') || name.includes('face pull') || name.includes('shoulder')) {
+      muscles.push('delts');
+    }
+    
+    // Leg exercises - Quads
+    if (name.includes('squat') || name.includes('lunge') || name.includes('leg press') ||
+        name.includes('step up') || name.includes('wall ball') || name.includes('thruster')) {
+      muscles.push('quads');
+    }
+    
+    // Leg exercises - Glutes/Hamstrings
+    if (name.includes('deadlift') || name.includes('rdl') || name.includes('romanian') ||
+        name.includes('hip thrust') || name.includes('good morning') || name.includes('swing') ||
+        name.includes('glute') || name.includes('hamstring')) {
+      if (name.includes('hip thrust') || name.includes('glute')) {
+        muscles.push('glutes');
+      } else {
+        muscles.push('hamstrings', 'glutes');
+      }
+    }
+    
+    // Core exercises
+    if (name.includes('plank') || name.includes('hollow') || name.includes('dead bug') ||
+        name.includes('situp') || name.includes('crunch') || name.includes('leg raise') ||
+        name.includes('russian twist') || name.includes('pallof') || name.includes('ttb') ||
+        name.includes('toes to bar') || name.includes('knees to chest')) {
+      muscles.push('abs');
+    }
+    
+    // Triceps
+    if (name.includes('tricep') || name.includes('dip') && !name.includes('hip') ||
+        name.includes('pushdown') || name.includes('extension')) {
+      muscles.push('triceps');
+    }
+    
+    // Biceps
+    if (name.includes('bicep') || name.includes('curl')) {
+      muscles.push('biceps');
+    }
+    
+    return muscles.length > 0 ? muscles : ['full_body'];
   }
 
   private async extractAndStoreExercises(workout: any, workoutEquipment: string[] = []): Promise<void> {
@@ -467,19 +694,45 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
             .catch(() => null);
           
           if (!existing) {
-            // Infer equipment from exercise name and workout context
+            // Infer exercise properties from name and workout context
             const inferredEquipment = this.inferEquipmentFromName(exerciseName, workoutEquipment);
+            const inferredCategory = this.inferCategoryFromName(exerciseName);
+            const inferredMovementPattern = this.inferMovementPatternFromName(exerciseName);
+            const inferredPrimaryMuscles = this.inferPrimaryMusclesFromName(exerciseName);
+            
+            // Infer space requirement based on exercise type
+            let inferredSpace: 'SPOT' | 'OPEN_AREA' | 'LANE_5M' | 'LANE_10M' | 'RUN_ROUTE' | 'MACHINE_FIXED' = 'OPEN_AREA';
+            const nameLower = exerciseName.toLowerCase();
+            if (nameLower.includes('run') || nameLower.includes('jog') || nameLower.includes('sprint')) {
+              inferredSpace = 'RUN_ROUTE';
+            } else if (nameLower.includes('shuttle') || nameLower.includes('carry') || (nameLower.includes('lunge') && nameLower.includes('walk'))) {
+              inferredSpace = 'LANE_10M';
+            } else if (nameLower.includes('crawl') || nameLower.includes('bear')) {
+              inferredSpace = 'LANE_5M';
+            } else if (nameLower.includes('erg') || nameLower.includes('machine') || nameLower.includes('rower') || (nameLower.includes('bike') && nameLower.includes('erg'))) {
+              inferredSpace = 'MACHINE_FIXED';
+            } else if (inferredEquipment.length === 0 || inferredEquipment.includes('barbell') || inferredEquipment.includes('dumbbell')) {
+              inferredSpace = 'SPOT';
+            }
+            
+            // Infer impact level
+            let inferredImpact: 'LOW' | 'MEDIUM' | 'HIGH' = 'MEDIUM';
+            if (nameLower.includes('jump') || nameLower.includes('sprint') || nameLower.includes('burpee') || nameLower.includes('box jump')) {
+              inferredImpact = 'HIGH';
+            } else if (nameLower.includes('plank') || nameLower.includes('hold') || nameLower.includes('stretch') || nameLower.includes('mobility')) {
+              inferredImpact = 'LOW';
+            }
             
             // Create basic exercise entry - will be enriched with instructions/variations later
             await this.exercisesService.create({
               exerciseId,
               name: exerciseName,
-              category: 'MIXED', // Default - can be updated later
-              movementPattern: 'FULL_BODY', // Default - can be updated later
-              primaryMuscles: [], // Will be inferred later from exercise name/context
-              equipment: inferredEquipment, // Inferred from name and workout context
-              space: 'OPEN_AREA', // Default
-              impactLevel: 'MEDIUM', // Default
+              category: inferredCategory,
+              movementPattern: inferredMovementPattern,
+              primaryMuscles: inferredPrimaryMuscles,
+              equipment: inferredEquipment,
+              space: inferredSpace,
+              impactLevel: inferredImpact,
               typicalUse: ['PRIMARY'],
               suitableArchetypes: workout.archetype ? [workout.archetype] : [],
               indoorFriendly: true,
@@ -494,11 +747,11 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
               regressionTips: null,
             });
             
-            console.log(`✅ Stored new AI-generated exercise: ${exerciseName} (equipment: ${inferredEquipment.length > 0 ? inferredEquipment.join(', ') : 'bodyweight'})`);
+            console.log(`✅ Stored new AI-generated exercise: ${exerciseName} (category: ${inferredCategory}, pattern: ${inferredMovementPattern}, equipment: ${inferredEquipment.length > 0 ? inferredEquipment.join(', ') : 'bodyweight'})`);
           } else {
             // Increment usage count for existing exercise
             await this.exercisesService.update(existing.id, {
-              usageCount: existing.usageCount + 1,
+              usageCount: (existing.usageCount || 0) + 1,
             });
           }
         } catch (error) {
@@ -586,60 +839,61 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
         ...updatedSection,
         order: updatedSection.order || index + 1,
         blocks: (updatedSection.blocks || []).map((block: any, blockIndex: number) => {
-        const updatedBlock = {
-          ...block,
-          order: block.order || blockIndex + 1,
-        };
+          const updatedBlock = {
+            ...block,
+            order: block.order || blockIndex + 1,
+          };
 
-        // Validate erg machines have distance/calories in all tiers
-        if (isErgMachine(block.exerciseName)) {
-          const tiers = ['tierSilver', 'tierGold', 'tierBlack'];
-          tiers.forEach((tierKey) => {
-            const tier = updatedBlock[tierKey];
-            if (tier) {
-              // If distance is missing or null, add default values based on exercise type
-              if (tier.distance === null || tier.distance === undefined || !tier.distanceUnit) {
-                const exerciseName = block.exerciseName.toLowerCase();
-                let defaultDistance: number;
-                let defaultUnit: string;
+          // Validate erg machines have distance/calories in all tiers
+          if (isErgMachine(block.exerciseName)) {
+            const tiers = ['tierSilver', 'tierGold', 'tierBlack'];
+            tiers.forEach((tierKey) => {
+              const tier = updatedBlock[tierKey];
+              if (tier) {
+                // If distance is missing or null, add default values based on exercise type
+                if (tier.distance === null || tier.distance === undefined || !tier.distanceUnit) {
+                  const exerciseName = block.exerciseName.toLowerCase();
+                  let defaultDistance: number;
+                  let defaultUnit: string;
 
-                if (exerciseName.includes('bike') || exerciseName.includes('assault') || exerciseName.includes('echo')) {
-                  // Bike exercises use calories
-                  defaultUnit = 'cal';
-                  if (tierKey === 'tierSilver') defaultDistance = 12;
-                  else if (tierKey === 'tierGold') defaultDistance = 15;
-                  else defaultDistance = 18;
-                } else if (exerciseName.includes('row')) {
-                  // Rower uses meters
-                  defaultUnit = 'm';
-                  if (tierKey === 'tierSilver') defaultDistance = 500;
-                  else if (tierKey === 'tierGold') defaultDistance = 800;
-                  else defaultDistance = 1000;
-                } else if (exerciseName.includes('ski')) {
-                  // SkiErg uses meters
-                  defaultUnit = 'm';
-                  if (tierKey === 'tierSilver') defaultDistance = 400;
-                  else if (tierKey === 'tierGold') defaultDistance = 600;
-                  else defaultDistance = 800;
-                } else {
-                  // Default to meters
-                  defaultUnit = 'm';
-                  if (tierKey === 'tierSilver') defaultDistance = 500;
-                  else if (tierKey === 'tierGold') defaultDistance = 800;
-                  else defaultDistance = 1000;
+                  if (exerciseName.includes('bike') || exerciseName.includes('assault') || exerciseName.includes('echo')) {
+                    // Bike exercises use calories
+                    defaultUnit = 'cal';
+                    if (tierKey === 'tierSilver') defaultDistance = 12;
+                    else if (tierKey === 'tierGold') defaultDistance = 15;
+                    else defaultDistance = 18;
+                  } else if (exerciseName.includes('row')) {
+                    // Rower uses meters
+                    defaultUnit = 'm';
+                    if (tierKey === 'tierSilver') defaultDistance = 500;
+                    else if (tierKey === 'tierGold') defaultDistance = 800;
+                    else defaultDistance = 1000;
+                  } else if (exerciseName.includes('ski')) {
+                    // SkiErg uses meters
+                    defaultUnit = 'm';
+                    if (tierKey === 'tierSilver') defaultDistance = 400;
+                    else if (tierKey === 'tierGold') defaultDistance = 600;
+                    else defaultDistance = 800;
+                  } else {
+                    // Default to meters
+                    defaultUnit = 'm';
+                    if (tierKey === 'tierSilver') defaultDistance = 500;
+                    else if (tierKey === 'tierGold') defaultDistance = 800;
+                    else defaultDistance = 1000;
+                  }
+
+                  tier.distance = defaultDistance;
+                  tier.distanceUnit = defaultUnit;
+                  console.log(`✅ Auto-added distance for ${block.exerciseName} ${tierKey}: ${defaultDistance}${defaultUnit}`);
                 }
-
-                tier.distance = defaultDistance;
-                tier.distanceUnit = defaultUnit;
-                console.log(`✅ Auto-added distance for ${block.exerciseName} ${tierKey}: ${defaultDistance}${defaultUnit}`);
               }
-            }
-          });
-        }
+            });
+          }
 
-        return updatedBlock;
-      }),
-    }));
+          return updatedBlock;
+        }),
+      };
+    });
 
     return workout;
   }
@@ -999,7 +1253,7 @@ FOR_TIME (Cap 45:00):
 - 1km Run
 - 100m SkiErg (tierSilver: 80m, tierGold: 100m, tierBlack: 120m)
 - 1km Run
-- 50 Wall Balls (9/6 kg)
+- 50 Wall Balls (9/6 kg) - CRITICAL HYROX STATION: Wall Ball is essential for HYROX workouts
 - 1km Run
 - 100m Farmers Walk (24/16 kg)
 - 1km Run
@@ -1011,11 +1265,13 @@ FOR_TIME (Cap 45:00):
 - 1km Run
 - 200m Farmers Walk (24/16 kg)
 
+NOTE: WALL BALL is a mandatory exercise for HYROX-style workouts. Always include it when generating HYROX workouts.
+
 Example 2 - Hyrox Station Focus:
 "HYROX STATIONS // 02"
 WARMUP: 5 min
 EMOM x 20:
-Min 1: 20 Wall Balls (9/6 kg)
+Min 1: 20 Wall Balls (9/6 kg) - CRITICAL: Wall Ball is essential for HYROX
 Min 2: 15 Burpee Broad Jumps
 Min 3: 100m Farmers Walk (24/16 kg)
 Min 4: 20m Sandbag Lunges (20/14 kg)
@@ -1023,6 +1279,10 @@ Min 5: 100m Row
 REST 2:00
 Repeat 3 more rounds
 FINISHER: 2km Run for time
+
+NOTE: For HYROX workouts, always prioritize WALL BALL exercises. It's one of the core HYROX stations.
+
+NOTE: For HYROX workouts, always prioritize WALL BALL exercises. It's one of the core HYROX stations.
 
 REVL/HYROX REP SCHEME PATTERNS:
 - Descending reps: 100 → 80 → 60 → 40 → 20

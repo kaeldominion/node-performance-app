@@ -11,7 +11,9 @@
   "dependencies": {
     "@clerk/nextjs": "^6.35.6",
     "axios": "^1.13.2",
+    "lucide-react": "^0.555.0",
     "next": "16.0.7",
+    "qrcode.react": "^4.2.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "recharts": "^3.5.1"

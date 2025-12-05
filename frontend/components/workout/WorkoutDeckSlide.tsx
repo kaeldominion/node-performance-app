@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { WorkoutTimer } from './WorkoutTimer';
 import ArchetypeBadge from './ArchetypeBadge';
 import TierBadge from './TierBadge';
+import { Icons } from '@/lib/iconMapping';
 
 interface WorkoutDeckSlideProps {
   section: any;
@@ -179,8 +180,8 @@ export function WorkoutDeckSlide({
             {/* Instructions Box */}
             {section.note && (
               <div className="bg-node-volt/10 border-2 border-node-volt rounded-lg p-6 text-left">
-                <div className="text-node-volt font-bold text-lg mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                  📋 Instructions
+                <div className="text-node-volt font-bold text-lg mb-2 flex items-center gap-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                  <Icons.PROGRAMS size={20} /> Instructions
                 </div>
                 <p className="text-text-white text-lg leading-relaxed whitespace-pre-line">{section.note}</p>
               </div>
@@ -292,8 +293,8 @@ export function WorkoutDeckSlide({
             {/* Instructions Box */}
             {section.note && (
               <div className="bg-node-volt/10 border-2 border-node-volt rounded-lg p-6 text-left mb-6">
-                <div className="text-node-volt font-bold text-lg mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                  📋 Wave Structure
+                <div className="text-node-volt font-bold text-lg mb-2 flex items-center gap-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                  <Icons.PROGRAMS size={20} /> Wave Structure
                 </div>
                 <p className="text-text-white text-lg leading-relaxed whitespace-pre-line">{section.note}</p>
               </div>
@@ -359,8 +360,8 @@ export function WorkoutDeckSlide({
             {/* Instructions Box */}
             {section.note && (
               <div className="bg-node-volt/10 border-2 border-node-volt rounded-lg p-6 text-left mb-6">
-                <div className="text-node-volt font-bold text-lg mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                  📋 Superset Instructions
+                <div className="text-node-volt font-bold text-lg mb-2 flex items-center gap-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                  <Icons.PROGRAMS size={20} /> Superset Instructions
                 </div>
                 <p className="text-text-white text-lg leading-relaxed whitespace-pre-line">{section.note}</p>
               </div>
@@ -421,34 +422,60 @@ export function WorkoutDeckSlide({
   const renderTierPrescriptions = (block: any) => {
     if (!block.tierSilver && !block.tierGold && !block.tierBlack) return null;
 
-    // Detect if this is an erg machine
-    const isErgMachine = (exerciseName: string): boolean => {
-      const ergPatterns = [/row/i, /bike/i, /ski/i, /erg/i, /assault/i, /echo/i];
-      return ergPatterns.some(pattern => pattern.test(exerciseName));
-    };
-
     const getTierDisplay = (tier: any, exerciseName: string) => {
-      const isErg = isErgMachine(exerciseName);
+      // Import the utility function logic inline to avoid import issues
+      const isErgMachine = (name: string): boolean => {
+        const ergPatterns = [/row/i, /bike/i, /ski/i, /erg/i, /assault/i, /echo/i, /airdyne/i];
+        return ergPatterns.some(pattern => pattern.test(name));
+      };
       
-      // For erg machines, distance/calories are required
+      const isBodyweightRepExercise = (name: string): boolean => {
+        const nameLower = name.toLowerCase();
+        const bodyweightRepExercises = [
+          'box jump', 'pull up', 'pullup', 'chin up', 'push up', 'pushup',
+          'dip', 'situp', 'sit-up', 'crunch', 'plank', 'burpee',
+          'jump', 'lunge', 'squat', 'air squat', 'hollow', 'dead bug',
+          'knees to chest', 'ttb', 'toes to bar', 'muscle up'
+        ];
+        return bodyweightRepExercises.some(ex => nameLower.includes(ex));
+      };
+      
+      const isErg = isErgMachine(exerciseName);
+      const isBodyweightRep = isBodyweightRepExercise(exerciseName);
+      
+      // 1. For erg machines, always show distance/calories
       if (isErg) {
         if (tier.distance !== null && tier.distance !== undefined && tier.distanceUnit) {
           return `${tier.distance}${tier.distanceUnit}`;
         }
-        // Show helpful instruction if missing
         return 'Choose tier for distance/cal';
       }
       
-      // For non-erg exercises, use normal priority
+      // 2. For distance-based exercises (not erg machines)
       if (tier.distance !== null && tier.distance !== undefined && tier.distanceUnit) {
         return `${tier.distance}${tier.distanceUnit}`;
       }
+      
+      // 3. For bodyweight rep exercises, prioritize targetReps
+      if (isBodyweightRep && tier.targetReps !== null && tier.targetReps !== undefined) {
+        return `${tier.targetReps} reps`;
+      }
+      
+      // 4. For other exercises, show targetReps if available
       if (tier.targetReps !== null && tier.targetReps !== undefined) {
         return `${tier.targetReps} reps`;
       }
+      
+      // 5. Show load only if it's not "Bodyweight" (or if there's no targetReps)
       if (tier.load) {
+        const loadLower = tier.load.toLowerCase();
+        // Skip "Bodyweight" if this is a bodyweight rep exercise (should show reps instead)
+        if (loadLower === 'bodyweight' && isBodyweightRep) {
+          return '—';
+        }
         return tier.load;
       }
+      
       return '—';
     };
 

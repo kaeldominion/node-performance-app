@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Icons } from '@/lib/iconMapping';
 
 interface GenerationTerminalProps {
   isGenerating: boolean;
   isReviewing: boolean;
   error?: string | null;
+  onComplete?: () => void;
+  workoutReady?: boolean; // Indicates workout is ready to display
 }
 
 type TerminalStep = {
@@ -15,9 +18,9 @@ type TerminalStep = {
   timestamp?: number;
 };
 
-export function GenerationTerminal({ isGenerating, isReviewing, error }: GenerationTerminalProps) {
+export function GenerationTerminal({ isGenerating, isReviewing, error, onComplete, workoutReady }: GenerationTerminalProps) {
   const [steps, setSteps] = useState<TerminalStep[]>([
-    { id: 'input', label: 'User input received ✓', status: 'complete' },
+    { id: 'input', label: 'User input received', status: 'complete' },
     { id: 'connecting', label: 'Connecting to NØDE AI systems...', status: 'pending' },
     { id: 'generating', label: 'Generating workout structure & exercise selection...', status: 'pending' },
     { id: 'reviewing', label: 'Running workout review & feasibility check...', status: 'pending' },
@@ -30,6 +33,9 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
   const [phaseStartTime, setPhaseStartTime] = useState<number | null>(null);
   const [currentPhase, setCurrentPhase] = useState<'connecting' | 'generating' | 'reviewing' | 'optimizing' | 'complete' | null>(null);
   const [soundsPlayed, setSoundsPlayed] = useState<Set<string>>(new Set());
+  const [isComplete, setIsComplete] = useState(false);
+  const [isShuttingDown, setIsShuttingDown] = useState(false);
+  const [shutdownProgress, setShutdownProgress] = useState(0);
 
   // Generate techy sound effects using Web Audio API
   const playSound = (type: 'connect' | 'step' | 'complete' | 'error') => {
@@ -108,6 +114,9 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
       setProgress(5);
       setCurrentStepProgress(0);
       setSoundsPlayed(new Set());
+      setIsComplete(false);
+      setIsShuttingDown(false);
+      setShutdownProgress(0);
       setSteps((prev) =>
         prev.map((step) => {
           if (step.id === 'connecting') return { ...step, status: 'active' as const };
@@ -154,14 +163,16 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
         }
       }
       // Phase 2: Generating (15% → 60%, ~20-25 seconds)
+      // Only show generating phase when isGenerating is true AND isReviewing is false
       else if (currentPhase === 'generating' && isGenerating && !isReviewing) {
         const generatingDuration = 25000; // 25 seconds for generation
         const phaseProgress = Math.min(1, phaseElapsed / generatingDuration);
         setCurrentStepProgress(phaseProgress);
         setProgress(15 + phaseProgress * 45); // 15% to 60%
       }
-      // Phase 3: Reviewing (60% → 85%, ~12 seconds)
-      else if (isReviewing && currentPhase !== 'reviewing') {
+      // Phase 3: Reviewing (60% → 85%, ~2-3 seconds)
+      // Only transition to reviewing when isGenerating is false (generation complete)
+      else if (isReviewing && !isGenerating && currentPhase !== 'reviewing') {
         setSteps((prev) =>
           prev.map((step) => {
             if (step.id === 'generating') return { ...step, status: 'complete' as const };
@@ -173,8 +184,8 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
         setPhaseStartTime(Date.now());
         setCurrentStepProgress(0);
         playSound('step');
-      } else if (currentPhase === 'reviewing' && isReviewing) {
-        const reviewDuration = 12000; // 12 seconds for review
+      } else if (currentPhase === 'reviewing' && isReviewing && !isGenerating) {
+        const reviewDuration = 2000; // 2 seconds for review (matches backend)
         const phaseProgress = Math.min(1, phaseElapsed / reviewDuration);
         setCurrentStepProgress(phaseProgress);
         setProgress(60 + phaseProgress * 25); // 60% to 85%
@@ -211,6 +222,7 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
             setCurrentPhase('complete');
             setProgress(100);
             setCurrentStepProgress(1);
+            setIsComplete(true);
           }, 300);
         }
       }
@@ -243,59 +255,163 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
     }
   }, [error]);
 
-  if (!isGenerating && !isReviewing && !error) {
-    return null; // Don't show terminal when complete
+  // Handle external completion (workout ready)
+  useEffect(() => {
+    if (workoutReady && !isGenerating && !isReviewing && !error && !isComplete && !isShuttingDown) {
+      // Mark all steps as complete and set completion state
+      setSteps((prev) =>
+        prev.map((step) => ({ ...step, status: 'complete' as const }))
+      );
+      setProgress(100);
+      setCurrentStepProgress(1);
+      setCurrentPhase('complete');
+      setIsComplete(true);
+      playSound('complete');
+    }
+  }, [workoutReady, isGenerating, isReviewing, error, isComplete, isShuttingDown]);
+
+  // Handle completion: show completion state, then shutdown
+  useEffect(() => {
+    if (isComplete && !isShuttingDown) {
+      // Show completion state for 2 seconds, then start shutdown
+      const completionTimer = setTimeout(() => {
+        setIsShuttingDown(true);
+      }, 2000);
+
+      return () => clearTimeout(completionTimer);
+    }
+  }, [isComplete, isShuttingDown]);
+
+  // Shutdown animation
+  useEffect(() => {
+    if (isShuttingDown) {
+      let shutdownFrameId: number;
+      let shutdownStartTime = Date.now();
+      const shutdownDuration = 1500; // 1.5 seconds for shutdown animation
+
+      const animateShutdown = () => {
+        const elapsed = Date.now() - shutdownStartTime;
+        const progress = Math.min(1, elapsed / shutdownDuration);
+        setShutdownProgress(progress);
+
+        if (progress < 1) {
+          shutdownFrameId = requestAnimationFrame(animateShutdown);
+        } else {
+          // Shutdown complete, notify parent
+          if (onComplete) {
+            onComplete();
+          }
+        }
+      };
+
+      shutdownFrameId = requestAnimationFrame(animateShutdown);
+
+      return () => {
+        if (shutdownFrameId) {
+          cancelAnimationFrame(shutdownFrameId);
+        }
+      };
+    }
+  }, [isShuttingDown, onComplete]);
+
+  // Don't render if not generating, reviewing, complete, or error
+  if (!isGenerating && !isReviewing && !error && !isComplete && !isShuttingDown) {
+    return null;
   }
 
+  // Calculate shutdown opacity and scale
+  const shutdownOpacity = isShuttingDown ? 1 - shutdownProgress : 1;
+  const shutdownScale = isShuttingDown ? 0.95 + shutdownProgress * 0.05 : 1;
+  const shutdownBlur = isShuttingDown ? shutdownProgress * 10 : 0;
+
   return (
-    <div className="bg-black border-2 border-node-volt/30 rounded-lg p-6 font-mono text-sm overflow-hidden relative">
+    <div 
+      className="bg-black border-2 border-node-volt/30 rounded-lg p-6 font-mono text-sm overflow-hidden relative transition-all duration-300"
+      style={{
+        opacity: shutdownOpacity,
+        transform: `scale(${shutdownScale})`,
+        filter: `blur(${shutdownBlur}px)`,
+      }}
+    >
       {/* Terminal header */}
       <div className="flex items-center gap-2 mb-4 pb-3 border-b border-node-volt/20">
         <div className="flex gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
-          <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
-          <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
+          <div className={`w-3 h-3 rounded-full transition-all duration-300 ${isShuttingDown ? 'bg-red-500' : 'bg-red-500/80'}`}></div>
+          <div className={`w-3 h-3 rounded-full transition-all duration-300 ${isShuttingDown ? 'bg-yellow-500' : 'bg-yellow-500/80'}`}></div>
+          <div className={`w-3 h-3 rounded-full transition-all duration-300 ${isShuttingDown ? 'bg-green-500' : 'bg-green-500/80'}`}></div>
         </div>
         <div className="text-node-volt/60 text-xs ml-2 font-mono">
           NØDE OS // AI Workout Generator v2.0
         </div>
         <div className="ml-auto text-node-volt/40 text-xs font-mono">
-          {new Date().toLocaleTimeString()}
+          {isShuttingDown ? 'SHUTTING DOWN...' : new Date().toLocaleTimeString()}
         </div>
       </div>
 
       {/* Progress Bar */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-node-volt/60 text-xs font-mono">Progress</span>
+          <span className="text-node-volt/60 text-xs font-mono">
+            {isShuttingDown ? 'Terminal Status' : 'Progress'}
+          </span>
           <span className="text-node-volt font-mono font-bold text-sm">
-            {Math.round(progress)}%
+            {isShuttingDown ? 'CLOSING...' : `${Math.round(progress)}%`}
           </span>
         </div>
         <div className="w-full h-2 bg-node-volt/10 rounded-full overflow-hidden border border-node-volt/20">
-          <div
-            className="h-full bg-gradient-to-r from-node-volt/50 to-node-volt transition-all duration-300 ease-out relative"
-            style={{ width: `${progress}%` }}
-          >
-            {/* Animated shimmer effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
-          </div>
+          {isShuttingDown ? (
+            <div className="h-full bg-gradient-to-r from-red-500/50 to-red-500 transition-all duration-300 ease-out relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+            </div>
+          ) : (
+            <div
+              className="h-full bg-gradient-to-r from-node-volt/50 to-node-volt transition-all duration-300 ease-out relative"
+              style={{ width: `${progress}%` }}
+            >
+              {/* Animated shimmer effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Shutdown overlay with terminal-style messages */}
+      {isShuttingDown && (
+        <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center z-10 backdrop-blur-sm p-6">
+          <div className="w-full max-w-md space-y-2 font-mono text-sm">
+            <div className="text-node-volt/80">$ shutdown -h now</div>
+            <div className="text-green-400/60">Saving session state...</div>
+            <div className="text-green-400/60" style={{ transitionDelay: '0.2s', opacity: shutdownProgress > 0.3 ? 1 : 0 }}>
+              Closing AI connections...
+            </div>
+            <div className="text-green-400/60" style={{ transitionDelay: '0.4s', opacity: shutdownProgress > 0.5 ? 1 : 0 }}>
+              Flushing workout cache...
+            </div>
+            <div className="text-green-400/60" style={{ transitionDelay: '0.6s', opacity: shutdownProgress > 0.7 ? 1 : 0 }}>
+              Transferring to display module...
+            </div>
+            <div className="text-node-volt text-lg font-bold mt-4 animate-pulse" style={{ opacity: shutdownProgress > 0.8 ? 1 : 0 }}>
+              SYSTEM SHUTDOWN COMPLETE
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Terminal content */}
       <div className="space-y-2 min-h-[120px]">
         {steps.map((step, idx) => {
           const isActive = step.status === 'active';
-          const isComplete = step.status === 'complete';
+          const isStepComplete = step.status === 'complete';
           const isError = step.status === 'error';
 
           return (
             <div
               key={step.id}
-              className={`flex items-center gap-3 ${
-                isActive ? 'text-node-volt' : isComplete ? 'text-green-400' : isError ? 'text-red-400' : 'text-gray-500'
-              } transition-colors duration-300`}
+              className={`flex items-center gap-3 transition-all duration-300 ${
+                isShuttingDown ? 'opacity-50' : ''
+              } ${
+                isActive ? 'text-node-volt' : isStepComplete ? 'text-green-400' : isError ? 'text-red-400' : 'text-gray-500'
+              }`}
             >
               {/* Status indicator */}
               <div className="w-2 h-2 flex-shrink-0">
@@ -339,13 +455,13 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
               )}
 
               {/* Success checkmark */}
-              {isComplete && (
-                <span className="text-green-400 ml-auto">✓</span>
+              {isStepComplete && (
+                <Icons.CHECK size={16} className="text-green-400 ml-auto" />
               )}
 
               {/* Error X */}
               {isError && (
-                <span className="text-red-400 ml-auto">✗</span>
+                <Icons.X size={16} className="text-red-400 ml-auto" />
               )}
             </div>
           );
@@ -369,8 +485,8 @@ export function GenerationTerminal({ isGenerating, isReviewing, error }: Generat
           <span>AI Engine: GPT-4o</span>
           <span>•</span>
           <span>Status:</span>
-          <span className={`${isGenerating || isReviewing ? 'text-node-volt animate-pulse' : 'text-green-400'}`}>
-            {isGenerating || isReviewing ? 'PROCESSING' : error ? 'ERROR' : 'READY'}
+          <span className={`${isGenerating || isReviewing ? 'text-node-volt animate-pulse' : isComplete ? 'text-green-400' : error ? 'text-red-400' : 'text-green-400'}`}>
+            {isShuttingDown ? 'SHUTTING DOWN' : isGenerating || isReviewing ? 'PROCESSING' : isComplete ? 'COMPLETE' : error ? 'ERROR' : 'READY'}
           </span>
           {(isGenerating || isReviewing) && (
             <>
@@ -408,4 +524,5 @@ if (typeof document !== 'undefined') {
     document.head.appendChild(style);
   }
 }
+
 

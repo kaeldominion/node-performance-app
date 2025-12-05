@@ -27,39 +27,35 @@ export const setApiToken = (token: string | null) => {
 
 // Add Clerk token to requests
 api.interceptors.request.use((config) => {
+  // Check if this is a public endpoint (no auth required)
+  const isPublicEndpoint = (config as any).isPublicEndpoint;
+  
   if (currentToken) {
     config.headers.Authorization = `Bearer ${currentToken}`;
-    // Decode JWT to see what's in it (just for debugging)
-    try {
-      const parts = currentToken.split('.');
-      if (parts.length === 3) {
-        const payload = JSON.parse(atob(parts[1]));
-        console.log('🔑 Sending request with token:', {
-          url: config.url,
-          method: config.method,
-          tokenPreview: currentToken.substring(0, 30) + '...',
-          jwtPayload: {
-            sub: payload.sub,
-            exp: payload.exp,
-            iat: payload.iat,
-            iss: payload.iss,
-          },
-        });
-      } else {
-        console.log('🔑 Sending request with token (not a JWT):', {
-          url: config.url,
-          method: config.method,
-          tokenPreview: currentToken.substring(0, 30) + '...',
-        });
+    // Only log token details in development for non-public endpoints
+    if (!isPublicEndpoint && process.env.NODE_ENV === 'development') {
+      try {
+        const parts = currentToken.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1]));
+          console.log('🔑 Sending request with token:', {
+            url: config.url,
+            method: config.method,
+            tokenPreview: currentToken.substring(0, 30) + '...',
+            jwtPayload: {
+              sub: payload.sub,
+              exp: payload.exp,
+              iat: payload.iat,
+              iss: payload.iss,
+            },
+          });
+        }
+      } catch (e) {
+        // Silent fail
       }
-    } catch (e) {
-      console.log('🔑 Sending request with token (could not decode):', {
-        url: config.url,
-        method: config.method,
-        tokenPreview: currentToken.substring(0, 30) + '...',
-      });
     }
-  } else {
+  } else if (!isPublicEndpoint) {
+    // Only log error for protected endpoints that need a token
     console.error('❌ NO TOKEN AVAILABLE FOR REQUEST:', {
       url: config.url,
       method: config.method,
@@ -75,56 +71,68 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Log error properties individually to avoid serialization issues
-    console.error('❌ API call failed');
-    console.error('Error type:', typeof error);
-    console.error('Error constructor:', error?.constructor?.name);
-    console.error('Error message:', error?.message);
-    console.error('Error response:', error?.response);
-    console.error('Error response data:', error?.response?.data);
-    console.error('Error response status:', error?.response?.status);
-    console.error('Error response statusText:', error?.response?.statusText);
-    console.error('Error request:', error?.request);
-    console.error('Error config:', error?.config);
-    console.error('Error config URL:', error?.config?.url);
-    console.error('Error config method:', error?.config?.method);
-    console.error('Error stack:', error?.stack);
+    // Check if this is a public endpoint - log less verbosely for public endpoints
+    const isPublicEndpoint = (error?.config as any)?.isPublicEndpoint;
     
-    // Try to stringify for debugging
-    try {
-      console.error('Error JSON:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-    } catch (e) {
-      console.error('Could not stringify error:', e);
-    }
-    
-    // Also log in a more readable format
-    if (error?.response) {
-      // Server responded with error
-      console.error('❌ Server Error Response:', {
-        status: error.response.status,
-        statusText: error.response.statusText,
-        data: error.response.data,
-        url: error.config?.url,
-        method: error.config?.method,
-        headers: error.response.headers,
-      });
-      // Log the actual error message from server
-      if (error.response.data?.message) {
-        console.error('📋 Server error message:', error.response.data.message);
-      }
-    } else if (error?.request) {
-      // Request made but no response (network error)
-      console.error('❌ Network Error - No response from server:', {
-        url: error.config?.url,
-        method: error.config?.method,
-        message: error.message,
+    if (isPublicEndpoint) {
+      // For public endpoints, only log a simple message (expected to fail sometimes)
+      console.warn('Public API call failed (this is expected if backend is unavailable):', {
+        url: error?.config?.url,
+        status: error?.response?.status,
+        message: error?.message,
       });
     } else {
-      // Error setting up request
-      console.error('❌ Request Setup Error:', {
-        message: error?.message,
-        error: String(error),
-      });
+      // For protected endpoints, log full error details
+      console.error('❌ API call failed');
+      console.error('Error type:', typeof error);
+      console.error('Error constructor:', error?.constructor?.name);
+      console.error('Error message:', error?.message);
+      console.error('Error response:', error?.response);
+      console.error('Error response data:', error?.response?.data);
+      console.error('Error response status:', error?.response?.status);
+      console.error('Error response statusText:', error?.response?.statusText);
+      console.error('Error request:', error?.request);
+      console.error('Error config:', error?.config);
+      console.error('Error config URL:', error?.config?.url);
+      console.error('Error config method:', error?.config?.method);
+      console.error('Error stack:', error?.stack);
+      
+      // Try to stringify for debugging
+      try {
+        console.error('Error JSON:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+      } catch (e) {
+        console.error('Could not stringify error:', e);
+      }
+      
+      // Also log in a more readable format
+      if (error?.response) {
+        // Server responded with error
+        console.error('❌ Server Error Response:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.response.headers,
+        });
+        // Log the actual error message from server
+        if (error.response.data?.message) {
+          console.error('📋 Server error message:', error.response.data.message);
+        }
+      } else if (error?.request) {
+        // Request made but no response (network error)
+        console.error('❌ Network Error - No response from server:', {
+          url: error.config?.url,
+          method: error.config?.method,
+          message: error.message,
+        });
+      } else {
+        // Error setting up request
+        console.error('❌ Request Setup Error:', {
+          message: error?.message,
+          error: String(error),
+        });
+      }
     }
     
     return Promise.reject(error);
@@ -181,6 +189,18 @@ export const programsApi = {
     const response = await api.get(`/programs/${slug}`);
     return response.data;
   },
+  createWithWorkouts: async (data: {
+    name: string;
+    description?: string;
+    level?: string;
+    goal?: string;
+    durationWeeks?: number;
+    cycle?: string;
+    workouts: any[];
+  }) => {
+    const response = await api.post('/programs', data);
+    return response.data;
+  },
 };
 
 // Workouts API
@@ -194,7 +214,13 @@ export const workoutsApi = {
     return response.data;
   },
   getRecommended: async () => {
-    const response = await api.get('/workouts/recommended');
+    const response = await api.get('/workouts/recommended', {
+      isPublicEndpoint: true, // Mark as public - no auth required
+    } as any);
+    return response.data;
+  },
+  getMyWorkouts: async () => {
+    const response = await api.get('/workouts/my-workouts');
     return response.data;
   },
   create: async (data: any) => {
@@ -203,6 +229,100 @@ export const workoutsApi = {
   },
   toggleRecommended: async (id: string, isRecommended: boolean) => {
     const response = await api.patch(`/workouts/${id}/recommended`, { isRecommended });
+    return response.data;
+  },
+  delete: async (id: string) => {
+    const response = await api.delete(`/workouts/${id}`);
+    return response.data;
+  },
+  generateShareLink: async (id: string) => {
+    const response = await api.post(`/workouts/${id}/share`);
+    return response.data;
+  },
+};
+
+// Schedule API
+export const scheduleApi = {
+  create: async (data: {
+    workoutId?: string;
+    programId?: string;
+    scheduledDate: string;
+    duration?: number;
+    notes?: string;
+  }) => {
+    const response = await api.post('/me/schedule', data);
+    return response.data;
+  },
+  scheduleProgram: async (data: {
+    programId: string;
+    startDate: string;
+    startTime?: string;
+  }) => {
+    const response = await api.post('/me/schedule/program', data);
+    return response.data;
+  },
+  getSchedule: async (startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    const response = await api.get(`/me/schedule?${params.toString()}`);
+    return response.data;
+  },
+  update: async (id: string, data: {
+    scheduledDate?: string;
+    duration?: number;
+    notes?: string;
+    order?: number;
+  }) => {
+    const response = await api.put(`/me/schedule/${id}`, data);
+    return response.data;
+  },
+  delete: async (id: string) => {
+    const response = await api.delete(`/me/schedule/${id}`);
+    return response.data;
+  },
+  reorder: async (updates: Array<{ id: string; scheduledDate: string; order: number }>) => {
+    const response = await api.post('/me/schedule/reorder', { updates });
+    return response.data;
+  },
+};
+
+// Network API
+export const networkApi = {
+  search: async (query: string) => {
+    const response = await api.get(`/me/network/search?q=${encodeURIComponent(query)}`);
+    return response.data;
+  },
+  searchByCode: async (code: string) => {
+    const response = await api.get(`/me/network/search-code?code=${encodeURIComponent(code)}`);
+    return response.data;
+  },
+  sendRequest: async (addresseeId: string) => {
+    const response = await api.post('/me/network', { addresseeId });
+    return response.data;
+  },
+  acceptRequest: async (requestId: string) => {
+    const response = await api.post(`/me/network/${requestId}/accept`);
+    return response.data;
+  },
+  remove: async (networkUserId: string) => {
+    const response = await api.delete(`/me/network/${networkUserId}`);
+    return response.data;
+  },
+  getNetwork: async () => {
+    const response = await api.get('/me/network');
+    return response.data;
+  },
+  getActivity: async () => {
+    const response = await api.get('/me/network/activity');
+    return response.data;
+  },
+  getPending: async () => {
+    const response = await api.get('/me/network/pending');
+    return response.data;
+  },
+  generateCode: async () => {
+    const response = await api.post('/me/network/generate-code');
     return response.data;
   },
 };

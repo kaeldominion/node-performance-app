@@ -10,6 +10,7 @@ interface User {
   name?: string;
   isAdmin?: boolean;
   role?: string;
+  networkCode?: string;
 }
 
 interface AuthContextType {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { analyticsApi } from '@/lib/api';
 import Navbar from '@/components/Navbar';
+import { Icons } from '@/lib/iconMapping';
 
 interface LeaderboardEntry {
   rank: number;
@@ -47,11 +48,11 @@ export default function LeaderboardPage() {
     }
   };
 
-  const getRankEmoji = (rank: number) => {
-    if (rank === 1) return '🥇';
-    if (rank === 2) return '🥈';
-    if (rank === 3) return '🥉';
-    return `#${rank}`;
+  const getRankIcon = (rank: number) => {
+    if (rank === 1) return Icons.RANK_1;
+    if (rank === 2) return Icons.RANK_2;
+    if (rank === 3) return Icons.RANK_3;
+    return null;
   };
 
   const getRankColor = (rank: number) => {
@@ -90,7 +91,7 @@ export default function LeaderboardPage() {
                 onClick={() => setSelectedMetric(metric)}
                 className={`px-6 py-3 rounded-lg font-bold transition-all ${
                   selectedMetric === metric
-                    ? 'bg-node-volt text-deep-asphalt shadow-lg shadow-node-volt/30'
+                    ? 'bg-node-volt text-dark shadow-lg shadow-node-volt/30'
                     : 'bg-tech-grey text-muted-text hover:text-text-white hover:bg-tech-grey/80 border border-border-dark'
                 }`}
                 style={{ fontFamily: 'var(--font-space-grotesk)' }}
@@ -117,11 +118,17 @@ export default function LeaderboardPage() {
                   <div className="flex items-center gap-6">
                     {/* Rank */}
                     <div className="flex-shrink-0 w-16 text-center">
-                      <div className="text-3xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                        {getRankEmoji(entry.rank)}
-                      </div>
-                      {entry.rank > 3 && (
-                        <div className="text-sm text-muted-text mt-1">#{entry.rank}</div>
+                      {getRankIcon(entry.rank) ? (
+                        <div className="flex justify-center">
+                          {(() => {
+                            const RankIcon = getRankIcon(entry.rank);
+                            return RankIcon ? <RankIcon size={32} className="text-node-volt" /> : null;
+                          })()}
+                        </div>
+                      ) : (
+                        <div className="text-3xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                          #{entry.rank}
+                        </div>
                       )}
                     </div>
 
@@ -173,8 +180,8 @@ export default function LeaderboardPage() {
                       <div className="text-xs text-muted-text mb-1" style={{ fontFamily: 'var(--font-manrope)' }}>
                         Streak
                       </div>
-                      <div className="text-2xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                        {entry.streak} 🔥
+                      <div className="text-2xl font-bold text-node-volt flex items-center gap-1" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                        {entry.streak} <Icons.STREAK size={20} />
                       </div>
                     </div>
                     <div className="text-center min-w-[120px]">
@@ -199,8 +206,8 @@ export default function LeaderboardPage() {
 
         {/* Info Box */}
         <div className="mt-12 bg-concrete-grey border border-border-dark rounded-xl p-6">
-          <p className="text-muted-text text-center" style={{ fontFamily: 'var(--font-manrope)' }}>
-            Rankings are updated in real-time. Keep training to climb the leaderboard! 💪
+          <p className="text-muted-text text-center flex items-center justify-center gap-2" style={{ fontFamily: 'var(--font-manrope)' }}>
+            Rankings are updated in real-time. Keep training to climb the leaderboard! <Icons.SESSIONS size={20} className="text-node-volt" />
           </p>
         </div>
       </div>

@@ -7,6 +7,7 @@ import { analyticsApi, gamificationApi } from '@/lib/api';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import { LevelUpModal } from '@/components/gamification/LevelUpModal';
+import { Icons } from '@/lib/iconMapping';
 
 interface SystemStats {
   users: {
@@ -224,8 +225,9 @@ export default function AdminDashboard() {
         {/* Gamification Preview Section */}
         <div className="bg-panel thin-border rounded-lg p-8 mb-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-              🎮 Gamification Preview
+            <h2 className="text-2xl font-bold flex items-center gap-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+              <Icons.GAMIFICATION size={24} className="text-node-volt" />
+              Gamification Preview
             </h2>
             <button
               onClick={handlePreviewLevelUp}
