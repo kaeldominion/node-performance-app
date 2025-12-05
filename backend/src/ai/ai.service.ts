@@ -205,7 +205,7 @@ Design workouts that are challenging, progressive, realistic, and aligned with t
     
     const userPrompt = `Generate ${workoutTypeGuidance} with these parameters:
 - Goal: ${params.goal}
-- Training Level: ${params.trainingLevel}
+- Training Level: ${params.trainingLevel} (used for workout complexity/duration guidance only)
 - Available Equipment: ${params.equipment.join(', ')}
 - Available Time: ${params.availableMinutes} minutes per session
 ${archetypeParam ? `- Archetype: ${archetypeParam} (follow archetype structure exactly)` : ''}
@@ -213,6 +213,12 @@ ${archetypeParam ? `- Archetype: ${archetypeParam} (follow archetype structure e
 ${cycleGuidance ? `- Cycle: ${cycle} - ${cycleGuidance}` : ''}
 
 ${workoutTypeGuidance}
+
+CRITICAL REQUIREMENTS:
+- EVERY exercise block MUST include all three tiers: tierSilver, tierGold, and tierBlack
+- Users will select their tier during workout execution, so all options must be available
+- Use exercise tier prescriptions from the database when available
+- If database doesn't have tier data, estimate appropriate loads/reps for each tier based on exercise complexity
 
 CRITICAL TIME CONSTRAINTS:
 - Total workout must fit within ${params.availableMinutes} minutes
@@ -224,10 +230,9 @@ CRITICAL TIME CONSTRAINTS:
 EQUIPMENT NOTES:
 ${hasRunningRoute ? '- Running route available: You may include running distances (100m, 200m, 400m, 800m, 1km) in workouts' : '- NO running route available: Do NOT include running exercises or distances'}
 - Only use exercises that match the available equipment list
-- Use exercise tier prescriptions from the database when provided
 - Ensure all exercises are realistic for the training level and equipment available
 
-Generate workouts that are effective, time-appropriate, challenging but achievable, and properly structured.`;
+Generate workouts that are effective, time-appropriate, challenging but achievable, and properly structured with all three tiers for every exercise.`;
 
     try {
       // For week/month, we need an array response
