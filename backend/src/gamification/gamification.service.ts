@@ -408,13 +408,18 @@ export class GamificationService {
 
     const progress = this.getXPProgress(user.xp, user.level);
     const nextLevelXP = this.getXPForNextLevel(user.level);
+    const xpToNextLevel = nextLevelXP ? nextLevelXP - user.xp : 0;
+    const nextLevel = user.level < LEVEL_THRESHOLDS.length - 1 ? user.level + 1 : null;
 
     return {
       xp: user.xp,
       level: user.level,
+      levelName: getLevelName(user.level),
       progress,
       nextLevelXP,
-      xpToNextLevel: nextLevelXP ? nextLevelXP - user.xp : null,
+      xpToNextLevel: xpToNextLevel > 0 ? xpToNextLevel : 0,
+      nextLevel: nextLevel,
+      nextLevelName: nextLevel ? getLevelName(nextLevel) : null,
     };
   }
 }
