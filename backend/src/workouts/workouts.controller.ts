@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Body, Param, UseGuards, Patch, Delete, Requ
 import { WorkoutsService } from './workouts.service';
 import { ClerkAdminGuard } from '../auth/clerk-admin.guard';
 import { ClerkAuthGuard } from '../auth/clerk.guard';
+import { autoFixDatabase } from '../../scripts/auto-fix-database';
 
 @Controller('workouts')
 export class WorkoutsController {
@@ -15,7 +16,46 @@ export class WorkoutsController {
   @Get('my-workouts')
   @UseGuards(ClerkAuthGuard)
   async findMyWorkouts(@Request() req: any) {
-    return this.workoutsService.findByUser(req.user.id);
+    try {
+      return await this.workoutsService.findByUser(req.user.id);
+    } catch (error: any) {
+      console.error('Error in findMyWorkouts:', error);
+      throw error;
+    }
+  }
+
+  @Get('health-check')
+  async healthCheck() {
+    try {
+      const result = await autoFixDatabase();
+      return {
+        status: result.success ? 'healthy' : 'degraded',
+        database: result.success ? 'ok' : 'issues_detected',
+        fixes: result.fixes,
+        errors: result.errors,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error: any) {
+      return {
+        status: 'unhealthy',
+        database: 'error',
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
+
+  @Post('auto-fix')
+  @UseGuards(ClerkAdminGuard)
+  async triggerAutoFix() {
+    const result = await autoFixDatabase();
+    return {
+      success: result.success,
+      message: result.message,
+      fixes: result.fixes,
+      errors: result.errors,
+      timestamp: new Date().toISOString(),
+    };
   }
 
   @Get('admin-all')
