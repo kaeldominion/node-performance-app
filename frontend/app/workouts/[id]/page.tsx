@@ -209,7 +209,13 @@ export default function WorkoutPlayerPage() {
             }
           }}
           onComplete={async (rpe: number, notes: string) => {
-            await handleCompleteWorkout(rpe, notes);
+            // Check if user is coach/admin - show bypass confirmation modal
+            if (user?.role === 'COACH' || user?.isAdmin === true) {
+              setPendingCompletion({ rpe, notes });
+              setShowCoachAdminBypassConfirm(true);
+            } else {
+              await handleCompleteWorkout(rpe, notes);
+            }
           }}
         />
       );
@@ -221,7 +227,13 @@ export default function WorkoutPlayerPage() {
           workout={workout}
           sessionId={sessionId}
           onComplete={async (rpe: number, notes: string) => {
-            await handleCompleteWorkout(rpe, notes);
+            // Check if user is coach/admin - show bypass confirmation modal
+            if (user?.role === 'COACH' || user?.isAdmin === true) {
+              setPendingCompletion({ rpe, notes });
+              setShowCoachAdminBypassConfirm(true);
+            } else {
+              await handleCompleteWorkout(rpe, notes);
+            }
           }}
         />
         {/* Admin Actions & Share Button - Fixed Position */}
