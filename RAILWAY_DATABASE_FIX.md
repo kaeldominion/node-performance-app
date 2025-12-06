@@ -4,32 +4,51 @@ Your production database on Railway is missing several migrations. Here's how to
 
 ## Quick Fix: Run All Migrations
 
-**Method 1: Using Railway Shell (Recommended)**
+**Method 1: Using Railway CLI (Recommended)**
 
-1. Go to [railway.app](https://railway.app)
-2. Select your **Backend** service
-3. Click **"Deployments"** tab
-4. Open the most recent deployment
-5. Click **"Shell"** button
-6. Run:
+1. Install Railway CLI (if you haven't):
    ```bash
-   cd /app
-   npx prisma migrate deploy
+   npm install -g @railway/cli
+   ```
+
+2. Login to Railway:
+   ```bash
+   railway login
+   ```
+
+3. Link to your project:
+   ```bash
+   railway link
+   ```
+   (Select your project when prompted)
+
+4. Run the migration:
+   ```bash
+   railway run --service node-performance-app npx prisma migrate deploy
+   ```
+   
+   Or if your service is named differently:
+   ```bash
+   railway run --service backend npx prisma migrate deploy
    ```
 
 This should apply all pending migrations automatically.
 
-## Method 2: Direct SQL Fix (If Migrations Fail)
+## Method 2: Direct SQL Fix (Easiest - No CLI Needed)
 
-If `prisma migrate deploy` doesn't work, you can run the SQL directly:
+This is the **easiest method** - just run SQL directly on your database:
 
-1. Go to Railway → Your **Postgres** service (not backend)
-2. Click **"Data"** tab
-3. Click **"Connect"** or **"Query"** button
-4. Copy and paste the contents of `backend/scripts/fix-production-database.sql`
-5. Run it
+1. Go to [railway.app](https://railway.app)
+2. Select your **Postgres** service (the database, not the backend)
+3. Click the **"Data"** tab at the top
+4. Click **"Query"** button (or look for a SQL query interface)
+5. Copy the entire contents of `backend/scripts/fix-production-database.sql` from your repo
+6. Paste it into the query box
+7. Click **"Run"** or **"Execute"**
 
-## Method 3: Using Railway CLI
+This will add all missing columns and tables in one go.
+
+## Method 3: Redeploy (Automatic Migration)
 
 ```bash
 # Install Railway CLI if needed
