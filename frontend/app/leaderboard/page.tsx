@@ -288,6 +288,14 @@ export default function LeaderboardPage() {
                       <div className="flex items-center gap-3 mb-2">
                         <div 
                           onClick={() => router.push(`/profile/${entry.userId}`)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              router.push(`/profile/${entry.userId}`);
+                            }
+                          }}
                           className="w-12 h-12 rounded-full bg-node-volt/20 border border-node-volt/50 flex items-center justify-center text-node-volt font-bold text-lg hover:bg-node-volt/30 transition-colors cursor-pointer" 
                           style={{ fontFamily: 'var(--font-space-grotesk)' }}
                         >
