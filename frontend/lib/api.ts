@@ -593,6 +593,10 @@ export const exercisesApi = {
 
 // Admin API - Exercises
 export const adminApi = {
+  syncClerkUsers: async () => {
+    const response = await api.post('/admin/users/sync-clerk');
+    return response.data;
+  },
   // Exercises
   getExercises: async () => {
     const response = await api.get('/exercises');

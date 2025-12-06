@@ -113,6 +113,11 @@ export class AdminUsersController {
     return this.usersService.findAll();
   }
 
+  @Post('sync-clerk')
+  async syncClerkUsers() {
+    return this.usersService.syncAllClerkUsers();
+  }
+
   @Patch(':id/admin')
   async setAdmin(@Param('id') id: string, @Body() body: { isAdmin: boolean }) {
     return this.usersService.setAdmin(id, body.isAdmin);

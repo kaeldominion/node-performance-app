@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
 import { ActivityService } from '../activity/activity.service';
+import { clerkClient } from '@clerk/clerk-sdk-node';
 
 @Injectable()
 export class UsersService {
@@ -239,6 +240,90 @@ export class UsersService {
         : null,
       recentSessions,
     };
+  }
+
+  async syncAllClerkUsers() {
+    try {
+      let allUsers = [];
+      let hasMore = true;
+      let offset = 0;
+      const limit = 100;
+
+      // Fetch all users from Clerk (paginated)
+      while (hasMore) {
+        const response = await clerkClient.users.getUserList({ limit, offset });
+        allUsers = allUsers.concat(response.data);
+        hasMore = response.data.length === limit;
+        offset += limit;
+      }
+
+      console.log(`Found ${allUsers.length} users in Clerk`);
+
+      // Sync each user to database
+      const results = {
+        total: allUsers.length,
+        created: 0,
+        updated: 0,
+        errors: [] as string[],
+      };
+
+      for (const clerkUser of allUsers) {
+        try {
+          const email = clerkUser.emailAddresses?.[0]?.emailAddress;
+          if (!email) {
+            results.errors.push(`User ${clerkUser.id} has no email`);
+            continue;
+          }
+
+          const firstName = clerkUser.firstName;
+          const lastName = clerkUser.lastName;
+          const name = firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName || null;
+          const role = clerkUser.publicMetadata?.role || 'HOME_USER';
+          const isAdmin = clerkUser.publicMetadata?.isAdmin || false;
+
+          const existingUser = await this.prisma.user.findUnique({
+            where: { id: clerkUser.id },
+          });
+
+          if (existingUser) {
+            await this.prisma.user.update({
+              where: { id: clerkUser.id },
+              data: {
+                email,
+                name,
+                role: role as any,
+                isAdmin,
+              },
+            });
+            results.updated++;
+          } else {
+            await this.prisma.user.create({
+              data: {
+                id: clerkUser.id,
+                email,
+                name,
+                passwordHash: '', // Clerk handles passwords
+                role: role as any,
+                isAdmin,
+              },
+            });
+            results.created++;
+          }
+        } catch (error: any) {
+          results.errors.push(`Failed to sync user ${clerkUser.id}: ${error.message}`);
+          console.error(`Error syncing user ${clerkUser.id}:`, error);
+        }
+      }
+
+      return {
+        success: true,
+        message: `Synced ${results.created} new users and updated ${results.updated} existing users`,
+        ...results,
+      };
+    } catch (error: any) {
+      console.error('Error syncing Clerk users:', error);
+      throw error;
+    }
   }
 
   async setAdmin(userId: string, isAdmin: boolean) {

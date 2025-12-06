@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { analyticsApi, gamificationApi } from '@/lib/api';
+import { analyticsApi, gamificationApi, adminApi } from '@/lib/api';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import { Icon } from '@/components/icons';
@@ -69,6 +69,7 @@ export default function AdminDashboard() {
   const [showLevelUpPreview, setShowLevelUpPreview] = useState(false);
   const [previewLevel, setPreviewLevel] = useState(5);
   const [previewStats, setPreviewStats] = useState<any>(null);
+  const [syncingUsers, setSyncingUsers] = useState(false);
 
   useEffect(() => {
     if (!authLoading && (!user || !user.isAdmin)) {
@@ -117,6 +118,23 @@ export default function AdminDashboard() {
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     return `${days}d ago`;
+  };
+
+  const handleSyncClerkUsers = async () => {
+    if (!confirm('This will sync all users from Clerk to the database. Continue?')) {
+      return;
+    }
+    try {
+      setSyncingUsers(true);
+      const result = await adminApi.syncClerkUsers();
+      alert(`Success! ${result.message}\nCreated: ${result.created}, Updated: ${result.updated}`);
+      await loadStats(); // Refresh stats
+    } catch (error: any) {
+      console.error('Failed to sync users:', error);
+      alert(`Failed to sync users: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setSyncingUsers(false);
+    }
   };
 
   const handlePreviewLevelUp = async () => {
@@ -189,7 +207,17 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Users */}
           <div className="bg-panel thin-border rounded-lg p-6">
-            <div className="text-muted-text text-sm mb-2">Total Users</div>
+            <div className="flex items-start justify-between mb-2">
+              <div className="text-muted-text text-sm">Total Users</div>
+              <button
+                onClick={handleSyncClerkUsers}
+                disabled={syncingUsers}
+                className="text-xs bg-node-volt/20 hover:bg-node-volt/30 text-node-volt px-2 py-1 rounded transition-colors disabled:opacity-50"
+                title="Sync users from Clerk"
+              >
+                {syncingUsers ? 'Syncing...' : 'Sync'}
+              </button>
+            </div>
             <div className="text-3xl font-bold text-node-volt mb-1">
               {systemStats?.users.total || 0}
             </div>
