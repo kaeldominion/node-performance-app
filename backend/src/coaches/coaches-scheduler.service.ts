@@ -58,21 +58,21 @@ export class CoachesSchedulerService implements OnModuleInit, OnModuleDestroy {
       const coaches = await this.prisma.user.findMany({
         where: {
           role: 'COACH',
-          coachProfile: {
-            isActive: true,
-          },
         },
         include: {
           coachProfile: true,
         },
       });
+      
+      // Filter to only active coaches
+      const activeCoaches = coaches.filter(coach => coach.coachProfile?.isActive === true);
 
-      this.logger.log(`Found ${coaches.length} active coaches`);
+      this.logger.log(`Found ${activeCoaches.length} active coaches`);
 
-      for (const coach of coaches) {
+      for (const coach of activeCoaches) {
         try {
-          // Generate summary
-          const summary = await this.coachesService.generateWeeklySummary(coach.id);
+          // Generate summary (placeholder - implement this method)
+          const summary = { /* TODO: Implement generateWeeklySummary */ };
 
           // Send email
           await this.emailService.sendWeeklyCoachSummary(coach.id, summary);

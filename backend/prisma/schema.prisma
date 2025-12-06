@@ -399,7 +399,7 @@ model SessionLog {
 
   // Coach assignment tracking
   coachAssignmentId String? @unique
-  coachAssignment  CoachWorkoutAssignment? @relation(fields: [coachAssignmentId], references: [id], onDelete: SetNull)
+  coachAssignment  CoachWorkoutAssignment? @relation("SessionLogAssignment")
   inPersonSession   InPersonSession?
 
   createdAt DateTime @default(now())
@@ -604,7 +604,7 @@ model CoachWorkoutAssignment {
 
   completedAt   DateTime?
   sessionLogId  String?   @unique
-  sessionLog    SessionLog? @relation(fields: [sessionLogId], references: [id])
+  sessionLog    SessionLog? @relation("SessionLogAssignment", fields: [sessionLogId], references: [id], onDelete: SetNull)
 
   @@unique([coachClientId, workoutId, scheduledFor])
   @@map("coach_workout_assignments")
