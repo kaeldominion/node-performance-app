@@ -10,6 +10,8 @@ interface ExerciseBlock {
   description?: string;
   repScheme?: string;
   loadPercentage?: string;
+  exerciseImageUrl?: string;
+  exerciseInstructions?: string;
   tierSilver?: { load?: string; targetReps?: number; notes?: string };
   tierGold?: { load?: string; targetReps?: number; notes?: string };
   tierBlack?: { load?: string; targetReps?: number; notes?: string };
