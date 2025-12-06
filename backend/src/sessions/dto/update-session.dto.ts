@@ -21,5 +21,9 @@ export class UpdateSessionDto {
 
   @IsOptional()
   metrics?: any;
+
+  @IsOptional()
+  @IsBoolean()
+  bypassValidation?: boolean; // For coaches/admins to bypass completion requirements
 }
 

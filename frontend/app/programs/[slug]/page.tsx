@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { programsApi, userApi, scheduleApi } from '@/lib/api';
+import { programsApi, userApi, scheduleApi, workoutsApi } from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import ArchetypeBadge from '@/components/workout/ArchetypeBadge';
 import Link from 'next/link';
@@ -37,6 +37,7 @@ export default function ProgramDetailPage() {
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showScheduleWorkoutModal, setShowScheduleWorkoutModal] = useState(false);
   const [selectedWorkout, setSelectedWorkout] = useState<{ id: string; name: string } | null>(null);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -46,8 +47,18 @@ export default function ProgramDetailPage() {
 
     if (user && slug) {
       loadProgram();
+      loadFavorites();
     }
   }, [user, authLoading, slug]);
+
+  const loadFavorites = async () => {
+    try {
+      const favorites = await workoutsApi.getFavorites().catch(() => []);
+      setFavoriteIds(new Set(favorites.map((f: any) => f.id)));
+    } catch (error) {
+      console.error('Failed to load favorites:', error);
+    }
+  };
 
   const loadProgram = async () => {
     try {
@@ -151,6 +162,30 @@ export default function ProgramDetailPage() {
                     {workout.archetype && <ArchetypeBadge archetype={workout.archetype} size="sm" />}
                   </Link>
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        const isFavorite = favoriteIds.has(workout.id);
+                        try {
+                          if (isFavorite) {
+                            await workoutsApi.removeFavorite(workout.id);
+                            setFavoriteIds(new Set(Array.from(favoriteIds).filter((id) => id !== workout.id)));
+                          } else {
+                            await workoutsApi.addFavorite(workout.id);
+                            setFavoriteIds(new Set([...favoriteIds, workout.id]));
+                          }
+                        } catch (error) {
+                          console.error('Failed to toggle favorite:', error);
+                          alert('Failed to update favorite. Please try again.');
+                        }
+                      }}
+                      className={`opacity-0 group-hover:opacity-100 p-2 hover:bg-panel rounded transition-all ${
+                        favoriteIds.has(workout.id) ? 'opacity-100 text-yellow-400' : 'text-muted-text'
+                      }`}
+                      title={favoriteIds.has(workout.id) ? 'Remove from favorites' : 'Add to favorites'}
+                    >
+                      <Icons.STAR size={18} className={favoriteIds.has(workout.id) ? 'fill-current' : ''} />
+                    </button>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();

@@ -11,6 +11,7 @@ import { Icons } from '@/lib/iconMapping';
 import { Moon, Sun } from 'lucide-react';
 import { UserMenu } from './UserMenu';
 import { NotificationBell } from './notifications/NotificationBell';
+import { GenerationIndicator } from './workout/GenerationIndicator';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -67,6 +68,10 @@ export default function Navbar() {
                 <div className="h-6 w-px bg-border-dark mx-2" />
                 <div className="flex items-center gap-2">
                   <NotificationBell />
+                  {/* Show generation indicator if any workouts are generating */}
+                  {typeof window !== 'undefined' && (
+                    <GenerationIndicator />
+                  )}
                   {/* Theme Toggle - Next to notifications and user menu */}
                   <button
                     onClick={toggleTheme}

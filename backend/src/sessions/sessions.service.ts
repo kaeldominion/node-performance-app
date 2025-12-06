@@ -67,7 +67,14 @@ export class SessionsService {
     return session;
   }
 
-  async update(id: string, userId: string, updateDto: UpdateSessionDto) {
+  async getUser(userId: string) {
+    return this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, role: true, isAdmin: true },
+    });
+  }
+
+  async update(id: string, userId: string, updateDto: UpdateSessionDto, isCoachOrAdmin: boolean = false) {
     const session = await this.prisma.sessionLog.findUnique({
       where: { id, userId },
       include: { workout: true },
@@ -75,6 +82,11 @@ export class SessionsService {
 
     if (!session) {
       throw new Error('Session not found');
+    }
+
+    // Log admin/coach bypass if applicable
+    if (isCoachOrAdmin && updateDto.completed && updateDto.bypassValidation) {
+      console.log(`[AUDIT] Coach/Admin bypass: User ${userId} marked session ${id} as complete without validation requirements`);
     }
 
     const wasCompleted = session.completed;

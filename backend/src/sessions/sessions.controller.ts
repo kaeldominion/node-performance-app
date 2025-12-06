@@ -30,7 +30,11 @@ export class SessionsController {
     @Param('id') id: string,
     @Body() updateDto: UpdateSessionDto,
   ) {
-    return this.sessionsService.update(id, req.user.id, updateDto);
+    // Check if user is coach or admin for bypass permissions
+    const user = await this.sessionsService.getUser(req.user.id);
+    const isCoachOrAdmin = user?.role === 'COACH' || user?.isAdmin === true;
+    
+    return this.sessionsService.update(id, req.user.id, updateDto, isCoachOrAdmin);
   }
 
   @Get('recent')

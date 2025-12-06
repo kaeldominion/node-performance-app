@@ -6,6 +6,7 @@ import { workoutsApi, scheduleApi } from '@/lib/api';
 import { Icons } from '@/lib/iconMapping';
 import { copyToClipboard } from '@/lib/clipboard';
 import ArchetypeBadge from './ArchetypeBadge';
+import { WorkoutShareModal } from './WorkoutShareModal';
 
 // ScheduleWorkoutModal component (inline, same as in workouts page)
 function ScheduleWorkoutModal({
@@ -138,6 +139,22 @@ export function WorkoutCard({
   const [localOpenMenuId, setLocalOpenMenuId] = useState<string | null>(null);
   const [localShowScheduleModal, setLocalShowScheduleModal] = useState(false);
   const [localSelectedWorkoutForSchedule, setLocalSelectedWorkoutForSchedule] = useState<{ id: string; name: string } | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [loadingFavorite, setLoadingFavorite] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+
+  // Load favorite status
+  useEffect(() => {
+    const checkFavorite = async () => {
+      try {
+        const favorites = await workoutsApi.getFavorites().catch(() => []);
+        setIsFavorite(favorites.some((f: any) => f.id === workout.id));
+      } catch (error) {
+        console.error('Failed to check favorite status:', error);
+      }
+    };
+    checkFavorite();
+  }, [workout.id]);
 
   // Use provided state handlers or local state
   const menuId = openMenuId !== undefined ? openMenuId : localOpenMenuId;
@@ -158,16 +175,9 @@ export function WorkoutCard({
     setMenuId(null);
   };
 
-  const handleShare = async () => {
+  const handleShare = () => {
     setMenuId(null);
-    try {
-      const shareData = await workoutsApi.generateShareLink(workout.id);
-      await copyToClipboard(shareData.shareUrl);
-      alert('Share link copied to clipboard!');
-    } catch (error) {
-      console.error('Failed to generate share link:', error);
-      alert('Failed to copy share link. Please try again.');
-    }
+    setShowShareModal(true);
   };
 
   const handleDelete = async () => {
@@ -208,6 +218,34 @@ export function WorkoutCard({
             )}
           </Link>
           <div className="flex items-center gap-2">
+            <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (loadingFavorite) return;
+                setLoadingFavorite(true);
+                try {
+                  if (isFavorite) {
+                    await workoutsApi.removeFavorite(workout.id);
+                    setIsFavorite(false);
+                  } else {
+                    await workoutsApi.addFavorite(workout.id);
+                    setIsFavorite(true);
+                  }
+                } catch (error) {
+                  console.error('Failed to toggle favorite:', error);
+                  alert('Failed to update favorite. Please try again.');
+                } finally {
+                  setLoadingFavorite(false);
+                }
+              }}
+              className={`opacity-0 group-hover:opacity-100 p-2 hover:bg-panel rounded transition-all ${
+                isFavorite ? 'opacity-100 text-yellow-400' : 'text-muted-text'
+              }`}
+              title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+              disabled={loadingFavorite}
+            >
+              <Icons.STAR size={18} className={isFavorite ? 'fill-current' : ''} />
+            </button>
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -305,6 +343,13 @@ export function WorkoutCard({
           }}
         />
       )}
+
+      {/* Share Modal */}
+      <WorkoutShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        workout={workout}
+      />
     </>
   );
 }

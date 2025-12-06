@@ -322,23 +322,37 @@ export class WorkoutsService {
         shareId,
         isRecommended,
         sections: {
-          create: sections.map((section: any) => ({
-            ...section,
-            blocks: {
-              create: section.blocks?.map((block: any) => {
-                const { tierSilver, tierGold, tierBlack, ...blockData } = block;
-                const tierPrescriptions = [];
-                if (tierSilver) tierPrescriptions.push({ ...tierSilver, tier: 'SILVER' });
-                if (tierGold) tierPrescriptions.push({ ...tierGold, tier: 'GOLD' });
-                if (tierBlack) tierPrescriptions.push({ ...tierBlack, tier: 'BLACK' });
-                
-                return {
-                  ...blockData,
-                  tierPrescriptions: tierPrescriptions.length > 0 ? { create: tierPrescriptions } : undefined,
-                };
-              }),
-            },
-          })),
+          create: sections.map((section: any) => {
+            const { blocks, ...sectionData } = section;
+            return {
+              ...sectionData,
+              blocks: {
+                create: blocks?.map((block: any) => {
+                  const { tierSilver, tierGold, tierBlack, ...blockData } = block;
+                  const tierPrescriptions = [];
+                  if (tierSilver) tierPrescriptions.push({ ...tierSilver, tier: 'SILVER' });
+                  if (tierGold) tierPrescriptions.push({ ...tierGold, tier: 'GOLD' });
+                  if (tierBlack) tierPrescriptions.push({ ...tierBlack, tier: 'BLACK' });
+                  
+                  // Explicitly map only valid Prisma fields for ExerciseBlock
+                  return {
+                    label: blockData.label,
+                    exerciseName: blockData.exerciseName,
+                    description: blockData.description || null,
+                    shortDescription: blockData.shortDescription || null,
+                    longDescription: blockData.longDescription || null,
+                    repScheme: blockData.repScheme || null,
+                    tempo: blockData.tempo || null,
+                    loadPercentage: blockData.loadPercentage || null,
+                    distance: blockData.distance || null,
+                    distanceUnit: blockData.distanceUnit || null,
+                    order: blockData.order,
+                    tierPrescriptions: tierPrescriptions.length > 0 ? { create: tierPrescriptions } : undefined,
+                  };
+                }) || [],
+              },
+            };
+          }),
         },
       },
       include: {
@@ -633,7 +647,22 @@ export class WorkoutsService {
     const user = await this.usersService.findOne(userId);
     console.log('User exists:', !!user, user ? `email: ${user.email}` : 'not found');
     
-    // Get workouts from user's sessions (workouts they've done)
+    if (!user) {
+      console.error('User not found:', userId);
+      return [];
+    }
+    
+    // Get workouts created by the user (saved workouts) - this is the primary source
+    const workoutsCreatedByUser = await this.prisma.workout.findMany({
+      where: { createdBy: userId },
+      select: { id: true, name: true, createdBy: true },
+    });
+
+    console.log('Workouts created by user:', workoutsCreatedByUser.length, workoutsCreatedByUser.map(w => ({ id: w.id, name: w.name })));
+    
+    const workoutIdsFromCreated = workoutsCreatedByUser.map(w => w.id);
+    
+    // Also get workouts from user's sessions (workouts they've done but didn't create)
     const sessions = await this.prisma.sessionLog.findMany({
       where: { userId },
       select: { workoutId: true },
@@ -643,28 +672,12 @@ export class WorkoutsService {
     const workoutIdsFromSessions = sessions.map(s => s.workoutId).filter(Boolean);
     console.log('Workout IDs from sessions:', workoutIdsFromSessions);
 
-    // Get workouts created by the user (saved workouts)
-    const workoutsCreatedByUser = await this.prisma.workout.findMany({
-      where: { createdBy: userId },
-      select: { id: true, name: true, createdBy: true },
-    });
-
-    console.log('Workouts created by user:', workoutsCreatedByUser.length, workoutsCreatedByUser);
-    
-    // Also check for workouts with null createdBy (created before the field was added)
-    const workoutsWithNullCreatedBy = await this.prisma.workout.findMany({
-      where: { createdBy: null },
-      select: { id: true, name: true, createdAt: true },
-      take: 5, // Just check a few
-    });
-    console.log('Workouts with null createdBy (sample):', workoutsWithNullCreatedBy.length);
-    
-    const workoutIdsFromCreated = workoutsCreatedByUser.map(w => w.id);
-
-    // Combine both sets of workout IDs
-    const allWorkoutIds = [...new Set([...workoutIdsFromSessions, ...workoutIdsFromCreated])];
+    // Combine both sets of workout IDs (created OR done)
+    const allWorkoutIds = [...new Set([...workoutIdsFromCreated, ...workoutIdsFromSessions])];
+    console.log('All workout IDs to fetch:', allWorkoutIds.length, allWorkoutIds);
 
     if (allWorkoutIds.length === 0) {
+      console.log('No workouts found for user');
       return [];
     }
 
@@ -696,6 +709,8 @@ export class WorkoutsService {
       orderBy: { createdAt: 'desc' },
     });
 
+    console.log(`Found ${workouts.length} workouts with full data`);
+
     return workouts.map((workout) => {
       // Calculate average rating
       const ratingCount = workout.ratings.length;
@@ -718,6 +733,22 @@ export class WorkoutsService {
           })),
         })),
       };
+    });
+  }
+
+  async deleteAdmin(workoutId: string) {
+    // Admin can delete any workout without permission checks
+    const workout = await this.prisma.workout.findUnique({
+      where: { id: workoutId },
+    });
+
+    if (!workout) {
+      throw new Error('Workout not found');
+    }
+
+    // Delete the workout (cascade will handle related data)
+    return this.prisma.workout.delete({
+      where: { id: workoutId },
     });
   }
 
@@ -953,30 +984,40 @@ export class WorkoutsService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return favorites.map((favorite) => {
-      const workout = favorite.workout;
-      // Calculate average rating
-      const ratingCount = workout.ratings.length;
-      const averageRating = ratingCount > 0
-        ? workout.ratings.reduce((sum: number, r: any) => sum + r.starRating, 0) / ratingCount
-        : null;
+    const mappedFavorites = favorites
+      .map((favorite) => {
+        const workout = favorite.workout;
+        if (!workout) {
+          console.warn('Favorite has no workout:', favorite.id);
+          return null;
+        }
+        
+        // Calculate average rating
+        const ratingCount = workout.ratings.length;
+        const averageRating = ratingCount > 0
+          ? workout.ratings.reduce((sum: number, r: any) => sum + r.starRating, 0) / ratingCount
+          : null;
 
-      return {
-        ...workout,
-        averageRating,
-        ratingCount,
-        sections: workout.sections.map((section: any) => ({
-          ...section,
-          blocks: section.blocks.map((block: any) => ({
-            ...block,
-            tierSilver: block.tierPrescriptions.find((t: any) => t.tier === 'SILVER') || null,
-            tierGold: block.tierPrescriptions.find((t: any) => t.tier === 'GOLD') || null,
-            tierBlack: block.tierPrescriptions.find((t: any) => t.tier === 'BLACK') || null,
-            tierPrescriptions: undefined,
+        return {
+          ...workout,
+          averageRating,
+          ratingCount,
+          sections: workout.sections.map((section: any) => ({
+            ...section,
+            blocks: section.blocks.map((block: any) => ({
+              ...block,
+              tierSilver: block.tierPrescriptions.find((t: any) => t.tier === 'SILVER') || null,
+              tierGold: block.tierPrescriptions.find((t: any) => t.tier === 'GOLD') || null,
+              tierBlack: block.tierPrescriptions.find((t: any) => t.tier === 'BLACK') || null,
+              tierPrescriptions: undefined,
+            })),
           })),
-        })),
-      };
-    });
+        };
+      })
+      .filter((w) => w !== null); // Remove null entries
+
+    console.log(`Returning ${mappedFavorites.length} favorite workouts for user ${userId}`);
+    return mappedFavorites;
   }
 
   async copyWorkout(userId: string, workoutId: string, userEmail?: string) {

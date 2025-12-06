@@ -133,8 +133,9 @@ export function WorkoutDetailsModal({ workout, onClose }: WorkoutDetailsModalPro
                                 <span className="text-xs text-node-volt">(click for details)</span>
                               </h4>
                             </button>
-                            {block.description && (
-                              <p className="text-muted-text text-sm mt-1">{block.description}</p>
+                            {/* ONLY show shortDescription, NEVER description or longDescription */}
+                            {block.shortDescription && block.shortDescription.length <= 80 && (
+                              <p className="text-muted-text text-sm mt-1">{block.shortDescription}</p>
                             )}
                             {block.repScheme && (
                               <div className="text-node-volt font-medium mt-2">{block.repScheme}</div>

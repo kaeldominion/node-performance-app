@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useAudioSystem } from '@/hooks/useAudioSystem';
 import { useDeckAnimations } from '@/hooks/useDeckAnimations';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface DeckTimerProps {
   type: 'COUNTDOWN' | 'EMOM' | 'E2MOM' | 'AMRAP' | 'INTERVAL';
@@ -43,6 +44,7 @@ export function DeckTimer({
   const { config, isMobile } = useResponsiveLayout();
   const { playSound, playVoice, playCountdown } = useAudioSystem();
   const { triggerPulse, getPulseClass } = useDeckAnimations();
+  const { theme } = useTheme();
 
   // Initialize timer based on type
   useEffect(() => {
@@ -206,7 +208,14 @@ export function DeckTimer({
 
   const getTimerColor = () => {
     if (timeLeft <= 5 && isRunning && !isPaused) return '#ff6b6b';
-    if (isWorkPhase) return '#ccff00';
+    // For COUNTDOWN/AMRAP, use blue in light mode, green in dark mode
+    if (type === 'COUNTDOWN' || type === 'AMRAP') {
+      return theme === 'light' ? '#0066ff' : '#ccff00';
+    }
+    // For EMOM/INTERVAL work phase, use blue in light mode, green in dark mode
+    if (isWorkPhase) {
+      return theme === 'light' ? '#0066ff' : '#ccff00';
+    }
     return '#4a9eff';
   };
 
