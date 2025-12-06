@@ -38,7 +38,18 @@ export default function CoachSetupPage() {
       await coachApi.createProfile(formData);
       router.push('/coach');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create profile');
+      // Extract error message from various possible structures
+      const errorMessage = err?.response?.data?.message || 
+                          err?.response?.data?.error ||
+                          err?.message || 
+                          'Failed to create profile';
+      console.error('Coach profile creation error:', {
+        error: err,
+        errorMessage,
+        responseData: err?.response?.data,
+        status: err?.response?.status,
+      });
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

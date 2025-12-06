@@ -95,8 +95,18 @@ export class CoachesService {
       user.role === 'SUPERADMIN' || 
       existingProfile !== null;
 
+    // Log for debugging (remove in production if needed)
+    console.log('Coach profile creation check:', {
+      userId,
+      userRole: user.role,
+      hasExistingProfile: !!existingProfile,
+      canCreateOrUpdate,
+    });
+
     if (!canCreateOrUpdate) {
-      throw new ForbiddenException('User must have COACH role, be SUPERADMIN, or have an existing coach profile');
+      throw new ForbiddenException(
+        `User must have COACH role, be SUPERADMIN, or have an existing coach profile. Current role: ${user.role}, Has profile: ${!!existingProfile}`
+      );
     }
 
     return this.prisma.coachProfile.upsert({

@@ -143,21 +143,36 @@ api.interceptors.response.use(
       const errorStatus = error?.response?.status || error?.status || error?.statusCode;
       const errorStatusText = error?.response?.statusText || error?.statusText;
       
-      // Try multiple ways to get the error message
-      let errorMessage = error?.response?.data?.message || 
-                        error?.response?.data?.error || 
-                        error?.response?.data?.errorMessage ||
-                        error?.message || 
-                        error?.response?.data ||
-                        (typeof error === 'string' ? error : null);
+      // Try multiple ways to get the error message - NestJS format is typically { statusCode, message, error }
+      let errorMessage: string | null = null;
       
-      // If errorMessage is an object, try to stringify it
-      if (errorMessage && typeof errorMessage === 'object') {
-        try {
-          errorMessage = JSON.stringify(errorMessage);
-        } catch (e) {
-          errorMessage = String(errorMessage);
+      if (error?.response?.data) {
+        const data = error.response.data;
+        // NestJS error format: { statusCode: 403, message: "...", error: "Forbidden" }
+        if (typeof data === 'string') {
+          errorMessage = data;
+        } else if (data?.message && typeof data.message === 'string') {
+          errorMessage = data.message;
+        } else if (data?.error && typeof data.error === 'string') {
+          errorMessage = data.error;
+        } else if (typeof data === 'object') {
+          // Try to extract message from nested structure
+          try {
+            errorMessage = JSON.stringify(data);
+          } catch (e) {
+            errorMessage = String(data);
+          }
         }
+      }
+      
+      // Fallback to error.message
+      if (!errorMessage) {
+        errorMessage = error?.message || null;
+      }
+      
+      // Last resort
+      if (!errorMessage && typeof error === 'string') {
+        errorMessage = error;
       }
       
       // Build comprehensive error info
@@ -175,12 +190,11 @@ api.interceptors.response.use(
         errorInfo.message = errorMessage;
       }
       
-      // Add structural information
+      // Add structural information and always include full response data for debugging
       if (error?.response) {
         errorInfo.hasResponse = true;
-        if (error.response.data && typeof error.response.data === 'object') {
-          errorInfo.responseData = error.response.data;
-        }
+        // Always include response data so we can see what the backend actually returned
+        errorInfo.responseData = error.response.data;
       }
       if (error?.request) errorInfo.hasRequest = true;
       if (error?.config) errorInfo.hasConfig = true;
