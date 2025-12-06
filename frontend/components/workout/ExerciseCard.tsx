@@ -90,7 +90,7 @@ export function ExerciseCard({ block, isActive = false, onClick, sectionColor }:
           className="font-bold uppercase tracking-wider"
           style={{
             color: textColor,
-            fontSize: config.isMobile ? '0.875rem' : '1rem',
+            fontSize: isMobile ? '0.875rem' : '1rem',
             fontFamily: 'var(--font-space-grotesk)',
           }}
         >
@@ -144,7 +144,7 @@ export function ExerciseCard({ block, isActive = false, onClick, sectionColor }:
         <div
           className="text-node-volt font-mono font-bold mb-2 uppercase tracking-wider"
           style={{
-            fontSize: config.isMobile ? '1rem' : '1.25rem',
+            fontSize: isMobile ? '1rem' : '1.25rem',
           }}
         >
           {block.label}
@@ -156,7 +156,7 @@ export function ExerciseCard({ block, isActive = false, onClick, sectionColor }:
         className="font-bold mb-2 uppercase tracking-wider"
         style={{
           fontFamily: 'var(--font-space-grotesk)',
-          fontSize: config.isMobile ? '1rem' : '1.125rem',
+          fontSize: isMobile ? '1rem' : '1.125rem',
           lineHeight: 1.2,
           color: 'var(--text-white)',
         }}
@@ -181,7 +181,7 @@ export function ExerciseCard({ block, isActive = false, onClick, sectionColor }:
         <div
           className="text-node-volt font-bold mb-3 uppercase tracking-wider"
           style={{
-            fontSize: config.isMobile ? '0.875rem' : '1rem',
+            fontSize: isMobile ? '0.875rem' : '1rem',
             fontFamily: 'var(--font-space-grotesk)',
           }}
         >
