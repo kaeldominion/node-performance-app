@@ -1633,7 +1633,7 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
                             ))}
                           </div>
                           <div className="text-text-white" style={{ fontSize: isDesktop ? '0.875rem' : '0.75rem' }}>
-                            {workout.averageRating.toFixed(1)}
+                            {(workout.averageRating || 0).toFixed(1)}
                             {workout.ratingCount && workout.ratingCount > 0 && (
                               <span className="text-muted-text ml-1">({workout.ratingCount})</span>
                             )}
