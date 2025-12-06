@@ -1270,10 +1270,20 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
               <div className="flex-shrink-0 flex justify-center">
               <DeckTimer
                   ref={(ref) => {
+                    // Always update the ref when it changes
                     if (ref) {
                       timerRefs.current.set(safeSectionIndex, ref);
+                      // Force a re-check of start button state
+                      setTimeout(() => {
+                        setShowStartButton(!ref.isRunning && !ref.isPaused);
+                      }, 50);
                     } else {
-                      timerRefs.current.delete(safeSectionIndex);
+                      // Only delete if we're sure the component is unmounting
+                      // Don't delete on every null ref (which happens during re-renders)
+                      const timer = timerRefs.current.get(safeSectionIndex);
+                      if (timer === ref) {
+                        timerRefs.current.delete(safeSectionIndex);
+                      }
                     }
                   }}
                   key={`countdown-${currentSection.id}-${safeSectionIndex}`}
