@@ -42,6 +42,7 @@ export default function AccountSettingsPage() {
     instagram: '',
   });
   const [upgrading, setUpgrading] = useState(false);
+  const [hasCoachProfile, setHasCoachProfile] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -57,11 +58,13 @@ export default function AccountSettingsPage() {
   const loadProfile = async () => {
     try {
       setLoading(true);
-      const [profileData, userData] = await Promise.all([
+      const [profileData, userData, coachProfile] = await Promise.all([
         userApi.getProfile().catch(() => null),
         userApi.getMe().catch(() => null),
+        coachApi.getProfile().catch(() => null),
       ]);
       setProfile(profileData);
+      setHasCoachProfile(!!coachProfile);
       
       // Use Clerk image as default
       const imageUrl = clerkUser?.imageUrl || profileData?.imageUrl || '';
@@ -375,8 +378,8 @@ export default function AccountSettingsPage() {
           </div>
         </div>
 
-        {/* Coach Upgrade Section - Show for users who aren't already coaches */}
-        {user && user.role !== 'COACH' && (
+        {/* Coach Upgrade Section - Show for users who aren't already coaches and don't have a coach profile */}
+        {user && user.role !== 'COACH' && !hasCoachProfile && (
           <div className="mt-8 bg-gradient-to-r from-node-volt/20 to-node-volt/10 border border-node-volt/50 rounded-xl p-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
