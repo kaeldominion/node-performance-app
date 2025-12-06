@@ -236,6 +236,18 @@ export const DeckTimer = forwardRef<DeckTimerRef, DeckTimerProps>(({
   const isLowTime = timeLeft <= 5 && isRunning && !isPaused;
   const pulseClass = isLowTime ? getPulseClass() : '';
 
+  // Expose methods via ref
+  useImperativeHandle(ref, () => ({
+    start: () => {
+      startPreCountdown();
+    },
+    pause: handlePause,
+    resume: handleResume,
+    reset: handleReset,
+    isRunning,
+    isPaused,
+  }), [isRunning, isPaused]);
+
   // Auto-start if enabled
   useEffect(() => {
     if (autoStart && !isRunning && !isPaused) {
