@@ -1628,7 +1628,7 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
                               <Icons.STAR
                                 key={star}
                                 size={isDesktop ? 16 : 14}
-                                className={star <= Math.round(workout.averageRating) ? 'text-node-volt fill-node-volt' : 'text-muted-text'}
+                                className={star <= Math.round(workout.averageRating || 0) ? 'text-node-volt fill-node-volt' : 'text-muted-text'}
                               />
                             ))}
                           </div>
