@@ -26,7 +26,7 @@ interface LeaderboardEntry {
 
 export default function LeaderboardPage() {
   const { user } = useAuth();
-  const router = useRouter();
+  const router = useRouter(); // Navigation handler - using router.push instead of Link component
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [selectedMetric, setSelectedMetric] = useState<'sessions' | 'hours' | 'rpe' | 'streak'>('sessions');
   const [showTrending, setShowTrending] = useState(true);
