@@ -15,6 +15,7 @@ interface Exercise {
   id: string;
   exerciseId: string;
   name: string;
+  aliases?: string[];
   category: string;
   movementPattern: string;
   primaryMuscles: string[];
