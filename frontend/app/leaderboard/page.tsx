@@ -286,6 +286,7 @@ export default function LeaderboardPage() {
                     {/* User Info */}
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
+                        {/* Profile avatar - using router.push for navigation (no Link import) */}
                         <div 
                           onClick={() => router.push(`/profile/${entry.userId}`)}
                           role="button"
