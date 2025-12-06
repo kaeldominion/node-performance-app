@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { UsersService } from '../users/users.service';
 
 // Level thresholds - early levels are easy, later ones are extremely difficult
 // Formula: exponential growth with early levels being very achievable
@@ -251,7 +252,11 @@ export const XP_REWARDS = {
 
 @Injectable()
 export class GamificationService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(forwardRef(() => UsersService))
+    private usersService: UsersService,
+  ) {}
 
   /**
    * Calculate level from XP
@@ -306,10 +311,37 @@ export class GamificationService {
     amount: number,
     reason: string,
   ): Promise<{ xp: number; level: number; leveledUp: boolean; newLevel?: number }> {
-    const user = await this.prisma.user.findUnique({
+    let user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { xp: true, level: true },
     });
+
+    // If user doesn't exist, try to create from Clerk (handles webhook delays)
+    if (!user) {
+      try {
+        const { clerkClient } = require('@clerk/clerk-sdk-node');
+        const clerkUser = await clerkClient.users.getUser(userId);
+        const email = clerkUser.emailAddresses?.[0]?.emailAddress;
+        if (email) {
+          await this.usersService.createFromClerk({
+            id: userId,
+            email,
+            name: clerkUser.firstName && clerkUser.lastName 
+              ? `${clerkUser.firstName} ${clerkUser.lastName}` 
+              : clerkUser.firstName || clerkUser.lastName || null,
+            role: (clerkUser.publicMetadata?.role as string) || 'HOME_USER',
+            isAdmin: (clerkUser.publicMetadata?.isAdmin as boolean) || false,
+          });
+          // Fetch again
+          user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { xp: true, level: true },
+          });
+        }
+      } catch (error) {
+        console.error('Failed to create user from Clerk in addXP:', error);
+      }
+    }
 
     if (!user) {
       throw new Error('User not found');
@@ -417,10 +449,37 @@ export class GamificationService {
    * Get user's gamification stats
    */
   async getUserStats(userId: string) {
-    const user = await this.prisma.user.findUnique({
+    let user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { xp: true, level: true },
     });
+
+    // If user doesn't exist, try to create from Clerk (handles webhook delays)
+    if (!user) {
+      try {
+        const { clerkClient } = require('@clerk/clerk-sdk-node');
+        const clerkUser = await clerkClient.users.getUser(userId);
+        const email = clerkUser.emailAddresses?.[0]?.emailAddress;
+        if (email) {
+          await this.usersService.createFromClerk({
+            id: userId,
+            email,
+            name: clerkUser.firstName && clerkUser.lastName 
+              ? `${clerkUser.firstName} ${clerkUser.lastName}` 
+              : clerkUser.firstName || clerkUser.lastName || null,
+            role: (clerkUser.publicMetadata?.role as string) || 'HOME_USER',
+            isAdmin: (clerkUser.publicMetadata?.isAdmin as boolean) || false,
+          });
+          // Fetch again
+          user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { xp: true, level: true },
+          });
+        }
+      } catch (error) {
+        console.error('Failed to create user from Clerk in getUserStats:', error);
+      }
+    }
 
     if (!user) {
       throw new Error('User not found');
