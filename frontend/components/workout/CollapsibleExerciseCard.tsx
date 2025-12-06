@@ -9,6 +9,7 @@ import { Icons } from '@/lib/iconMapping';
 interface CollapsibleExerciseCardProps {
   block: any;
   isActive?: boolean;
+  isRestPhase?: boolean; // Highlight during rest phase (softer, "get ready" style)
   sectionColor?: string;
   compact?: boolean; // For EMOM/grid layouts
   largeText?: boolean; // For 2-4 box layouts with larger text
@@ -19,7 +20,8 @@ interface CollapsibleExerciseCardProps {
 
 export function CollapsibleExerciseCard({ 
   block, 
-  isActive = false, 
+  isActive = false,
+  isRestPhase = false,
   sectionColor,
   compact = false,
   largeText = false,
@@ -55,11 +57,15 @@ export function CollapsibleExerciseCard({
   const activeBorderColor = theme === 'light' ? '#0066ff' : '#ccff00';
   const activeBgColor = theme === 'light' ? 'rgba(0, 102, 255, 0.1)' : 'rgba(204, 255, 0, 0.1)';
   const hoverBorderColor = theme === 'light' ? 'rgba(0, 102, 255, 0.5)' : 'rgba(204, 255, 0, 0.5)';
+  
+  // Rest phase highlight - softer, "get ready" style
+  const restBorderColor = theme === 'light' ? '#4a9eff' : '#4a9eff'; // Blue for rest
+  const restBgColor = theme === 'light' ? 'rgba(74, 158, 255, 0.08)' : 'rgba(74, 158, 255, 0.08)';
 
   return (
     <div
       className={`
-        bg-panel thin-border rounded-lg transition-all
+        bg-panel thin-border rounded-lg transition-all relative
         ${onClick ? 'cursor-pointer' : ''}
         ${largeText ? (isMobile ? 'p-4' : 'p-6') : (compact ? 'p-2' : (isMobile ? 'p-3' : 'p-4'))}
       `}
@@ -70,11 +76,22 @@ export function CollapsibleExerciseCard({
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
+        // NØDE Ø symbol background watermark
+        backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ctext x=\'50%25\' y=\'50%25\' font-size=\'80\' font-weight=\'bold\' text-anchor=\'middle\' dominant-baseline=\'middle\' fill=\'rgba(204,255,0,0.03)\' font-family=\'system-ui\'%3EØ%3C/text%3E%3C/svg%3E")',
+        backgroundRepeat: 'repeat',
+        backgroundSize: '120px 120px',
+        backgroundPosition: 'center',
         ...(isActive ? {
           borderWidth: '2px',
           borderColor: sectionColor || activeBorderColor,
           backgroundColor: sectionColor ? `${sectionColor}15` : activeBgColor,
           boxShadow: sectionColor ? `0 0 20px ${sectionColor}40` : `0 0 20px ${activeBorderColor}40`,
+        } : isRestPhase ? {
+          borderWidth: '1px',
+          borderColor: restBorderColor,
+          backgroundColor: restBgColor,
+          boxShadow: `0 0 10px ${restBorderColor}20`,
+          opacity: 0.9,
         } : {}),
         ...(onClick && !isActive ? {
           ':hover': {

@@ -568,7 +568,7 @@ export const sessionsApi = {
     const response = await api.post('/me/sessions', data);
     return response.data;
   },
-  complete: async (id: string, data: { durationSec?: number; completed: boolean; rpe?: number; metrics?: any; notes?: string }) => {
+  complete: async (id: string, data: { durationSec?: number; completed: boolean; rpe?: number; metrics?: any; notes?: string; bypassValidation?: boolean }) => {
     const response = await api.put(`/me/sessions/${id}/complete`, data);
     return response.data;
   },

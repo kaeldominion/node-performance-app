@@ -79,11 +79,17 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
   const [showSectionMenu, setShowSectionMenu] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [showIncompleteWarning, setShowIncompleteWarning] = useState(false);
+  const [showSectionCelebration, setShowSectionCelebration] = useState(false);
+  const [celebratedSectionIndex, setCelebratedSectionIndex] = useState<number | null>(null);
+  const [showCoachAdminBypassConfirm, setShowCoachAdminBypassConfirm] = useState(false);
+  const [pendingCompletion, setPendingCompletion] = useState<any>(null);
   const [participants, setParticipants] = useState<Array<{ id?: string; name: string; email?: string; isSignedUp: boolean; avatarUrl?: string }>>([]);
   const [activeStation, setActiveStation] = useState(0);
   const [currentRound, setCurrentRound] = useState(1);
   // Track active exercise for AMRAP/CIRCUIT/FOR_TIME sections
   const [activeExerciseIndex, setActiveExerciseIndex] = useState(0);
+  // Track current phase for rest highlighting
+  const [currentPhase, setCurrentPhase] = useState<'work' | 'rest'>('work');
   // Track which sections have completed their timers
   const [completedSections, setCompletedSections] = useState<Set<number>>(new Set());
   // Track total elapsed time for timed stations sections
@@ -254,14 +260,14 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
 
   // Check if all timers have been completed
   const allTimersCompleted = useCallback(() => {
-    // Count sections that have timers (WARMUP and COOLDOWN don't require timer completion)
+    // Count sections that have timers (WARMUP, COOLDOWN, and FINISHER don't require timer completion)
     const sectionsWithTimers = workout.sections.filter((section, idx) => {
-      // Skip WARMUP and COOLDOWN - they don't need timer completion
-      if (section.type === 'WARMUP' || section.type === 'COOLDOWN') {
+      // Skip WARMUP, COOLDOWN, and FINISHER - they don't need timer completion
+      if (section.type === 'WARMUP' || section.type === 'COOLDOWN' || section.type === 'FINISHER') {
         return false;
       }
       return section.durationSec || 
-             (section.type === 'EMOM' && section.emomWorkSec) ||
+             ((section.type === 'EMOM' || section.type === 'E2MOM') && section.emomWorkSec) ||
              (section.type === 'INTERVAL' && section.intervalWorkSec);
     });
     
@@ -279,7 +285,24 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
 
   const handleSectionTimerComplete = useCallback((sectionIndex: number) => {
     setCompletedSections((prev) => new Set([...prev, sectionIndex]));
-  }, []);
+    
+    // Trigger celebration for section completion
+    const section = workout.sections[sectionIndex];
+    // Only celebrate main sections (not warmup, cooldown, finisher)
+    if (section && section.type !== 'WARMUP' && section.type !== 'COOLDOWN' && section.type !== 'FINISHER') {
+      triggerCelebration();
+      triggerConfetti();
+      playSound('complete');
+      setCelebratedSectionIndex(sectionIndex);
+      setShowSectionCelebration(true);
+      
+      // Auto-hide celebration after 3 seconds
+      setTimeout(() => {
+        setShowSectionCelebration(false);
+        setCelebratedSectionIndex(null);
+      }, 3000);
+    }
+  }, [workout.sections, triggerCelebration, triggerConfetti, playSound]);
 
   // Reset active station and elapsed time when entering a timed stations section
   useEffect(() => {
@@ -385,6 +408,7 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
   };
 
   const handlePhaseChange = (phase: 'work' | 'rest', round: number) => {
+    setCurrentPhase(phase);
     if (phase === 'work' && currentSection.type === 'EMOM') {
       const newStation = (round - 1) % (currentSection.blocks?.length || 1);
       setActiveStation(newStation);
@@ -447,6 +471,7 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
 
     switch (currentSection.type) {
       case 'EMOM':
+      case 'E2MOM':
         const emomBlockCount = currentSection.blocks?.length || 0;
         const emomMaxColumns = isHyrox ? 8 : 6; // HYROX can have more
         const emomActualColumns = Math.min(emomBlockCount, emomMaxColumns);
@@ -461,10 +486,10 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
             <div className="flex-shrink-0 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               <div style={{ flexShrink: 0 }}>
             <DeckTimer
-                  key={`emom-${currentSection.id}-${safeSectionIndex}`}
-              type="EMOM"
-              workSec={currentSection.emomWorkSec || 45}
-              restSec={currentSection.emomRestSec || 15}
+                  key={`${currentSection.type.toLowerCase()}-${currentSection.id}-${safeSectionIndex}`}
+              type={currentSection.type === 'E2MOM' ? 'E2MOM' : 'EMOM'}
+              workSec={currentSection.emomWorkSec || (currentSection.type === 'E2MOM' ? 90 : 45)}
+              restSec={currentSection.emomRestSec || (currentSection.type === 'E2MOM' ? 30 : 15)}
               rounds={currentSection.emomRounds || 12}
               onPhaseChange={handlePhaseChange}
               autoStart={false}
@@ -503,18 +528,27 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
                 alignContent: 'start',
               }}
             >
-              {currentSection.blocks?.map((block: any, idx: number) => (
-                <CollapsibleExerciseCard
-                  key={`${currentSection.id}-block-${block.id || idx}`}
-                  block={block}
-                  isActive={idx === activeStation}
-                  sectionColor={sectionColor}
-                  compact={emomShouldBeCompact}
-                  largeText={emomIsSmallLayout || emomIsSingleCard}
-                  showFullDescription={emomBlockCount <= 2 && !isMobile}
-                  showTiersAlways={true}
-                />
-              ))}
+              {currentSection.blocks?.map((block: any, idx: number) => {
+                const isActive = idx === activeStation;
+                const nextStation = (activeStation + 1) % (currentSection.blocks?.length || 1);
+                const isNext = idx === nextStation;
+                // During rest phase, highlight the next exercise with "get ready" style
+                const isRestPhase = currentPhase === 'rest' && isNext && !isActive;
+                
+                return (
+                  <CollapsibleExerciseCard
+                    key={`${currentSection.id}-block-${block.id || idx}`}
+                    block={block}
+                    isActive={isActive}
+                    isRestPhase={isRestPhase}
+                    sectionColor={sectionColor}
+                    compact={emomShouldBeCompact}
+                    largeText={emomIsSmallLayout || emomIsSingleCard}
+                    showFullDescription={emomBlockCount <= 2 && !isMobile}
+                    showTiersAlways={true}
+                  />
+                );
+              })}
             </div>
           </div>
         );
@@ -895,7 +929,7 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
   // Render intro card (content only, no navbar - navbar is handled in parent)
   const renderIntroCard = () => {
     const totalDuration = workout.sections.reduce((acc, section) => {
-      if (section.type === 'EMOM' && section.emomRounds && section.emomWorkSec && section.emomRestSec) {
+      if ((section.type === 'EMOM' || section.type === 'E2MOM') && section.emomRounds && section.emomWorkSec && section.emomRestSec) {
         return acc + (section.emomRounds * (section.emomWorkSec + section.emomRestSec));
       }
       return acc + (section.durationSec || 0);
@@ -1701,18 +1735,37 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
             <Icons.CHEVRON_LEFT size={16} />
             <span className="hidden sm:inline">{isFirstSection ? 'Preview' : 'Previous'}</span>
           </button>
-          <button
-            onClick={isLastSection ? handleNextSection : handleNextSection}
-            className="bg-node-volt text-dark font-bold px-4 py-2 sm:px-6 sm:py-3 hover:opacity-90 transition-opacity pointer-events-auto flex items-center gap-2 uppercase tracking-wider text-xs font-medium"
-            style={{
-              fontFamily: 'var(--font-space-grotesk)',
-              minWidth: config.touchTargetSize,
-              minHeight: config.touchTargetSize,
-            }}
-          >
-            <span>{isLastSection ? 'Complete' : 'Next'}</span>
-            {!isLastSection && <Icons.CHEVRON_RIGHT size={16} />}
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Skip Finisher Button - Only show for FINISHER sections */}
+            {currentSection.type === 'FINISHER' && (
+              <button
+                onClick={() => {
+                  // Skip finisher and complete workout
+                  if (allTimersCompleted()) {
+                    setShowRatingModal(true);
+                  } else {
+                    setShowIncompleteWarning(true);
+                  }
+                }}
+                className="bg-panel/80 thin-border text-text-white px-4 py-2 hover:border-node-volt transition-colors pointer-events-auto flex items-center gap-2 uppercase tracking-wider text-xs font-medium"
+                style={{ minWidth: config.touchTargetSize, minHeight: config.touchTargetSize }}
+              >
+                <span>Skip Finisher</span>
+              </button>
+            )}
+            <button
+              onClick={isLastSection ? handleNextSection : handleNextSection}
+              className="bg-node-volt text-dark font-bold px-4 py-2 sm:px-6 sm:py-3 hover:opacity-90 transition-opacity pointer-events-auto flex items-center gap-2 uppercase tracking-wider text-xs font-medium"
+              style={{
+                fontFamily: 'var(--font-space-grotesk)',
+                minWidth: config.touchTargetSize,
+                minHeight: config.touchTargetSize,
+              }}
+            >
+              <span>{isLastSection ? 'Complete' : 'Next'}</span>
+              {!isLastSection && <Icons.CHEVRON_RIGHT size={16} />}
+            </button>
+          </div>
         </div>
       )}
 
@@ -1796,6 +1849,57 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
             handleCompleteWorkout();
           }}
         />
+      )}
+
+      {/* Section Completion Celebration */}
+      {showSectionCelebration && celebratedSectionIndex !== null && (
+        <div className="fixed inset-0 z-[70] flex flex-col items-center justify-center">
+          <div className="text-center animate-fadeIn pointer-events-none mb-8">
+            <div className="mb-4">
+              <div
+                className="text-6xl sm:text-8xl font-bold mb-4 animate-bounce"
+                style={{
+                  fontFamily: 'var(--font-space-grotesk)',
+                  color: sectionColor,
+                  textShadow: `0 0 40px ${sectionColor}80`,
+                }}
+              >
+                🎉
+              </div>
+              <h2
+                className="text-4xl sm:text-6xl font-bold mb-2 animate-pulse"
+                style={{
+                  fontFamily: 'var(--font-space-grotesk)',
+                  color: sectionColor,
+                  textShadow: `0 0 30px ${sectionColor}60`,
+                }}
+              >
+                Section Complete!
+              </h2>
+              <p
+                className="text-2xl sm:text-3xl text-muted-text"
+                style={{ fontFamily: 'var(--font-space-grotesk)' }}
+              >
+                Great work! 💪
+              </p>
+            </div>
+          </div>
+          {/* Prominent Next Section Button */}
+          <button
+            onClick={() => {
+              setShowSectionCelebration(false);
+              setCelebratedSectionIndex(null);
+              handleNextSection();
+            }}
+            className="bg-node-volt text-dark font-bold px-8 py-4 sm:px-12 sm:py-6 rounded-lg hover:opacity-90 transition-opacity text-xl sm:text-2xl uppercase tracking-wider pointer-events-auto shadow-2xl animate-fadeIn"
+            style={{
+              fontFamily: 'var(--font-space-grotesk)',
+              boxShadow: `0 0 40px ${sectionColor}60`,
+            }}
+          >
+            {isLastSection ? 'Finish Workout' : 'Move to Next Section →'}
+          </button>
+        </div>
       )}
 
       {/* Incomplete Workout Warning Modal - Brutalist Style */}

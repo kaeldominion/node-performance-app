@@ -143,12 +143,12 @@ FOR MULTI-DAY PROGRAMS (4-day, 7-day, 4-week):
       "sections": [
     {
       "title": "Section Title",
-      "type": "WARMUP" | "EMOM" | "AMRAP" | "FOR_TIME" | "FINISHER" | "COOLDOWN" | "WAVE" | "SUPERSET" | "CIRCUIT" | "CAPACITY" | "FLOW" | "INTERVAL",
+      "type": "WARMUP" | "EMOM" | "E2MOM" | "AMRAP" | "FOR_TIME" | "FINISHER" | "COOLDOWN" | "WAVE" | "SUPERSET" | "CIRCUIT" | "CAPACITY" | "FLOW" | "INTERVAL",
       "order": 1,
       "durationSec": 720 (REQUIRED for ALL sections except EMOM/INTERVAL - must be specified in seconds. WARMUP: 300s (5 min) for non-HYROX, 600-900s for HYROX, COOLDOWN: 300s, WAVE: 600-1200s, SUPERSET: 600-900s, AMRAP/FOR_TIME/CAPACITY: 480-1800s, FINISHER: 180-600s, FLOW: 600-900s),
-      "emomWorkSec": 45 (REQUIRED for EMOM - work duration in seconds),
-      "emomRestSec": 15 (REQUIRED for EMOM - rest duration in seconds),
-      "emomRounds": 12 (REQUIRED for EMOM - total number of rounds),
+      "emomWorkSec": 45 (REQUIRED for EMOM - work duration in seconds), 90 (REQUIRED for E2MOM - work duration in seconds, typically 90s to fit 2-min interval),
+      "emomRestSec": 15 (REQUIRED for EMOM - rest duration in seconds), 30 (REQUIRED for E2MOM - rest duration in seconds, typically 30s to fit 2-min interval),
+      "emomRounds": 12 (REQUIRED for EMOM/E2MOM - total number of rounds),
       "intervalWorkSec": 20 (REQUIRED for INTERVAL - work duration in seconds),
       "intervalRestSec": 100 (REQUIRED for INTERVAL - rest duration in seconds),
       "intervalRounds": 8 (REQUIRED for INTERVAL - number of rounds),
@@ -255,6 +255,7 @@ CRITICAL: EVERY SECTION MUST HAVE A TIME - NO EXCEPTIONS:
 - FINISHER: REQUIRED durationSec: 180-600 seconds (3-10 min) - short high-intensity block
 - FLOW: REQUIRED durationSec: 600-900 seconds (10-15 min) - tempo/mobility work
 - EMOM: REQUIRED emomWorkSec + emomRestSec + emomRounds (total time = (workSec + restSec) × rounds)
+- E2MOM: REQUIRED emomWorkSec (typically 90s) + emomRestSec (typically 30s) + emomRounds (total time = (workSec + restSec) × rounds, where workSec + restSec = 120s for 2-minute intervals)
 - INTERVAL: REQUIRED intervalWorkSec + intervalRestSec + intervalRounds (total time = (workSec + restSec) × rounds)
 
 TIME MANAGEMENT GUIDELINES:
@@ -1160,6 +1161,11 @@ Generate a completely new workout that properly addresses all timing issues.`;
         if (!section.emomWorkSec) updatedSection.emomWorkSec = 45;
         if (!section.emomRestSec) updatedSection.emomRestSec = 15;
         if (!section.emomRounds) updatedSection.emomRounds = 12;
+      } else if (section.type === 'E2MOM') {
+        // E2MOM sections need emomWorkSec (90s), emomRestSec (30s), emomRounds
+        if (!section.emomWorkSec) updatedSection.emomWorkSec = 90;
+        if (!section.emomRestSec) updatedSection.emomRestSec = 30;
+        if (!section.emomRounds) updatedSection.emomRounds = 8; // Fewer rounds for E2MOM (2 min intervals)
       } else if (section.type === 'INTERVAL') {
         // INTERVAL sections need intervalWorkSec, intervalRestSec, intervalRounds
         if (!section.intervalWorkSec) updatedSection.intervalWorkSec = 20;

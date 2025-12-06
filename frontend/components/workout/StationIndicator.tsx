@@ -52,67 +52,7 @@ export function StationIndicator({
         </div>
       </div>
 
-      {/* Station Grid */}
-      <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${Math.min(totalStations, isMobile ? 2 : 4)}, 1fr)` }}>
-        {Array.from({ length: totalStations }).map((_, idx) => {
-          const isActive = idx === activeStation;
-          const isNext = idx === nextStation;
-          
-          return (
-            <div
-              key={idx}
-              className={`
-                relative p-4 rounded-lg border-2 transition-all duration-300
-                ${isActive
-                  ? 'bg-node-volt/20 border-node-volt scale-105 animate-pulse-glow'
-                  : isNext
-                  ? 'bg-panel/50 border-node-volt/50'
-                  : 'bg-panel/30 border-border'
-                }
-              `}
-            >
-              {/* Station Number */}
-              <div className="text-center mb-2">
-                <div
-                  className={`font-bold ${isActive ? 'text-node-volt' : 'text-muted-text'}`}
-                  style={{
-                    fontFamily: 'var(--font-space-grotesk)',
-                    fontSize: isActive ? '2rem' : '1.5rem',
-                  }}
-                >
-                  {idx + 1}
-                </div>
-              </div>
-
-              {/* Station Name */}
-              {stationNames[idx] && (
-                <div className="text-center">
-                  <div
-                    className={`text-sm font-medium ${isActive ? 'text-text-white' : 'text-muted-text'}`}
-                    style={{
-                      fontFamily: 'var(--font-space-grotesk)',
-                    }}
-                  >
-                    {getStationName(idx)}
-                  </div>
-                </div>
-              )}
-
-              {/* Active Indicator */}
-              {isActive && (
-                <div className="absolute top-2 right-2 w-3 h-3 bg-node-volt rounded-full animate-pulse" />
-              )}
-
-              {/* Next Indicator */}
-              {isNext && !isActive && (
-                <div className="absolute top-2 right-2 w-2 h-2 bg-node-volt/50 rounded-full" />
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Next Station Preview */}
+      {/* Next Station Preview - Only show next station, no grid of cards */}
       {nextStation !== undefined && nextStation !== activeStation && (
         <div className="text-center mt-4 p-4 bg-panel/50 rounded-lg thin-border">
           <div className="text-muted-text text-sm mb-1 uppercase tracking-wider">Next Station</div>

@@ -58,6 +58,7 @@ export default function SectionEMOM({ title, note, blocks, workSec, restSec, rou
           workSec={workSec}
           restSec={restSec}
           rounds={rounds}
+          betweenRoundRestSec={60} // 1 minute rest between rounds
           onPhaseChange={handlePhaseChange}
           onTick={handleTick}
           activeStation={activeStation}

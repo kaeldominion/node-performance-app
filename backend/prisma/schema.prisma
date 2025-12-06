@@ -35,6 +35,7 @@ enum Tier {
 enum SectionType {
   WARMUP
   EMOM
+  E2MOM // Every 2 Minutes On the Minute - 2 minute intervals instead of 1
   AMRAP
   FOR_TIME
   FINISHER

@@ -33,8 +33,14 @@ export function WorkoutTimer({
   useEffect(() => {
     if (type === 'COUNTDOWN' || type === 'AMRAP') {
       setTimeLeft(durationSec || 0);
-    } else if (type === 'EMOM' || type === 'E2MOM') {
+    } else if (type === 'EMOM') {
       setTimeLeft(workSec);
+      setIsWorkPhase(true);
+      setCurrentRound(1);
+    } else if (type === 'E2MOM') {
+      // E2MOM: Every 2 Minutes On the Minute - 2 minute intervals
+      // Default: 90s work, 30s rest (total 120s = 2 minutes)
+      setTimeLeft(workSec || 90);
       setIsWorkPhase(true);
       setCurrentRound(1);
     } else if (type === 'INTERVAL') {
@@ -80,13 +86,17 @@ export function WorkoutTimer({
       if (isWorkPhase) {
         // Switch to rest
         setIsWorkPhase(false);
-        setTimeLeft(restSec);
+        // For E2MOM, ensure rest time fits within 2-minute interval
+        const e2momRestTime = type === 'E2MOM' ? (restSec || 30) : restSec;
+        setTimeLeft(e2momRestTime);
         playCue('rest');
       } else {
         // Switch to work for next round
         if (currentRound < rounds) {
           setIsWorkPhase(true);
-          setTimeLeft(workSec);
+          // For E2MOM, use 90s work by default (or specified workSec)
+          const e2momWorkTime = type === 'E2MOM' ? (workSec || 90) : workSec;
+          setTimeLeft(e2momWorkTime);
           setCurrentRound(currentRound + 1);
           playCue('work');
         } else {
