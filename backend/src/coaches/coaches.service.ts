@@ -79,10 +79,24 @@ export class CoachesService {
 
   // Coach Profile Management
   async createProfile(userId: string, createDto: CreateCoachProfileDto) {
-    // Check if user has COACH role or is SUPERADMIN
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user || (user.role !== 'COACH' && user.role !== 'SUPERADMIN')) {
-      throw new ForbiddenException('User must have COACH role or be SUPERADMIN');
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Check if user has COACH role, is SUPERADMIN, or already has a coach profile
+    const existingProfile = await this.prisma.coachProfile.findUnique({
+      where: { userId },
+    });
+
+    // Allow if: user is COACH, user is SUPERADMIN, or user already has a coach profile
+    const canCreateOrUpdate = 
+      user.role === 'COACH' || 
+      user.role === 'SUPERADMIN' || 
+      existingProfile !== null;
+
+    if (!canCreateOrUpdate) {
+      throw new ForbiddenException('User must have COACH role, be SUPERADMIN, or have an existing coach profile');
     }
 
     return this.prisma.coachProfile.upsert({
