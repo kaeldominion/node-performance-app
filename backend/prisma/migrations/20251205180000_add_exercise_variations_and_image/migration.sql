@@ -1,4 +1,5 @@
 -- Add exercise variations and image fields
+ALTER TABLE "exercises" ADD COLUMN IF NOT EXISTS "instructions" TEXT;
 ALTER TABLE "exercises" ADD COLUMN IF NOT EXISTS "weightRanges" JSONB;
 ALTER TABLE "exercises" ADD COLUMN IF NOT EXISTS "durationRanges" JSONB;
 ALTER TABLE "exercises" ADD COLUMN IF NOT EXISTS "intensityLevels" JSONB;
