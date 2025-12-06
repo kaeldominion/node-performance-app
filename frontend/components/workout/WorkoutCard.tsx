@@ -147,10 +147,40 @@ export function WorkoutCard({
   useEffect(() => {
     const checkFavorite = async () => {
       try {
-        const favorites = await workoutsApi.getFavorites().catch(() => []);
-        setIsFavorite(favorites.some((f: any) => f.id === workout.id));
+        let favorites: any[] = [];
+        try {
+          const response = await workoutsApi.getFavorites();
+          // Ensure response is an array
+          if (Array.isArray(response)) {
+            favorites = response;
+          } else if (response && typeof response === 'object') {
+            // Handle case where response might be wrapped
+            if (Array.isArray(response.workouts)) {
+              favorites = response.workouts;
+            } else if (Array.isArray(response.data)) {
+              favorites = response.data;
+            } else {
+              console.warn('Favorites response is not an array:', response);
+              favorites = [];
+            }
+          } else {
+            favorites = [];
+          }
+        } catch (apiError) {
+          console.error('API call failed:', apiError);
+          favorites = [];
+        }
+        
+        // getFavorites returns array of workout objects (mapped from WorkoutFavorite)
+        // Check if any favorite workout has matching id
+        setIsFavorite(favorites.some((f: any) => {
+          // Handle both direct workout objects and nested workout objects
+          const workoutId = f?.workout?.id || f?.id;
+          return workoutId === workout.id;
+        }));
       } catch (error) {
         console.error('Failed to check favorite status:', error);
+        setIsFavorite(false);
       }
     };
     checkFavorite();

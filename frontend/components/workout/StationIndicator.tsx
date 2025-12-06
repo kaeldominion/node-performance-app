@@ -35,25 +35,27 @@ export function StationIndicator({
 
   return (
     <div className="w-full space-y-6">
-      {/* Round Progress */}
-      <div className="text-center">
-        <div className="text-muted-text text-sm mb-2 uppercase tracking-wider">Round Progress</div>
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-            {currentRound} / {totalRounds}
+      {/* Round Progress - Hidden on Mobile */}
+      {!isMobile && (
+        <div className="text-center">
+          <div className="text-muted-text text-sm mb-2 uppercase tracking-wider">Round Progress</div>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <div className="text-3xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+              {currentRound} / {totalRounds}
+            </div>
+          </div>
+          {/* Progress Bar */}
+          <div className="w-full max-w-md mx-auto h-2 bg-panel/50 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-node-volt transition-all duration-500"
+              style={{ width: `${(currentRound / totalRounds) * 100}%` }}
+            />
           </div>
         </div>
-        {/* Progress Bar */}
-        <div className="w-full max-w-md mx-auto h-2 bg-panel/50 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-node-volt transition-all duration-500"
-            style={{ width: `${(currentRound / totalRounds) * 100}%` }}
-          />
-        </div>
-      </div>
+      )}
 
-      {/* Next Station Preview - Only show next station, no grid of cards */}
-      {nextStation !== undefined && nextStation !== activeStation && (
+      {/* Next Station Preview - Hidden on Mobile */}
+      {!isMobile && nextStation !== undefined && nextStation !== activeStation && (
         <div className="text-center mt-4 p-4 bg-panel/50 rounded-lg thin-border">
           <div className="text-muted-text text-sm mb-1 uppercase tracking-wider">Next Station</div>
           <div className="text-xl font-bold text-node-volt" style={{ fontFamily: 'var(--font-space-grotesk)' }}>

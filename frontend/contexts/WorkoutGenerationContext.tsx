@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { workoutsApi, programsApi } from '@/lib/api';
 
 interface UnsavedWorkout {
   id: string;

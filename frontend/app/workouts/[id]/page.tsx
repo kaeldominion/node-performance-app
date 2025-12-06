@@ -58,6 +58,7 @@ export default function WorkoutPlayerPage() {
   const [currentSection, setCurrentSection] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [rpe, setRpe] = useState(5);
   const [notes, setNotes] = useState('');
@@ -83,13 +84,26 @@ export default function WorkoutPlayerPage() {
 
   const loadWorkout = async () => {
     try {
+      setLoading(true);
+      setError(null);
       // Check if it's a shareId (starts with 'share_') or regular ID
       const data = workoutId.startsWith('share_')
         ? await workoutsApi.getByShareId(workoutId)
         : await workoutsApi.getById(workoutId);
       setWorkout(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load workout:', error);
+      setWorkout(null);
+      // Set user-friendly error message
+      if (error?.response?.status === 404) {
+        setError('Workout not found');
+      } else if (error?.response?.status === 403) {
+        setError('You do not have permission to view this workout');
+      } else if (error?.request && !error?.response) {
+        setError('Unable to connect to server. Please check your connection.');
+      } else {
+        setError('Failed to load workout. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -150,10 +164,18 @@ export default function WorkoutPlayerPage() {
     );
   }
 
-  if (!workout) {
+  if (error || !workout) {
     return (
       <div className="min-h-screen bg-deep-asphalt flex items-center justify-center">
-        <div className="text-muted-text">Workout not found</div>
+        <div className="text-center">
+          <div className="text-muted-text mb-4">{error || 'Workout not found'}</div>
+          <button
+            onClick={() => router.push('/workouts')}
+            className="bg-panel thin-border text-text-white px-4 py-2 hover:border-node-volt transition-colors"
+          >
+            Back to Workouts
+          </button>
+        </div>
       </div>
     );
   }

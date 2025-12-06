@@ -246,6 +246,47 @@ function WorkoutBuilderPageContent() {
           setLoading(false);
         }
         
+        // Auto-save the workout in the background
+        try {
+          console.log('💾 Auto-saving workout...');
+          if (Array.isArray(workout)) {
+            // Multi-day program - create program
+            const workoutCount = workout.length;
+            let programName = '';
+            let durationWeeks = 1;
+            
+            if (formData.workoutType === 'fourDay') {
+              programName = `4-Day Program - ${formData.goal}`;
+              durationWeeks = 1;
+            } else if (formData.workoutType === 'week') {
+              programName = `7-Day Program - ${formData.goal}`;
+              durationWeeks = 1;
+            } else if (formData.workoutType === 'month') {
+              programName = `4-Week Program - ${formData.goal}`;
+              durationWeeks = 4;
+            }
+            
+            const program = await programsApi.createWithWorkouts({
+              name: programName,
+              description: `AI-generated ${formData.workoutType === 'fourDay' ? '4-day' : formData.workoutType === 'week' ? '7-day' : '4-week'} program`,
+              level: 'ADVANCED',
+              goal: formData.goal,
+              durationWeeks,
+              cycle: formData.cycle,
+              workouts: workout,
+            });
+            
+            console.log('✅ Program auto-saved:', program.id);
+          } else {
+            // Single workout - save directly
+            const savedWorkout = await workoutsApi.create(workout);
+            console.log('✅ Workout auto-saved:', savedWorkout.id);
+          }
+        } catch (saveError: any) {
+          console.error('⚠️ Failed to auto-save workout (user can save manually):', saveError);
+          // Don't throw - workout is still generated, just not saved
+        }
+        
         // Complete generation and store in context
         // This will dispatch the notification event
         completeGeneration(generationId, workout, formData);

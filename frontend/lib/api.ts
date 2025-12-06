@@ -162,31 +162,36 @@ api.interceptors.response.use(
         });
       } else {
         // Safely extract error information
-        const errorUrl = error?.config?.url || error?.request?.responseURL || 'unknown';
-        const errorMethod = error?.config?.method || 'unknown';
-        const errorStatus = error?.response?.status || error?.status;
+        const errorUrl = error?.config?.url || error?.request?.responseURL || error?.url;
+        const errorMethod = error?.config?.method || error?.method;
+        const errorStatus = error?.response?.status || error?.status || error?.statusCode;
         const errorMessage = error?.response?.data?.message || 
                            error?.response?.data?.error || 
                            error?.message || 
-                           (typeof error === 'string' ? error : String(error)) || 
-                           'Unknown error';
+                           (typeof error === 'string' ? error : String(error));
         
-        // Log the most important info first
-        console.error('❌ API call failed:', {
-          method: errorMethod,
-          url: errorUrl,
-          status: errorStatus,
-          message: errorMessage,
-          hasResponse: !!error?.response,
-          hasRequest: !!error?.request,
-          hasConfig: !!error?.config,
-          errorType: error?.constructor?.name || typeof error,
-        });
+        // Build error info object, only including properties that have values
+        const errorInfo: any = {};
+        if (errorMethod && errorMethod !== 'unknown') errorInfo.method = errorMethod;
+        if (errorUrl && errorUrl !== 'unknown') errorInfo.url = errorUrl;
+        if (errorStatus) errorInfo.status = errorStatus;
+        if (errorMessage && errorMessage !== 'Unknown error') errorInfo.message = errorMessage;
+        if (error?.response) errorInfo.hasResponse = true;
+        if (error?.request) errorInfo.hasRequest = true;
+        if (error?.config) errorInfo.hasConfig = true;
+        errorInfo.errorType = error?.constructor?.name || typeof error;
         
-        // If error is empty or malformed, log the raw error
-        if (!error?.response && !error?.request && !error?.message && !error?.config) {
-          console.error('⚠️ Error object appears empty or malformed. Raw error:', error);
-          console.error('Error keys:', Object.keys(error || {}));
+        // Only log if we have meaningful content
+        if (Object.keys(errorInfo).length > 1 || errorInfo.errorType !== 'object') {
+          console.error('❌ API call failed:', errorInfo);
+        } else {
+          // If error is empty or malformed, log the raw error
+          console.error('⚠️ API call failed - Error object appears empty or malformed:', {
+            errorType: typeof error,
+            errorConstructor: error?.constructor?.name,
+            errorKeys: Object.keys(error || {}),
+            rawError: error,
+          });
           try {
             console.error('Error stringified:', JSON.stringify(error, null, 2));
           } catch (e) {
@@ -444,6 +449,10 @@ export const workoutsApi = {
   },
   getUserRating: async (id: string) => {
     const response = await api.get(`/workouts/${id}/ratings/user`);
+    return response.data;
+  },
+  delete: async (id: string) => {
+    const response = await api.delete(`/workouts/${id}`);
     return response.data;
   },
 };

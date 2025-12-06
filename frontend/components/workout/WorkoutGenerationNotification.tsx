@@ -51,14 +51,14 @@ export function WorkoutGenerationNotification() {
       setNotifications((prev) => [notification, ...prev].slice(0, 5)); // Keep last 5
       setVisibleNotifications((prev) => new Set([...prev, generationId]));
 
-      // Auto-hide after 10 seconds
+      // Auto-hide after 30 seconds (increased from 10 seconds)
       setTimeout(() => {
         setVisibleNotifications((prev) => {
           const next = new Set(prev);
           next.delete(generationId);
           return next;
         });
-      }, 10000);
+      }, 30000);
     };
 
     window.addEventListener('workout-generated', handleWorkoutGenerated);
@@ -69,12 +69,9 @@ export function WorkoutGenerationNotification() {
   }, []);
 
   const handleViewWorkout = (notification: Notification) => {
-    // Find the workout in unsaved workouts
-    const workout = unsavedWorkouts.find((w) => w.id === notification.workoutId);
-    if (workout) {
-      // Navigate to workout builder with the workout data
-      router.push(`/ai/workout-builder?workoutId=${notification.workoutId}`);
-    }
+    // Since workouts are now auto-saved, navigate directly to the workouts page
+    // The workout should already be in "My Workouts"
+    router.push(`/workouts?tab=my-workouts&_t=${Date.now()}`);
     setVisibleNotifications((prev) => {
       const next = new Set(prev);
       next.delete(notification.id);
@@ -132,26 +129,29 @@ export function WorkoutGenerationNotification() {
                 <Icons.WORKOUT size={20} className="text-node-volt" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-text-white mb-1">
-                  Workout Ready!
-                </p>
-                <p className="text-xs text-muted-text mb-3 truncate">
-                  {notification.workoutName}
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleViewWorkout(notification)}
-                    className="flex-1 px-3 py-1.5 bg-node-volt text-dark text-xs font-bold rounded hover:bg-node-volt/90 transition-all duration-200 hover:scale-105"
-                  >
-                    View
-                  </button>
-                  <button
-                    onClick={() => handleDismiss(notification.id)}
-                    className="px-3 py-1.5 text-muted-text hover:text-text-white text-xs transition-all duration-200 hover:scale-105"
-                  >
-                    Dismiss
-                  </button>
-                </div>
+              <p className="text-sm font-bold text-text-white mb-1">
+                Workout Ready!
+              </p>
+              <p className="text-xs text-muted-text mb-1 truncate">
+                {notification.workoutName}
+              </p>
+              <p className="text-xs text-node-volt mb-3">
+                Auto-saved to My Workouts
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleViewWorkout(notification)}
+                  className="flex-1 px-3 py-1.5 bg-node-volt text-dark text-xs font-bold rounded hover:bg-node-volt/90 transition-all duration-200 hover:scale-105"
+                >
+                  View
+                </button>
+                <button
+                  onClick={() => handleDismiss(notification.id)}
+                  className="px-3 py-1.5 text-muted-text hover:text-text-white text-xs transition-all duration-200 hover:scale-105"
+                >
+                  Dismiss
+                </button>
+              </div>
               </div>
             </div>
           </div>

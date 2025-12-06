@@ -753,16 +753,32 @@ export class WorkoutsService {
   }
 
   async delete(userId: string, workoutId: string) {
-    // Verify the workout belongs to the user (check if they have a session with it)
-    const session = await this.prisma.sessionLog.findFirst({
-      where: {
-        userId,
-        workoutId,
-      },
+    // Verify the workout belongs to the user
+    // Check if user created it OR has a session with it
+    const workout = await this.prisma.workout.findUnique({
+      where: { id: workoutId },
+      select: { createdBy: true },
     });
 
-    if (!session) {
-      throw new Error('Workout not found or you do not have permission to delete it');
+    if (!workout) {
+      throw new Error('Workout not found');
+    }
+
+    // Check if user created the workout
+    const isCreator = workout.createdBy === userId;
+
+    // If not creator, check if they have a session with it
+    if (!isCreator) {
+      const session = await this.prisma.sessionLog.findFirst({
+        where: {
+          userId,
+          workoutId,
+        },
+      });
+
+      if (!session) {
+        throw new Error('You do not have permission to delete this workout');
+      }
     }
 
     // Delete the workout (cascade will handle related data)

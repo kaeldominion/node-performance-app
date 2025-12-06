@@ -78,7 +78,17 @@ export default function LandingPage() {
           const stats = await gamificationApi.getStats();
           setXpStats(stats);
         } catch (err) {
-          console.error('Failed to load XP stats:', err);
+          // Silently fail - stats are not critical for page functionality
+          // Only log if it's not a network/404 error
+          if (err && typeof err === 'object' && 'response' in err) {
+            const httpError = err as any;
+            if (httpError.response?.status !== 404 && httpError.response?.status !== 0) {
+              console.error('Failed to load XP stats:', err);
+            }
+          } else if (err && typeof err === 'object' && Object.keys(err).length > 0) {
+            // Only log if error object has content
+            console.error('Failed to load XP stats:', err);
+          }
         }
       };
       loadXpStats();

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useAudioSystem } from '@/hooks/useAudioSystem';
 import { useDeckAnimations } from '@/hooks/useDeckAnimations';
@@ -17,9 +17,20 @@ interface DeckTimerProps {
   onPhaseChange?: (phase: 'work' | 'rest', round: number) => void;
   autoStart?: boolean;
   showPreCountdown?: boolean;
+  hideControls?: boolean; // Hide built-in controls for custom layout
+  onStartClick?: () => void; // External start handler
 }
 
-export function DeckTimer({
+export interface DeckTimerRef {
+  start: () => void;
+  pause: () => void;
+  resume: () => void;
+  reset: () => void;
+  isRunning: boolean;
+  isPaused: boolean;
+}
+
+export const DeckTimer = forwardRef<DeckTimerRef, DeckTimerProps>(({
   type,
   durationSec,
   workSec = 45,
@@ -30,7 +41,9 @@ export function DeckTimer({
   onPhaseChange,
   autoStart = false,
   showPreCountdown = true,
-}: DeckTimerProps) {
+  hideControls = false,
+  onStartClick,
+}, ref) => {
   const [timeLeft, setTimeLeft] = useState(durationSec || workSec || 0);
   const [currentRound, setCurrentRound] = useState(1);
   const [isWorkPhase, setIsWorkPhase] = useState(true);
@@ -331,60 +344,64 @@ export function DeckTimer({
         )}
 
         {/* Timer Controls */}
-        <div className="flex items-center gap-3 flex-wrap justify-center">
-          {!isRunning && !isPaused && (
-            <button
-              onClick={startPreCountdown}
-              className="bg-node-volt text-dark font-bold px-8 py-3 rounded-lg hover:opacity-90 transition-opacity"
-              style={{
-                fontFamily: 'var(--font-space-grotesk)',
-                minWidth: config.touchTargetSize,
-                minHeight: config.touchTargetSize,
-              }}
-            >
-              Start
-            </button>
-          )}
-          {isRunning && (
-            <button
-              onClick={handlePause}
-              className="bg-panel thin-border text-text-white px-6 py-3 rounded-lg hover:bg-panel transition-colors font-medium"
-              style={{
-                minWidth: config.touchTargetSize,
-                minHeight: config.touchTargetSize,
-              }}
-            >
-              Pause
-            </button>
-          )}
-          {isPaused && (
-            <>
+        {!hideControls && (
+          <div className="flex items-center gap-3 flex-wrap justify-center">
+            {!isRunning && !isPaused && (
               <button
-                onClick={handleResume}
-                className="bg-node-volt text-dark font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
+                onClick={onStartClick || startPreCountdown}
+                className="bg-node-volt text-dark font-bold px-8 py-3 rounded-lg hover:opacity-90 transition-opacity"
                 style={{
                   fontFamily: 'var(--font-space-grotesk)',
                   minWidth: config.touchTargetSize,
                   minHeight: config.touchTargetSize,
                 }}
               >
-                Resume
+                Start
               </button>
+            )}
+            {isRunning && (
               <button
-                onClick={handleReset}
+                onClick={handlePause}
                 className="bg-panel thin-border text-text-white px-6 py-3 rounded-lg hover:bg-panel transition-colors font-medium"
                 style={{
                   minWidth: config.touchTargetSize,
                   minHeight: config.touchTargetSize,
                 }}
               >
-                Reset
+                Pause
               </button>
-            </>
-          )}
-        </div>
+            )}
+            {isPaused && (
+              <>
+                <button
+                  onClick={handleResume}
+                  className="bg-node-volt text-dark font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
+                  style={{
+                    fontFamily: 'var(--font-space-grotesk)',
+                    minWidth: config.touchTargetSize,
+                    minHeight: config.touchTargetSize,
+                  }}
+                >
+                  Resume
+                </button>
+                <button
+                  onClick={handleReset}
+                  className="bg-panel thin-border text-text-white px-6 py-3 rounded-lg hover:bg-panel transition-colors font-medium"
+                  style={{
+                    minWidth: config.touchTargetSize,
+                    minHeight: config.touchTargetSize,
+                  }}
+                >
+                  Reset
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </>
   );
-}
+});
+
+DeckTimer.displayName = 'DeckTimer';
 

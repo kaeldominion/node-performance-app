@@ -9,7 +9,7 @@ import { useAudioSystem } from '@/hooks/useAudioSystem';
 import { useDeckAnimations, useConfetti } from '@/hooks/useDeckAnimations';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Logo } from '@/components/Logo';
-import { DeckTimer } from './DeckTimer';
+import { DeckTimer, DeckTimerRef } from './DeckTimer';
 import { StationIndicator } from './StationIndicator';
 import { ExerciseCard } from './ExerciseCard';
 import { CollapsibleExerciseCard } from './CollapsibleExerciseCard';
@@ -90,6 +90,10 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
   const [activeExerciseIndex, setActiveExerciseIndex] = useState(0);
   // Track current phase for rest highlighting
   const [currentPhase, setCurrentPhase] = useState<'work' | 'rest'>('work');
+  // Track which card is expanded on mobile (accordion behavior)
+  const [expandedCardIndex, setExpandedCardIndex] = useState<number | null>(null);
+  // Track auto-expanded cards (cards that should be expanded based on available space)
+  const [autoExpandedCards, setAutoExpandedCards] = useState<Set<number>>(new Set());
   // Track which sections have completed their timers
   const [completedSections, setCompletedSections] = useState<Set<number>>(new Set());
   // Track total elapsed time for timed stations sections
@@ -97,7 +101,14 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
   // Track if session has been started (only when timer is actually started)
   const [sessionStarted, setSessionStarted] = useState(false);
   
-  const { config, isMobile, isTablet, isDesktop, isTV, getExerciseGridColumns } = useResponsiveLayout();
+  // Timer refs for all section types (must be at top level for Hooks rules)
+  // Use a map to store refs by section index
+  const timerRefs = useRef<Map<number, DeckTimerRef | null>>(new Map());
+  
+  // Track timer states for start button visibility
+  const [showStartButton, setShowStartButton] = useState(true);
+  
+  const { config, isMobile, isTablet, isDesktop, isTV, getExerciseGridColumns, breakpoint } = useResponsiveLayout();
   const { playSound, playVoice } = useAudioSystem();
   const { triggerTransition, triggerCelebration, getTransitionClass } = useDeckAnimations();
   const { showConfetti, trigger: triggerConfetti } = useConfetti();
@@ -108,6 +119,7 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
   const sectionRef = useRef<HTMLDivElement>(null);
   const touchStartRef = useRef<number | null>(null);
   const touchEndRef = useRef<number | null>(null);
+  const cardsContainerRef = useRef<HTMLDivElement>(null);
 
   // Safety checks for workout data
   if (!workout || !workout.sections || !Array.isArray(workout.sections) || workout.sections.length === 0) {
@@ -131,6 +143,28 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
 
   // Ensure currentSectionIndex is within bounds
   const safeSectionIndex = Math.min(Math.max(0, currentSectionIndex), workout.sections.length - 1);
+  
+  // Helper to get current timer ref
+  const getCurrentTimerRef = (): DeckTimerRef | null => {
+    return timerRefs.current.get(safeSectionIndex) || null;
+  };
+  
+  // Sync timer state for start button
+  useEffect(() => {
+    // Reset start button visibility when section changes
+    setShowStartButton(true);
+    
+    const interval = setInterval(() => {
+      const currentRef = timerRefs.current.get(safeSectionIndex);
+      if (currentRef) {
+        setShowStartButton(!currentRef.isRunning && !currentRef.isPaused);
+      } else {
+        setShowStartButton(true);
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, [safeSectionIndex]);
+  
   useEffect(() => {
     if (safeSectionIndex !== currentSectionIndex) {
       setCurrentSectionIndex(safeSectionIndex);
@@ -140,6 +174,8 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
   // Reset active exercise index when section changes
   useEffect(() => {
     setActiveExerciseIndex(0);
+    setExpandedCardIndex(null); // Reset expanded card when section changes
+    setAutoExpandedCards(new Set()); // Reset auto-expanded cards
   }, [safeSectionIndex]);
 
   const currentSection = workout.sections[safeSectionIndex];
@@ -150,6 +186,96 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
       </div>
     );
   }
+  
+  // Debug: Log breakpoint in development (after currentSection is defined)
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+      console.log('📱 Responsive Layout:', {
+        breakpoint,
+        isMobile,
+        width: window.innerWidth,
+        sectionType: currentSection?.type,
+      });
+    }
+  }, [breakpoint, isMobile, currentSection?.type]);
+  
+  // Auto-expand cards on mobile based on available space
+  useEffect(() => {
+    if (!isMobile || !cardsContainerRef.current || !currentSection?.blocks || currentSection.blocks.length === 0) return;
+    
+    const calculateAutoExpanded = () => {
+      const container = cardsContainerRef.current;
+      if (!container) return;
+      
+      const containerHeight = container.clientHeight;
+      if (containerHeight === 0) return; // Container not yet rendered
+      
+      const gap = 6; // 0.375rem = 6px (tighter spacing)
+      const collapsedCardHeight = 60; // maxHeight of collapsed cards
+      const expandedCardMinHeight = 180; // Estimated minimum height for expanded card
+      const totalCards = currentSection.blocks.length;
+      const newAutoExpanded = new Set<number>();
+      
+      // Only use 2-column layout if 5+ cards, otherwise single column
+      if (totalCards >= 5) {
+        // 2-column grid layout
+        const rows = Math.ceil(totalCards / 2); // Number of rows in 2-column grid
+        const availableHeightPerRow = containerHeight / rows;
+        
+        // For each row, check if cards can be expanded
+        for (let row = 0; row < rows; row++) {
+          const card1Index = row * 2;
+          const card2Index = row * 2 + 1;
+          
+          // Check if we have space to expand cards in this row
+          const canExpandBoth = availableHeightPerRow >= expandedCardMinHeight + gap;
+          const canExpandOne = availableHeightPerRow >= (expandedCardMinHeight + collapsedCardHeight) / 2 + gap;
+          
+          if (canExpandBoth) {
+            // Both cards in this row can be expanded
+            if (card1Index < totalCards) newAutoExpanded.add(card1Index);
+            if (card2Index < totalCards) newAutoExpanded.add(card2Index);
+          } else if (canExpandOne) {
+            // Only first card in row can be expanded
+            if (card1Index < totalCards) newAutoExpanded.add(card1Index);
+          }
+          // Otherwise, both cards stay collapsed (default state)
+        }
+      } else {
+        // Single column layout (< 5 cards)
+        let usedHeight = 0;
+        
+        for (let i = 0; i < totalCards; i++) {
+          const cardHeight = expandedCardMinHeight;
+          const neededHeight = cardHeight + (i > 0 ? gap : 0);
+          const remainingCards = totalCards - i - 1;
+          const remainingCollapsedHeight = remainingCards > 0 ? remainingCards * (collapsedCardHeight + gap) : 0;
+          
+          if (usedHeight + neededHeight + remainingCollapsedHeight <= containerHeight) {
+            // This card can be expanded and all remaining cards fit collapsed
+            newAutoExpanded.add(i);
+            usedHeight += neededHeight;
+          } else {
+            // This card should be collapsed
+            usedHeight += collapsedCardHeight + (i > 0 ? gap : 0);
+          }
+        }
+      }
+      
+      setAutoExpandedCards(newAutoExpanded);
+    };
+    
+    // Calculate after a short delay to ensure layout is complete
+    const timeout = setTimeout(calculateAutoExpanded, 150);
+    
+    // Also recalculate on window resize
+    window.addEventListener('resize', calculateAutoExpanded);
+    
+    return () => {
+      clearTimeout(timeout);
+      window.removeEventListener('resize', calculateAutoExpanded);
+    };
+  }, [isMobile, currentSection?.blocks, safeSectionIndex]);
 
   // Calculate total pages (intro + sections) - available throughout component
   const totalPages = workout.sections.length + 1; // +1 for intro
@@ -482,10 +608,27 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
         
         return (
           <div className="w-full h-full flex flex-col" style={{ gap: isMobile ? '0.75rem' : '1rem', maxHeight: '100%', padding: isMobile ? '0.5rem' : '1rem' }}>
-            {/* Timer and Station Indicator - Top Row */}
+            {/* Timer and Station Indicator - Always Visible, Fixed at Top */}
             <div className="flex-shrink-0 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               <div style={{ flexShrink: 0 }}>
             <DeckTimer
+                  ref={(ref) => {
+                    // Always update the ref when it changes
+                    if (ref) {
+                      timerRefs.current.set(safeSectionIndex, ref);
+                      // Force a re-check of start button state
+                      setTimeout(() => {
+                        setShowStartButton(!ref.isRunning && !ref.isPaused);
+                      }, 50);
+                    } else {
+                      // Only delete if we're sure the component is unmounting
+                      // Don't delete on every null ref (which happens during re-renders)
+                      const timer = timerRefs.current.get(safeSectionIndex);
+                      if (timer === ref) {
+                        timerRefs.current.delete(safeSectionIndex);
+                      }
+                    }
+                  }}
                   key={`${currentSection.type.toLowerCase()}-${currentSection.id}-${safeSectionIndex}`}
               type={currentSection.type === 'E2MOM' ? 'E2MOM' : 'EMOM'}
               workSec={currentSection.emomWorkSec || (currentSection.type === 'E2MOM' ? 90 : 45)}
@@ -494,6 +637,7 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
               onPhaseChange={handlePhaseChange}
               autoStart={false}
               showPreCountdown={true}
+              hideControls={true}
                   onComplete={async () => {
                     handleSectionTimerComplete(safeSectionIndex);
                     // Create session when first timer is started (if not already created)
@@ -518,12 +662,18 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
               </div>
             </div>
             
-            {/* Exercise Cards - Fill remaining space */}
+            {/* Cards - Show all on mobile if space allows, otherwise grid layout */}
             <div
-              className="grid justify-center w-full flex-1 min-h-0"
-              style={{
+              className={isMobile ? "grid w-full flex-1 min-h-0" : "grid justify-center w-full flex-1 min-h-0"}
+              style={isMobile ? {
+                // Use 2 columns only if 5+ cards, otherwise single column
+                gridTemplateColumns: emomBlockCount >= 5 ? 'repeat(2, 1fr)' : '1fr',
+                gap: '1rem', // Proper spacing between cards
+                maxWidth: '100%',
+                overflow: 'hidden', // No scrolling - accordion behavior
+              } : {
                 gridTemplateColumns: emomIsSingleCard ? '1fr' : `repeat(${emomActualColumns}, 1fr)`,
-                gap: emomIsSmallLayout ? (isMobile ? '1rem' : '1.5rem') : (isMobile ? '0.75rem' : '1rem'),
+                gap: emomIsSmallLayout ? '1.5rem' : '1rem',
                 maxWidth: emomIsSingleCard ? '600px' : '100%',
                 alignContent: 'start',
               }}
@@ -534,6 +684,14 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
                 const isNext = idx === nextStation;
                 // During rest phase, highlight the next exercise with "get ready" style
                 const isRestPhase = currentPhase === 'rest' && isNext && !isActive;
+                // For mobile, use compact layout if 5+ cards, otherwise larger
+                const mobileCompact = isMobile && emomBlockCount >= 5;
+                const mobileLargeText = isMobile && emomBlockCount < 5;
+                // On mobile, collapse non-active cards by default, but allow manual expansion
+                // Track which cards are manually expanded (separate from active station)
+                const isManuallyExpanded = isMobile && expandedCardIndex === idx;
+                const isExpandedOnMobile = isMobile ? (isActive || isManuallyExpanded) : undefined;
+                const isCompactOnMobile = isMobile && !isActive && !isManuallyExpanded;
                 
                 return (
                   <CollapsibleExerciseCard
@@ -542,10 +700,17 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
                     isActive={isActive}
                     isRestPhase={isRestPhase}
                     sectionColor={sectionColor}
-                    compact={emomShouldBeCompact}
-                    largeText={emomIsSmallLayout || emomIsSingleCard}
-                    showFullDescription={emomBlockCount <= 2 && !isMobile}
+                    compact={isMobile ? (isCompactOnMobile || mobileCompact) : emomShouldBeCompact}
+                    largeText={isMobile ? (isExpandedOnMobile ? mobileLargeText : false) : (emomIsSmallLayout || emomIsSingleCard)}
+                    showFullDescription={emomBlockCount <= 2}
                     showTiersAlways={true}
+                    isExpanded={isExpandedOnMobile}
+                    onExpandChange={(expanded) => {
+                      if (isMobile) {
+                        // Allow manual expansion/collapse without changing active station
+                        setExpandedCardIndex(expanded ? idx : null);
+                      }
+                    }}
                   />
                 );
               })}
@@ -562,9 +727,27 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
         const intervalIsSingleCard = intervalBlockCount === 1;
         
         return (
-          <div className="w-full h-full flex flex-col items-center justify-center" style={{ gap: '1rem', maxHeight: '100%' }}>
+          <div className="w-full h-full flex flex-col" style={{ gap: '1rem', maxHeight: '100%', padding: isMobile ? '0.5rem' : '1rem' }}>
+            {/* Timer - Always Visible, Fixed at Top */}
             <div style={{ flexShrink: 0 }}>
               <DeckTimer
+                ref={(ref) => {
+                  // Always update the ref when it changes
+                  if (ref) {
+                    timerRefs.current.set(safeSectionIndex, ref);
+                    // Force a re-check of start button state
+                    setTimeout(() => {
+                      setShowStartButton(!ref.isRunning && !ref.isPaused);
+                    }, 50);
+                  } else {
+                    // Only delete if we're sure the component is unmounting
+                    // Don't delete on every null ref (which happens during re-renders)
+                    const timer = timerRefs.current.get(safeSectionIndex);
+                    if (timer === ref) {
+                      timerRefs.current.delete(safeSectionIndex);
+                    }
+                  }
+                }}
                 key={`interval-${currentSection.id}-${safeSectionIndex}`}
                 type="INTERVAL"
                 workSec={currentSection.intervalWorkSec || 20}
@@ -573,6 +756,7 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
                 onPhaseChange={handlePhaseChange}
                 autoStart={false}
                 showPreCountdown={true}
+                hideControls={true}
                 onComplete={async () => {
                   handleSectionTimerComplete(safeSectionIndex);
                   // Create session when first timer is started (if not already created)
@@ -585,30 +769,58 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
                 }}
               />
             </div>
+            {/* Cards - Conditional Layout on Mobile, Grid on Desktop */}
             <div
-              className="grid justify-center w-full"
-              style={{
+              ref={cardsContainerRef}
+              className={isMobile ? "grid w-full flex-1 min-h-0" : "grid justify-center w-full flex-1 min-h-0"}
+              style={isMobile ? {
+                // Use 2 columns only if 5+ cards, otherwise single column
+                gridTemplateColumns: intervalBlockCount >= 5 ? 'repeat(2, 1fr)' : '1fr',
+                gap: '1rem', // Proper spacing between cards
+                maxWidth: '100%',
+                overflow: 'hidden', // No scrolling - accordion behavior
+              } : {
                 gridTemplateColumns: intervalIsSingleCard ? '1fr' : `repeat(${intervalActualColumns}, 1fr)`,
                 gap: intervalIsSmallLayout ? '1.5rem' : '0.75rem',
-                flex: '1 1 auto',
-                minHeight: 0,
-                maxHeight: '100%',
-                overflow: 'hidden',
                 maxWidth: intervalIsSingleCard ? '600px' : '100%',
+                alignContent: 'start',
               }}
             >
-              {currentSection.blocks?.map((block: any, idx: number) => (
-                <CollapsibleExerciseCard
-                  key={`${currentSection.id}-block-${block.id || idx}`}
-                  block={block}
-                  isActive={idx === activeExerciseIndex}
-                  sectionColor={sectionColor}
-                  compact={!intervalIsSmallLayout && !intervalIsSingleCard}
-                  largeText={intervalIsSmallLayout || intervalIsSingleCard}
-                  showFullDescription={intervalBlockCount <= 2 && !isMobile}
-                  onClick={() => setActiveExerciseIndex(idx)}
-                />
-              ))}
+              {currentSection.blocks?.map((block: any, idx: number) => {
+                const isManuallyExpanded = expandedCardIndex === idx;
+                const isAutoExpanded = expandedCardIndex === null && autoExpandedCards.has(idx);
+                const isExpanded = isMobile ? (isManuallyExpanded || isAutoExpanded) : undefined;
+                const isCompact = isMobile ? (expandedCardIndex !== null && !isManuallyExpanded) || (expandedCardIndex === null && !isAutoExpanded) : (!intervalIsSmallLayout && !intervalIsSingleCard);
+                // Expanded cards should span full width (both columns)
+                const shouldSpanFullWidth = isMobile && intervalBlockCount >= 5 && isExpanded;
+                
+                return (
+                  <CollapsibleExerciseCard
+                    key={`${currentSection.id}-block-${block.id || idx}`}
+                    block={block}
+                    isActive={idx === activeExerciseIndex}
+                    sectionColor={sectionColor}
+                    compact={isCompact}
+                    largeText={isMobile ? isExpanded : (intervalIsSmallLayout || intervalIsSingleCard)}
+                    showFullDescription={intervalBlockCount <= 2 && !isMobile}
+                    onClick={() => setActiveExerciseIndex(idx)}
+                    isExpanded={isExpanded}
+                    onExpandChange={(expanded) => {
+                      if (isMobile) {
+                        setExpandedCardIndex(expanded ? idx : null);
+                        if (expanded) {
+                          setAutoExpandedCards(prev => {
+                            const next = new Set(prev);
+                            next.delete(idx);
+                            return next;
+                          });
+                        }
+                      }
+                    }}
+                    style={shouldSpanFullWidth ? { gridColumn: '1 / -1' } : undefined}
+                  />
+                );
+              })}
             </div>
           </div>
         );
@@ -635,11 +847,19 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
               <div className="flex-shrink-0 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
                 <div style={{ flexShrink: 0 }}>
                   <DeckTimer
+                    ref={(ref) => {
+                      if (ref) {
+                        timerRefs.current.set(safeSectionIndex, ref);
+                      } else {
+                        timerRefs.current.delete(safeSectionIndex);
+                      }
+                    }}
                     key={`timed-station-${currentSection.id}-${safeSectionIndex}-${activeStation}`}
                     type="COUNTDOWN"
                     durationSec={stationDuration}
                     autoStart={false}
                     showPreCountdown={true}
+                    hideControls={true}
                     onComplete={async () => {
                       // Add this station's duration to elapsed time
                       let shouldAdvance = false;
@@ -694,28 +914,52 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
                 </div>
               </div>
               
-              {/* Exercise Cards - Fill remaining space */}
+              {/* Cards - Show all on mobile if space allows */}
               <div
-                className="grid justify-center w-full flex-1 min-h-0"
-                style={{
+                className={isMobile ? "grid w-full flex-1 min-h-0" : "grid justify-center w-full flex-1 min-h-0"}
+                style={isMobile ? {
+                  // Use 2 columns only if 5+ cards, otherwise single column
+                  gridTemplateColumns: timedStationsBlockCount >= 5 ? 'repeat(2, 1fr)' : '1fr',
+                  gap: '1rem', // Proper spacing between cards
+                  maxWidth: '100%',
+                  overflow: 'hidden', // No scrolling - accordion behavior
+                } : {
                   gridTemplateColumns: timedStationsIsSingleCard ? '1fr' : `repeat(${timedStationsActualColumns}, 1fr)`,
-                  gap: timedStationsIsSmallLayout ? (isMobile ? '1rem' : '1.5rem') : (isMobile ? '0.75rem' : '1rem'),
+                  gap: timedStationsIsSmallLayout ? '1.5rem' : '1rem',
                   maxWidth: timedStationsIsSingleCard ? '600px' : '100%',
                   alignContent: 'start',
                 }}
               >
-                {currentSection.blocks?.map((block: any, idx: number) => (
-                  <CollapsibleExerciseCard
-                    key={`${currentSection.id}-block-${block.id || idx}`}
-                    block={block}
-                    isActive={idx === activeStation}
-                    sectionColor={sectionColor}
-                    compact={timedStationsShouldBeCompact}
-                    largeText={timedStationsIsSmallLayout || timedStationsIsSingleCard}
-                    showFullDescription={timedStationsBlockCount <= 2 && !isMobile}
-                    showTiersAlways={true}
-                  />
-                ))}
+                {currentSection.blocks?.map((block: any, idx: number) => {
+                  const isActive = idx === activeStation;
+                  // For mobile, use compact layout if 5+ cards, otherwise larger
+                  const mobileCompact = isMobile && timedStationsBlockCount >= 5;
+                  const mobileLargeText = isMobile && timedStationsBlockCount < 5;
+                  // On mobile, collapse non-active cards by default, but allow manual expansion
+                  const isManuallyExpanded = isMobile && expandedCardIndex === idx;
+                  const isExpandedOnMobile = isMobile ? (isActive || isManuallyExpanded) : undefined;
+                  const isCompactOnMobile = isMobile && !isActive && !isManuallyExpanded;
+                  
+                  return (
+                    <CollapsibleExerciseCard
+                      key={`${currentSection.id}-block-${block.id || idx}`}
+                      block={block}
+                      isActive={isActive}
+                      sectionColor={sectionColor}
+                      compact={isMobile ? (isCompactOnMobile || mobileCompact) : timedStationsShouldBeCompact}
+                      largeText={isMobile ? (isExpandedOnMobile ? mobileLargeText : false) : (timedStationsIsSmallLayout || timedStationsIsSingleCard)}
+                      showFullDescription={timedStationsBlockCount <= 2}
+                      showTiersAlways={true}
+                      isExpanded={isExpandedOnMobile}
+                      onExpandChange={(expanded) => {
+                        if (isMobile) {
+                          // Allow manual expansion/collapse without changing active station
+                          setExpandedCardIndex(expanded ? idx : null);
+                        }
+                      }}
+                    />
+                  );
+                })}
               </div>
             </div>
           );
@@ -740,18 +984,38 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
         const blockCount = currentSection.blocks?.length || 0;
         const maxColumns = isHyrox ? 8 : 6; // HYROX can have more
         const actualColumns = Math.min(blockCount, maxColumns);
-        const isSmallLayout = blockCount >= 2 && blockCount <= 4;
+        const isSmallLayout = blockCount >= 2 && blockCount <= 5; // Include 5 cards for larger text
         const isSingleCard = blockCount === 1;
         
         return (
-          <div className="w-full h-full flex flex-col items-center justify-center" style={{ gap: '1rem', maxHeight: '100%' }}>
-            <div style={{ flexShrink: 0 }}>
+          <div className="w-full h-full flex flex-col" style={{ gap: '1rem', maxHeight: '100%', padding: isMobile ? '0.5rem' : '1rem' }}>
+            {/* Timer and Targets - Always Visible, Fixed at Top */}
+            <div className="flex-shrink-0 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+              <div style={{ flexShrink: 0 }}>
             <DeckTimer
+                ref={(ref) => {
+                  // Always update the ref when it changes
+                  if (ref) {
+                    timerRefs.current.set(safeSectionIndex, ref);
+                    // Force a re-check of start button state
+                    setTimeout(() => {
+                      setShowStartButton(!ref.isRunning && !ref.isPaused);
+                    }, 50);
+                  } else {
+                    // Only delete if we're sure the component is unmounting
+                    // Don't delete on every null ref (which happens during re-renders)
+                    const timer = timerRefs.current.get(safeSectionIndex);
+                    if (timer === ref) {
+                      timerRefs.current.delete(safeSectionIndex);
+                    }
+                  }
+                }}
                 key={`amrap-${currentSection.id}-${safeSectionIndex}`}
               type="AMRAP"
               durationSec={currentSection.durationSec || 720}
               autoStart={false}
               showPreCountdown={true}
+              hideControls={true}
               onComplete={async () => {
                 handleSectionTimerComplete(safeSectionIndex);
                 // Create session when first timer is started (if not already created)
@@ -764,31 +1028,82 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
               }}
             />
             </div>
+            {/* Target Rounds - Right Side */}
+            {tierTargets && (
+              <div className="flex flex-col items-center gap-3">
+                <div className="bg-panel thin-border px-4 py-3 flex flex-col items-center gap-2">
+                  <div className="text-xs text-muted-text uppercase tracking-wider font-mono">Target:</div>
+                  <div className="flex items-center gap-2">
+                    <div className="bg-panel thin-border px-2 py-1.5 flex flex-col items-center">
+                      <div className="text-[10px] text-muted-text uppercase tracking-wider font-mono">SILVER</div>
+                      <div className="text-sm font-bold text-node-volt">{tierTargets.silver}</div>
+                    </div>
+                    <div className="bg-panel thin-border px-2 py-1.5 flex flex-col items-center" style={{ borderColor: '#ffd700' }}>
+                      <div className="text-[10px] text-muted-text uppercase tracking-wider font-mono">GOLD</div>
+                      <div className="text-sm font-bold" style={{ color: '#ffd700' }}>{tierTargets.gold}</div>
+                    </div>
+                    <div className="bg-dark thin-border px-2 py-1.5 flex flex-col items-center" style={{ borderColor: 'rgba(255, 255, 255, 0.4)' }}>
+                      <div className="text-[10px] text-text-white uppercase tracking-wider font-mono">BLACK</div>
+                      <div className="text-sm font-bold text-text-white">{tierTargets.black}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            </div>
             
+            {/* Cards - Conditional Layout on Mobile, Grid on Desktop */}
             <div
-              className="grid justify-center w-full"
-              style={{
+              ref={cardsContainerRef}
+              className={isMobile ? "grid w-full flex-1 min-h-0" : "grid justify-center w-full flex-1 min-h-0"}
+              style={isMobile ? {
+                // Use 2 columns only if 5+ cards, otherwise single column
+                gridTemplateColumns: blockCount >= 5 ? 'repeat(2, 1fr)' : '1fr',
+                gap: '1rem', // Proper spacing between cards
+                maxWidth: '100%',
+                overflow: 'hidden', // No scrolling - accordion behavior
+              } : {
                 gridTemplateColumns: isSingleCard ? '1fr' : `repeat(${actualColumns}, 1fr)`,
                 gap: isSmallLayout ? '1.5rem' : '0.75rem',
-                flex: '1 1 auto',
-                minHeight: 0,
-                maxHeight: '100%',
-                overflow: 'hidden',
                 maxWidth: isSingleCard ? '600px' : '100%',
+                alignContent: 'start',
               }}
             >
-              {currentSection.blocks?.map((block: any, idx: number) => (
-                <CollapsibleExerciseCard 
-                  key={`${currentSection.id}-block-${block.id || idx}`} 
-                  block={block}
-                  isActive={idx === activeExerciseIndex}
-                  sectionColor={sectionColor}
-                  compact={!isSmallLayout && !isSingleCard}
-                  largeText={isSmallLayout || isSingleCard}
-                  showFullDescription={blockCount <= 2 && !isMobile}
-                  onClick={() => setActiveExerciseIndex(idx)}
-                />
-              ))}
+              {currentSection.blocks?.map((block: any, idx: number) => {
+                const isManuallyExpanded = expandedCardIndex === idx;
+                const isAutoExpanded = expandedCardIndex === null && autoExpandedCards.has(idx);
+                const isExpanded = isMobile ? (isManuallyExpanded || isAutoExpanded) : undefined;
+                const isCompact = isMobile ? (expandedCardIndex !== null && !isManuallyExpanded) || (expandedCardIndex === null && !isAutoExpanded) : (!isSmallLayout && !isSingleCard);
+                // Expanded cards should span full width (both columns)
+                const shouldSpanFullWidth = isMobile && blockCount >= 5 && isExpanded;
+                
+                return (
+                  <CollapsibleExerciseCard 
+                    key={`${currentSection.id}-block-${block.id || idx}`} 
+                    block={block}
+                    isActive={idx === activeExerciseIndex}
+                    sectionColor={sectionColor}
+                    compact={isCompact}
+                    largeText={isMobile ? isExpanded : (isSmallLayout || isSingleCard)}
+                    showFullDescription={blockCount <= 2 && !isMobile}
+                    onClick={() => setActiveExerciseIndex(idx)}
+                    isExpanded={isExpanded}
+                    onExpandChange={(expanded) => {
+                      if (isMobile) {
+                        setExpandedCardIndex(expanded ? idx : null);
+                        if (expanded) {
+                          setAutoExpandedCards(prev => {
+                            const next = new Set(prev);
+                            next.delete(idx);
+                            return next;
+                          });
+                        }
+                      }
+                    }}
+                    style={shouldSpanFullWidth ? { gridColumn: '1 / -1' } : undefined}
+                  />
+                );
+              })}
             </div>
           </div>
         );
@@ -813,18 +1128,38 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
         const blockCountAmrap = currentSection.blocks?.length || 0;
         const maxColumnsAmrap = isHyrox ? 8 : 6; // HYROX can have more
         const actualColumnsAmrap = Math.min(blockCountAmrap, maxColumnsAmrap);
-        const isSmallLayoutAmrap = blockCountAmrap >= 2 && blockCountAmrap <= 4;
+        const isSmallLayoutAmrap = blockCountAmrap >= 2 && blockCountAmrap <= 5; // Include 5 cards for larger text
         const isSingleCardAmrap = blockCountAmrap === 1;
         
         return (
-          <div className="w-full h-full flex flex-col items-center justify-center" style={{ gap: '1rem', maxHeight: '100%' }}>
-            <div style={{ flexShrink: 0 }}>
+          <div className="w-full h-full flex flex-col" style={{ gap: '1rem', maxHeight: '100%', padding: isMobile ? '0.5rem' : '1rem' }}>
+            {/* Timer and Targets - Always Visible, Fixed at Top */}
+            <div className="flex-shrink-0 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+              <div style={{ flexShrink: 0 }}>
             <DeckTimer
+                ref={(ref) => {
+                  // Always update the ref when it changes
+                  if (ref) {
+                    timerRefs.current.set(safeSectionIndex, ref);
+                    // Force a re-check of start button state
+                    setTimeout(() => {
+                      setShowStartButton(!ref.isRunning && !ref.isPaused);
+                    }, 50);
+                  } else {
+                    // Only delete if we're sure the component is unmounting
+                    // Don't delete on every null ref (which happens during re-renders)
+                    const timer = timerRefs.current.get(safeSectionIndex);
+                    if (timer === ref) {
+                      timerRefs.current.delete(safeSectionIndex);
+                    }
+                  }
+                }}
                 key={`amrap-${currentSection.id}-${safeSectionIndex}`}
               type="AMRAP"
               durationSec={currentSection.durationSec || 720}
               autoStart={false}
               showPreCountdown={true}
+              hideControls={true}
               onComplete={async () => {
                 handleSectionTimerComplete(safeSectionIndex);
                 // Create session when first timer is started (if not already created)
@@ -837,31 +1172,85 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
               }}
             />
             </div>
+            {/* Target Rounds - Right Side */}
+            {tierTargetsAmrap && (
+              <div className="flex flex-col items-center gap-3">
+                <div className="bg-panel thin-border px-4 py-3 flex flex-col items-center gap-2">
+                  <div className="text-xs text-muted-text uppercase tracking-wider font-mono">Target:</div>
+                  <div className="flex items-center gap-2">
+                    <div className="bg-panel thin-border px-2 py-1.5 flex flex-col items-center">
+                      <div className="text-[10px] text-muted-text uppercase tracking-wider font-mono">SILVER</div>
+                      <div className="text-sm font-bold text-node-volt">{tierTargetsAmrap.silver}</div>
+                    </div>
+                    <div className="bg-panel thin-border px-2 py-1.5 flex flex-col items-center" style={{ borderColor: '#ffd700' }}>
+                      <div className="text-[10px] text-muted-text uppercase tracking-wider font-mono">GOLD</div>
+                      <div className="text-sm font-bold" style={{ color: '#ffd700' }}>{tierTargetsAmrap.gold}</div>
+                    </div>
+                    <div className="bg-dark thin-border px-2 py-1.5 flex flex-col items-center" style={{ borderColor: 'rgba(255, 255, 255, 0.4)' }}>
+                      <div className="text-[10px] text-text-white uppercase tracking-wider font-mono">BLACK</div>
+                      <div className="text-sm font-bold text-text-white">{tierTargetsAmrap.black}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            </div>
             
+            {/* Cards - Conditional Layout on Mobile, Grid on Desktop */}
             <div
-              className="grid justify-center w-full"
-              style={{
+              ref={cardsContainerRef}
+              className={isMobile ? "grid w-full flex-1 min-h-0" : "grid justify-center w-full flex-1 min-h-0"}
+              style={isMobile ? {
+                // Use 2 columns only if 5+ cards, otherwise single column
+                gridTemplateColumns: blockCountAmrap >= 5 ? 'repeat(2, 1fr)' : '1fr',
+                gap: '1rem', // Proper spacing between cards
+                maxWidth: '100%',
+                overflow: 'hidden', // No scrolling - accordion behavior
+              } : {
                 gridTemplateColumns: isSingleCardAmrap ? '1fr' : `repeat(${actualColumnsAmrap}, 1fr)`,
                 gap: isSmallLayoutAmrap ? '1.5rem' : '0.75rem',
-                flex: '1 1 auto',
-                minHeight: 0,
-                maxHeight: '100%',
-                overflow: 'hidden',
                 maxWidth: isSingleCardAmrap ? '600px' : '100%',
+                alignContent: 'start',
               }}
             >
-              {currentSection.blocks?.map((block: any, idx: number) => (
-                <CollapsibleExerciseCard 
-                  key={`${currentSection.id}-block-${block.id || idx}`} 
-                  block={block}
-                  isActive={idx === activeExerciseIndex}
-                  sectionColor={sectionColor}
-                  compact={!isSmallLayoutAmrap && !isSingleCardAmrap}
-                  largeText={isSmallLayoutAmrap || isSingleCardAmrap}
-                  showFullDescription={blockCountAmrap <= 2 && !isMobile}
-                  onClick={() => setActiveExerciseIndex(idx)}
-                />
-              ))}
+              {currentSection.blocks?.map((block: any, idx: number) => {
+                // Auto-expand logic: expand cards that fit, starting from first
+                // If user manually expanded a card, use that; otherwise use auto-expanded
+                const isManuallyExpanded = expandedCardIndex === idx;
+                const isAutoExpanded = expandedCardIndex === null && autoExpandedCards.has(idx);
+                const isExpanded = isMobile ? (isManuallyExpanded || isAutoExpanded) : undefined;
+                const isCompact = isMobile ? (expandedCardIndex !== null && !isManuallyExpanded) || (expandedCardIndex === null && !isAutoExpanded) : (!isSmallLayoutAmrap && !isSingleCardAmrap);
+                // Expanded cards should span full width (both columns)
+                const shouldSpanFullWidth = isMobile && blockCountAmrap >= 5 && isExpanded;
+                
+                return (
+                  <CollapsibleExerciseCard 
+                    key={`${currentSection.id}-block-${block.id || idx}`} 
+                    block={block}
+                    isActive={idx === activeExerciseIndex}
+                    sectionColor={sectionColor}
+                    compact={isCompact}
+                    largeText={isMobile ? isExpanded : (isSmallLayoutAmrap || isSingleCardAmrap)}
+                    showFullDescription={blockCountAmrap <= 2 && !isMobile}
+                    onClick={() => setActiveExerciseIndex(idx)}
+                    isExpanded={isExpanded}
+                    onExpandChange={(expanded) => {
+                      if (isMobile) {
+                        setExpandedCardIndex(expanded ? idx : null);
+                        // Remove from auto-expanded when manually toggled
+                        if (expanded) {
+                          setAutoExpandedCards(prev => {
+                            const next = new Set(prev);
+                            next.delete(idx);
+                            return next;
+                          });
+                        }
+                      }
+                    }}
+                    style={shouldSpanFullWidth ? { gridColumn: '1 / -1' } : undefined}
+                  />
+                );
+              })}
             </div>
           </div>
         );
@@ -874,15 +1263,24 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
         const defaultIsSingleCard = defaultBlockCount === 1;
         
         return (
-          <div className="w-full h-full flex flex-col items-center justify-center" style={{ gap: '1rem', maxHeight: '100%' }}>
+          <div className="w-full h-full flex flex-col" style={{ gap: '1rem', maxHeight: '100%', padding: isMobile ? '0.5rem' : '1rem' }}>
+            {/* Timer - Always Visible, Fixed at Top */}
             {currentSection.durationSec && (
-              <div style={{ flexShrink: 0 }}>
+              <div className="flex-shrink-0 flex justify-center">
               <DeckTimer
+                  ref={(ref) => {
+                    if (ref) {
+                      timerRefs.current.set(safeSectionIndex, ref);
+                    } else {
+                      timerRefs.current.delete(safeSectionIndex);
+                    }
+                  }}
                   key={`countdown-${currentSection.id}-${safeSectionIndex}`}
                 type="COUNTDOWN"
                 durationSec={currentSection.durationSec}
                 autoStart={false}
                 showPreCountdown={true}
+                hideControls={true}
               onComplete={async () => {
                 handleSectionTimerComplete(safeSectionIndex);
                 // Create session when first timer is started (if not already created)
@@ -896,30 +1294,58 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
               />
               </div>
             )}
+            {/* Cards - Conditional Layout on Mobile, Grid on Desktop */}
             <div
-              className="grid justify-center w-full"
-              style={{
+              ref={cardsContainerRef}
+              className={isMobile ? "grid w-full flex-1 min-h-0" : "grid justify-center w-full flex-1 min-h-0"}
+              style={isMobile ? {
+                // Use 2 columns only if 5+ cards, otherwise single column
+                gridTemplateColumns: defaultBlockCount >= 5 ? 'repeat(2, 1fr)' : '1fr',
+                gap: '1rem', // Proper spacing between cards
+                maxWidth: '100%',
+                overflow: 'hidden', // No scrolling - accordion behavior
+              } : {
                 gridTemplateColumns: defaultIsSingleCard ? '1fr' : `repeat(${defaultActualColumns}, 1fr)`,
                 gap: defaultIsSmallLayout ? '1.5rem' : '0.75rem',
-                flex: '1 1 auto',
-                minHeight: 0,
-                maxHeight: '100%',
-                overflow: 'hidden',
                 maxWidth: defaultIsSingleCard ? '600px' : '100%',
+                alignContent: 'start',
               }}
             >
-              {currentSection.blocks?.map((block: any, idx: number) => (
-                <CollapsibleExerciseCard 
-                  key={`${currentSection.id}-block-${block.id || idx}`} 
-                  block={block}
-                  isActive={idx === activeExerciseIndex}
-                  sectionColor={sectionColor}
-                  compact={!defaultIsSmallLayout && !defaultIsSingleCard}
-                  largeText={defaultIsSmallLayout || defaultIsSingleCard}
-                  showFullDescription={defaultBlockCount <= 2 && !isMobile}
-                  onClick={() => setActiveExerciseIndex(idx)}
-                />
-              ))}
+              {currentSection.blocks?.map((block: any, idx: number) => {
+                const isManuallyExpanded = expandedCardIndex === idx;
+                const isAutoExpanded = expandedCardIndex === null && autoExpandedCards.has(idx);
+                const isExpanded = isMobile ? (isManuallyExpanded || isAutoExpanded) : undefined;
+                const isCompact = isMobile ? (expandedCardIndex !== null && !isManuallyExpanded) || (expandedCardIndex === null && !isAutoExpanded) : (!defaultIsSmallLayout && !defaultIsSingleCard);
+                // Expanded cards should span full width (both columns)
+                const shouldSpanFullWidth = isMobile && defaultBlockCount >= 5 && isExpanded;
+                
+                return (
+                  <CollapsibleExerciseCard 
+                    key={`${currentSection.id}-block-${block.id || idx}`} 
+                    block={block}
+                    isActive={idx === activeExerciseIndex}
+                    sectionColor={sectionColor}
+                    compact={isCompact}
+                    largeText={isMobile ? isExpanded : (defaultIsSmallLayout || defaultIsSingleCard)}
+                    showFullDescription={defaultBlockCount <= 2 && !isMobile}
+                    onClick={() => setActiveExerciseIndex(idx)}
+                    isExpanded={isExpanded}
+                    onExpandChange={(expanded) => {
+                      if (isMobile) {
+                        setExpandedCardIndex(expanded ? idx : null);
+                        if (expanded) {
+                          setAutoExpandedCards(prev => {
+                            const next = new Set(prev);
+                            next.delete(idx);
+                            return next;
+                          });
+                        }
+                      }
+                    }}
+                    style={shouldSpanFullWidth ? { gridColumn: '1 / -1' } : undefined}
+                  />
+                );
+              })}
             </div>
           </div>
         );
@@ -1407,7 +1833,7 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
                   <Icons.MENU size={14} />
                   Sections
                 </button>
-                {/* Start Button */}
+                {/* Begin Workout Button */}
                 <button
                   onClick={() => {
                     setShowIntro(false);
@@ -1419,7 +1845,7 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
                   }}
                 >
                   <Icons.PLAY size={16} />
-                  <span className="hidden sm:inline">Start</span>
+                  <span className="hidden sm:inline">BEGIN WORKOUT</span>
                 </button>
               </div>
             </div>
@@ -1575,42 +2001,6 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Target Rounds for AMRAP/CIRCUIT/FOR_TIME */}
-              {((currentSection.type === 'AMRAP' || currentSection.type === 'CIRCUIT' || currentSection.type === 'FOR_TIME') && currentSection.note) && (() => {
-                const parseTierTargets = (note: string | undefined) => {
-                  if (!note) return null;
-                  const targetMatch = note.match(/Target rounds:\s*SILVER\s+([\d-]+)\s+rounds?,\s*GOLD\s+([\d-]+)\s+rounds?,\s*BLACK\s+([\d-]+)\s+rounds?/i);
-                  if (targetMatch) {
-                    return {
-                      silver: targetMatch[1],
-                      gold: targetMatch[2],
-                      black: targetMatch[3],
-                    };
-                  }
-                  return null;
-                };
-                const tierTargets = parseTierTargets(currentSection.note);
-                if (!tierTargets) return null;
-                return (
-                  <div className="bg-panel thin-border px-3 py-1.5 hidden md:flex items-center gap-2">
-                    <div className="text-xs text-muted-text uppercase tracking-wider font-mono">Target:</div>
-                    <div className="flex items-center gap-1.5">
-                      <div className="bg-panel thin-border px-2 py-1">
-                        <div className="text-[10px] text-muted-text uppercase tracking-wider font-mono">S</div>
-                        <div className="text-xs font-bold text-node-volt">{tierTargets.silver}</div>
-                      </div>
-                      <div className="bg-panel thin-border px-2 py-1" style={{ borderColor: '#ffd700' }}>
-                        <div className="text-[10px] text-muted-text uppercase tracking-wider font-mono">G</div>
-                        <div className="text-xs font-bold" style={{ color: '#ffd700' }}>{tierTargets.gold}</div>
-                      </div>
-                      <div className="bg-panel thin-border px-2 py-1" style={{ borderColor: 'rgba(255, 255, 255, 0.4)' }}>
-                        <div className="text-[10px] text-muted-text uppercase tracking-wider font-mono">B</div>
-                        <div className="text-xs font-bold text-white">{tierTargets.black}</div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
               <AudioControls compact={isMobile} />
               <button
                 onClick={toggleTheme}
@@ -1726,7 +2116,7 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
 
       {/* Navigation Buttons */}
       {showControls && (
-        <div className="absolute bottom-4 sm:bottom-8 left-4 sm:left-8 right-4 sm:right-8 z-40 flex justify-between pointer-events-none">
+        <div className="absolute bottom-4 sm:bottom-8 left-4 sm:left-8 right-4 sm:right-8 z-40 flex justify-between items-center pointer-events-none">
           <button
             onClick={handlePreviousSection}
             className="bg-panel thin-border text-text-white px-4 py-2 hover:border-node-volt transition-colors pointer-events-auto flex items-center gap-2 uppercase tracking-wider text-xs font-medium"
@@ -1735,6 +2125,43 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
             <Icons.CHEVRON_LEFT size={16} />
             <span className="hidden sm:inline">{isFirstSection ? 'Preview' : 'Previous'}</span>
           </button>
+          
+          {/* Start Button - Center, Highlighted */}
+          {showStartButton && !showIntro && (currentSection.durationSec || currentSection.emomWorkSec || currentSection.intervalWorkSec || currentSection.stationDurationSec) && (
+            <button
+              onClick={() => {
+                // Try to get the timer ref - it might not be set immediately, so try a few times
+                const tryStartTimer = () => {
+                  const currentRef = getCurrentTimerRef();
+                  if (currentRef) {
+                    currentRef.start();
+                    setShowStartButton(false);
+                  } else {
+                    // If ref not available yet, try again after a short delay
+                    setTimeout(() => {
+                      const retryRef = getCurrentTimerRef();
+                      if (retryRef) {
+                        retryRef.start();
+                        setShowStartButton(false);
+                      }
+                    }, 100);
+                  }
+                };
+                tryStartTimer();
+              }}
+              className="bg-node-volt text-dark font-bold px-6 py-3 hover:opacity-90 transition-opacity pointer-events-auto flex items-center gap-2 uppercase tracking-wider text-sm font-medium shadow-lg"
+              style={{
+                fontFamily: 'var(--font-space-grotesk)',
+                minWidth: config.touchTargetSize,
+                minHeight: config.touchTargetSize,
+                boxShadow: '0 0 20px rgba(204, 255, 0, 0.4)',
+              }}
+            >
+              <Icons.PLAY size={18} />
+              <span>Start</span>
+            </button>
+          )}
+          
           <div className="flex items-center gap-2">
             {/* Skip Finisher Button - Only show for FINISHER sections */}
             {currentSection.type === 'FINISHER' && (
@@ -1755,9 +2182,8 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
             )}
             <button
               onClick={isLastSection ? handleNextSection : handleNextSection}
-              className="bg-node-volt text-dark font-bold px-4 py-2 sm:px-6 sm:py-3 hover:opacity-90 transition-opacity pointer-events-auto flex items-center gap-2 uppercase tracking-wider text-xs font-medium"
+              className="bg-panel thin-border text-text-white px-4 py-2 sm:px-6 sm:py-3 hover:border-node-volt transition-colors pointer-events-auto flex items-center gap-2 uppercase tracking-wider text-xs font-medium"
               style={{
-                fontFamily: 'var(--font-space-grotesk)',
                 minWidth: config.touchTargetSize,
                 minHeight: config.touchTargetSize,
               }}
