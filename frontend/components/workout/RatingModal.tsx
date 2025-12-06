@@ -56,14 +56,14 @@ export function RatingModal({ workoutId, sessionLogId, onComplete, onCancel }: R
     setError(null);
 
     try {
-      const ratingData = {
-        sessionLogId,
+      const ratingData: any = {
+        sessionLogId: sessionLogId || undefined,
         starRating,
         difficultyRating: showDetailed ? difficultyRating : undefined,
         enjoymentRating: showDetailed ? enjoymentRating : undefined,
         effectivenessRating: showDetailed ? effectivenessRating : undefined,
         wouldDoAgain: showDetailed ? wouldDoAgain : undefined,
-        tags: selectedTags,
+        tags: selectedTags.length > 0 ? selectedTags : undefined,
         notes: notes.trim() || undefined,
         favoriteExercises: favoriteExercises.length > 0 ? favoriteExercises : undefined,
       };
