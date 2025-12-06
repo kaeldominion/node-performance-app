@@ -259,8 +259,11 @@ export class UsersService {
       // Fetch all users from Clerk (paginated)
       while (hasMore) {
         const response = await clerkClient.users.getUserList({ limit, offset });
-        allUsers = allUsers.concat(response.data);
-        hasMore = response.data.length === limit;
+        // Clerk SDK returns { data: User[], totalCount: number }
+        const users = (response as any).data || response;
+        const usersArray = Array.isArray(users) ? users : [];
+        allUsers = allUsers.concat(usersArray);
+        hasMore = usersArray.length === limit;
         offset += limit;
         console.log(`Fetched ${allUsers.length} users so far...`);
       }
