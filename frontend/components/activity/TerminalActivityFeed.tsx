@@ -78,8 +78,8 @@ export function TerminalActivityFeed({
           if (newOnes.length > 0) {
             const combined = [...newOnes, ...prev];
             // Deduplicate by ID to ensure no duplicates
-            const unique = combined.reduce((acc, activity) => {
-              if (!acc.find(a => a.id === activity.id)) {
+            const unique = combined.reduce((acc: ActivityLog[], activity: ActivityLog) => {
+              if (!acc.find((a: ActivityLog) => a.id === activity.id)) {
                 acc.push(activity);
               }
               return acc;
