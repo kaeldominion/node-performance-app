@@ -27,6 +27,8 @@ export function AchievementNotificationProvider({ children }: { children: ReactN
 
   // Check for achievements from sessionStorage on mount
   useEffect(() => {
+    if (typeof window === 'undefined' || typeof sessionStorage === 'undefined') return;
+    
     const stored = sessionStorage.getItem('newAchievements');
     if (stored) {
       try {

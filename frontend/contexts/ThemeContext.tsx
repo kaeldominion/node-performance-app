@@ -17,6 +17,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     setMounted(true);
     // Get theme from localStorage or default to dark
     const savedTheme = localStorage.getItem('theme') as Theme | null;
@@ -30,7 +32,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || typeof window === 'undefined' || typeof document === 'undefined') return;
     
     // Update document class and localStorage
     document.documentElement.classList.remove('dark', 'light');
