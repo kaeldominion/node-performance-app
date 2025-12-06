@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { analyticsApi, networkApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
@@ -26,6 +26,7 @@ interface LeaderboardEntry {
 
 export default function LeaderboardPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [selectedMetric, setSelectedMetric] = useState<'sessions' | 'hours' | 'rpe' | 'streak'>('sessions');
   const [showTrending, setShowTrending] = useState(true);
@@ -285,13 +286,13 @@ export default function LeaderboardPage() {
                     {/* User Info */}
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <Link href={`/profile/${entry.userId}`} legacyBehavior>
-                          <a>
-                            <div className="w-12 h-12 rounded-full bg-node-volt/20 border border-node-volt/50 flex items-center justify-center text-node-volt font-bold text-lg hover:bg-node-volt/30 transition-colors cursor-pointer" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                              {entry.name.charAt(0).toUpperCase()}
-                            </div>
-                          </a>
-                        </Link>
+                        <div 
+                          onClick={() => router.push(`/profile/${entry.userId}`)}
+                          className="w-12 h-12 rounded-full bg-node-volt/20 border border-node-volt/50 flex items-center justify-center text-node-volt font-bold text-lg hover:bg-node-volt/30 transition-colors cursor-pointer" 
+                          style={{ fontFamily: 'var(--font-space-grotesk)' }}
+                        >
+                          {entry.name.charAt(0).toUpperCase()}
+                        </div>
                         <div>
                           <h3 className="text-xl font-bold" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
                             <ClickableUserName
