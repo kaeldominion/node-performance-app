@@ -228,10 +228,30 @@ function WorkoutBuilderPageContent() {
       } else if (!err.response && err.request) {
         // Network error - no response from server
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-        errorMessage = `Network Error: Unable to connect to the backend API. Please check that the backend is running and the API URL is configured correctly (${apiUrl}).`;
-      } else if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        const attemptedUrl = err.config?.baseURL || apiUrl;
+        console.error('🔴 Network Error Details:', {
+          attemptedURL: attemptedUrl + (err.config?.url || ''),
+          baseURL: err.config?.baseURL,
+          endpoint: err.config?.url,
+          envAPIUrl: process.env.NEXT_PUBLIC_API_URL || 'NOT SET (using default)',
+          errorCode: err.code,
+          errorMessage: err.message,
+          hasRequest: !!err.request,
+          hasResponse: !!err.response,
+        });
+        
+        // Check for specific connection reset errors (Railway timeout)
+        if (err.code === 'ERR_CONNECTION_RESET' || err.code === 'ERR_NETWORK' || err.message?.includes('Connection reset') || err.message?.includes('ERR_CONNECTION_RESET')) {
+          errorMessage = 'Connection was reset during generation. The AI request is taking longer than Railway\'s timeout allows. Try: 1) Reducing workout duration, 2) Using fewer equipment options, 3) Selecting a specific archetype. Then retry.';
+        } else {
+          errorMessage = `Network Error: Unable to connect to the backend API. Please check that the backend is running and the API URL is configured correctly (${apiUrl}).`;
+        }
+      } else if (err.code === 'ECONNABORTED' || err.message?.includes('timeout') || err.code === 'ETIMEDOUT') {
         // Request timeout
-        errorMessage = 'Request timed out. The AI service is taking longer than expected. Please try again.';
+        errorMessage = 'Request timed out. The AI service is taking longer than expected (over 3 minutes). Please try again with a simpler workout configuration or reduce the workout duration.';
+      } else if (err.code === 'ERR_CONNECTION_RESET' || err.code === 'ERR_NETWORK') {
+        // Connection reset - likely Railway timeout
+        errorMessage = 'Connection was reset during generation. This usually happens when the request takes too long. Try: 1) Reducing workout duration, 2) Using fewer equipment options, 3) Selecting a specific archetype. Then retry.';
       } else if (err.message) {
         // Use the error message from the error object
         errorMessage = err.message;

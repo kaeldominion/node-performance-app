@@ -1,11 +1,21 @@
 import axios from 'axios';
 
+// Log API URL at module load time for debugging
+const apiBaseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+if (typeof window !== 'undefined') {
+  console.log('🌐 API Configuration:', {
+    baseURL: apiBaseURL,
+    envVar: process.env.NEXT_PUBLIC_API_URL || 'NOT SET (using default localhost:4000)',
+    isProduction: process.env.NODE_ENV === 'production',
+  });
+}
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000',
+  baseURL: apiBaseURL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 120000, // 120 seconds timeout for long-running AI requests
+  timeout: 180000, // 180 seconds (3 minutes) timeout for long-running AI requests - increased to handle Railway's proxy timeout
 });
 
 // Token will be set by components using useApiToken hook
@@ -95,19 +105,26 @@ api.interceptors.response.use(
     if (isNetworkError) {
       // Network error - backend is likely not running or unreachable
       const baseURL = error?.config?.baseURL || api.defaults.baseURL;
+      const fullURL = baseURL + error?.config?.url;
+      
+      // Log detailed error info in both dev and production for debugging
+      console.error('⚠️ NETWORK ERROR - Backend unreachable', {
+        attemptedURL: fullURL,
+        baseURL: baseURL,
+        endpoint: error?.config?.url,
+        method: error?.config?.method,
+        timeout: error?.code === 'ECONNABORTED' ? 'Request timed out' : 'Connection failed',
+        errorCode: error?.code,
+        errorMessage: error?.message,
+        envAPIUrl: process.env.NEXT_PUBLIC_API_URL || 'NOT SET (using default)',
+      });
       
       // Only log detailed errors in development to avoid console spam
       if (process.env.NODE_ENV === 'development') {
-        console.warn('⚠️ NETWORK ERROR - Backend unreachable');
-        console.warn('Attempted URL:', baseURL + error?.config?.url);
-        console.warn('Base URL:', baseURL);
         console.warn('💡 TROUBLESHOOTING:');
         console.warn('1. Make sure the backend is running on', baseURL);
         console.warn('2. Start the backend: cd backend && npm run start:dev');
         console.warn('3. Verify NEXT_PUBLIC_API_URL is set correctly');
-      } else {
-        // In production, just log a simple warning
-        console.warn('⚠️ Backend server unreachable. Some features may not work.');
       }
     } else if (isPublicEndpoint) {
       // For public endpoints, only log a simple warning
