@@ -137,63 +137,75 @@ api.interceptors.response.use(
       }
     } else {
       // For protected endpoints with server responses, log full error details
-      // First, check if error is actually an object and has properties
-      const errorIsValid = error && typeof error === 'object' && Object.keys(error).length > 0;
+      // Aggressively extract error information from various possible structures
+      const errorUrl = error?.config?.url || error?.request?.responseURL || error?.url || error?.config?.baseURL + error?.config?.url;
+      const errorMethod = (error?.config?.method || error?.method || 'UNKNOWN').toUpperCase();
+      const errorStatus = error?.response?.status || error?.status || error?.statusCode;
+      const errorStatusText = error?.response?.statusText || error?.statusText;
       
-      if (!errorIsValid) {
-        // Error is empty, null, undefined, or not an object
-        console.error('❌ API call failed - Invalid error object:', {
+      // Try multiple ways to get the error message
+      let errorMessage = error?.response?.data?.message || 
+                        error?.response?.data?.error || 
+                        error?.response?.data?.errorMessage ||
+                        error?.message || 
+                        error?.response?.data ||
+                        (typeof error === 'string' ? error : null);
+      
+      // If errorMessage is an object, try to stringify it
+      if (errorMessage && typeof errorMessage === 'object') {
+        try {
+          errorMessage = JSON.stringify(errorMessage);
+        } catch (e) {
+          errorMessage = String(errorMessage);
+        }
+      }
+      
+      // Build comprehensive error info
+      const errorInfo: any = {
+        method: errorMethod,
+        url: errorUrl || 'unknown',
+      };
+      
+      if (errorStatus) {
+        errorInfo.status = errorStatus;
+        if (errorStatusText) errorInfo.statusText = errorStatusText;
+      }
+      
+      if (errorMessage) {
+        errorInfo.message = errorMessage;
+      }
+      
+      // Add structural information
+      if (error?.response) {
+        errorInfo.hasResponse = true;
+        if (error.response.data && typeof error.response.data === 'object') {
+          errorInfo.responseData = error.response.data;
+        }
+      }
+      if (error?.request) errorInfo.hasRequest = true;
+      if (error?.config) errorInfo.hasConfig = true;
+      
+      const errorType = error?.constructor?.name || typeof error;
+      if (errorType && errorType !== 'object') errorInfo.errorType = errorType;
+      
+      // Always log the error info - it should have at least method and url
+      console.error('❌ API call failed:', errorInfo);
+      
+      // If we still don't have useful info, log raw error structure
+      if (!errorStatus && !errorMessage && !errorUrl) {
+        console.error('⚠️ Error object structure:', {
           errorType: typeof error,
-          errorValue: error,
-          errorString: String(error),
+          errorConstructor: error?.constructor?.name,
           errorKeys: error ? Object.keys(error) : [],
+          errorPrototype: error ? Object.getPrototypeOf(error) : null,
         });
-      } else {
-        // Safely extract error information
-        const errorUrl = error?.config?.url || error?.request?.responseURL || error?.url;
-        const errorMethod = error?.config?.method || error?.method;
-        const errorStatus = error?.response?.status || error?.status || error?.statusCode;
-        const errorMessage = error?.response?.data?.message || 
-                           error?.response?.data?.error || 
-                           error?.message || 
-                           (typeof error === 'string' ? error : String(error)) || 
-                           'Unknown error';
-        
-        // Build error info object, only including properties that have values
-        const errorInfo: any = {};
-        if (errorMethod && errorMethod !== 'unknown') errorInfo.method = errorMethod;
-        if (errorUrl && errorUrl !== 'unknown') errorInfo.url = errorUrl;
-        if (errorStatus) errorInfo.status = errorStatus;
-        if (errorMessage && errorMessage !== 'Unknown error') errorInfo.message = errorMessage;
-        if (error?.response) errorInfo.hasResponse = true;
-        if (error?.request) errorInfo.hasRequest = true;
-        if (error?.config) errorInfo.hasConfig = true;
-        const errorType = error?.constructor?.name || typeof error;
-        if (errorType && errorType !== 'object') errorInfo.errorType = errorType;
-        
-        // Only log if we have meaningful content (at least one non-boolean property)
-        const meaningfulKeys = Object.keys(errorInfo).filter(key => 
-          key !== 'hasResponse' && key !== 'hasRequest' && key !== 'hasConfig'
-        );
-        
-        if (meaningfulKeys.length > 0) {
-          console.error('❌ API call failed:', errorInfo);
-        } else if (errorInfo.hasResponse || errorInfo.hasRequest || errorInfo.hasConfig) {
-          // At least we know something about the error structure
-          console.error('❌ API call failed:', errorInfo);
-        } else {
-          // Error is completely empty or malformed
-          console.error('⚠️ API call failed - Error object appears empty or malformed:', {
-            errorType: typeof error,
-            errorConstructor: error?.constructor?.name,
-            errorKeys: error ? Object.keys(error) : [],
-            rawError: error,
-          });
-          try {
-            console.error('Error stringified:', JSON.stringify(error, null, 2));
-          } catch (e) {
-            console.error('Could not stringify error:', e);
-          }
+        try {
+          // Try to get all properties including non-enumerable ones
+          const allProps = error ? Object.getOwnPropertyNames(error) : [];
+          console.error('All error properties:', allProps);
+          console.error('Error stringified:', JSON.stringify(error, null, 2));
+        } catch (e) {
+          console.error('Could not stringify error:', e);
         }
       }
       
