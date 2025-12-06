@@ -117,3 +117,4 @@ export function AudioControls({ compact = false }: AudioControlsProps) {
   );
 }
 
+
