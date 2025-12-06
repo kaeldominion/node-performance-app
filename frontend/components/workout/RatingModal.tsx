@@ -38,7 +38,7 @@ export function RatingModal({ workoutId, sessionLogId, onComplete, onCancel }: R
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { config } = useResponsiveLayout();
+  const { config, isMobile } = useResponsiveLayout();
 
   const handleTagToggle = (tag: string) => {
     setSelectedTags(prev =>
