@@ -243,18 +243,26 @@ export class UsersService {
   }
 
   async syncAllClerkUsers() {
+    // Check if Clerk secret key is configured
+    if (!process.env.CLERK_SECRET_KEY) {
+      throw new Error('CLERK_SECRET_KEY is not configured. Please set it in your environment variables.');
+    }
+
     try {
       let allUsers = [];
       let hasMore = true;
       let offset = 0;
       const limit = 100;
 
+      console.log('Starting Clerk user sync...');
+      
       // Fetch all users from Clerk (paginated)
       while (hasMore) {
         const response = await clerkClient.users.getUserList({ limit, offset });
         allUsers = allUsers.concat(response.data);
         hasMore = response.data.length === limit;
         offset += limit;
+        console.log(`Fetched ${allUsers.length} users so far...`);
       }
 
       console.log(`Found ${allUsers.length} users in Clerk`);

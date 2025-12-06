@@ -126,12 +126,15 @@ export default function AdminDashboard() {
     }
     try {
       setSyncingUsers(true);
+      console.log('Starting user sync...');
       const result = await adminApi.syncClerkUsers();
-      alert(`Success! ${result.message}\nCreated: ${result.created}, Updated: ${result.updated}`);
+      console.log('Sync result:', result);
+      alert(`Success! ${result.message}\nCreated: ${result.created}, Updated: ${result.updated}${result.errors?.length ? `\nErrors: ${result.errors.length}` : ''}`);
       await loadStats(); // Refresh stats
     } catch (error: any) {
       console.error('Failed to sync users:', error);
-      alert(`Failed to sync users: ${error.response?.data?.message || error.message}`);
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error occurred';
+      alert(`Failed to sync users: ${errorMessage}\n\nPlease check:\n1. CLERK_SECRET_KEY is set in backend environment\n2. Backend logs for more details`);
     } finally {
       setSyncingUsers(false);
     }
