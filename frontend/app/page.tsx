@@ -30,6 +30,8 @@ export default function LandingPage() {
 
   // Parallax scroll effect
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const handleScroll = () => {
       setScrollY(window.scrollY);
     };
@@ -39,6 +41,8 @@ export default function LandingPage() {
 
   // Intersection Observer for scroll animations
   useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
