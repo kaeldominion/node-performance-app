@@ -80,7 +80,7 @@ export function RatingModal({ workoutId, sessionLogId, onComplete, onCancel }: R
     <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div
         className="bg-panel thin-border rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-        style={{ minWidth: config.isMobile ? '100%' : '500px' }}
+        style={{ minWidth: isMobile ? '100%' : '500px' }}
       >
         <div className="p-6 sm:p-8 space-y-6">
           {/* Header */}
@@ -130,7 +130,7 @@ export function RatingModal({ workoutId, sessionLogId, onComplete, onCancel }: R
                   }}
                 >
                   <Icons.STAR
-                    size={config.isMobile ? 40 : 48}
+                    size={isMobile ? 40 : 48}
                     fill={starRating >= star ? 'currentColor' : 'none'}
                   />
                 </button>
