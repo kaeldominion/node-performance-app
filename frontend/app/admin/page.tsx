@@ -129,7 +129,24 @@ export default function AdminDashboard() {
       console.log('Starting user sync...');
       const result = await adminApi.syncClerkUsers();
       console.log('Sync result:', result);
-      alert(`Success! ${result.message}\nCreated: ${result.created}, Updated: ${result.updated}${result.errors?.length ? `\nErrors: ${result.errors.length}` : ''}`);
+      
+      // Build detailed message
+      let message = `Success! ${result.message}\n\n`;
+      message += `Total: ${result.total}\n`;
+      message += `Created: ${result.created}\n`;
+      message += `Updated: ${result.updated}\n`;
+      
+      if (result.errors && result.errors.length > 0) {
+        message += `\nErrors (${result.errors.length}):\n`;
+        result.errors.slice(0, 10).forEach((err: string, idx: number) => {
+          message += `${idx + 1}. ${err}\n`;
+        });
+        if (result.errors.length > 10) {
+          message += `... and ${result.errors.length - 10} more errors\n`;
+        }
+      }
+      
+      alert(message);
       await loadStats(); // Refresh stats
     } catch (error: any) {
       console.error('Failed to sync users:', error);

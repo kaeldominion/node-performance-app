@@ -282,7 +282,9 @@ export class UsersService {
         try {
           const email = clerkUser.emailAddresses?.[0]?.emailAddress;
           if (!email) {
-            results.errors.push(`User ${clerkUser.id} has no email`);
+            const errorMsg = `User ${clerkUser.id} (${clerkUser.firstName || 'No name'}) has no email address`;
+            results.errors.push(errorMsg);
+            console.warn(errorMsg);
             continue;
           }
 
@@ -292,14 +294,24 @@ export class UsersService {
           const role = clerkUser.publicMetadata?.role || 'HOME_USER';
           const isAdmin = clerkUser.publicMetadata?.isAdmin || false;
 
-          const existingUser = await this.prisma.user.findUnique({
+          // Try to find user by Clerk ID first, then by email as fallback
+          let existingUser = await this.prisma.user.findUnique({
             where: { id: clerkUser.id },
           });
 
+          // If not found by ID, try by email (in case ID changed)
+          if (!existingUser) {
+            existingUser = await this.prisma.user.findUnique({
+              where: { email },
+            });
+          }
+
           if (existingUser) {
+            // Update existing user - ensure ID matches Clerk ID
             await this.prisma.user.update({
-              where: { id: clerkUser.id },
+              where: { id: existingUser.id },
               data: {
+                id: clerkUser.id, // Ensure ID matches Clerk ID
                 email,
                 name,
                 role: role as any,
@@ -307,28 +319,50 @@ export class UsersService {
               },
             });
             results.updated++;
+            console.log(`Updated user: ${email} (${clerkUser.id})`);
           } else {
-            await this.prisma.user.create({
-              data: {
-                id: clerkUser.id,
-                email,
-                name,
-                passwordHash: '', // Clerk handles passwords
-                role: role as any,
-                isAdmin,
-              },
-            });
-            results.created++;
+            // Create new user
+            try {
+              await this.prisma.user.create({
+                data: {
+                  id: clerkUser.id,
+                  email,
+                  name,
+                  passwordHash: '', // Clerk handles passwords
+                  role: role as any,
+                  isAdmin,
+                },
+              });
+              results.created++;
+              console.log(`Created user: ${email} (${clerkUser.id})`);
+            } catch (createError: any) {
+              // Handle unique constraint violations (duplicate email or ID)
+              if (createError.code === 'P2002') {
+                const field = createError.meta?.target?.[0] || 'unknown';
+                const errorMsg = `User ${clerkUser.id} (${email}): Duplicate ${field} - user may already exist`;
+                results.errors.push(errorMsg);
+                console.warn(errorMsg);
+              } else {
+                throw createError; // Re-throw if it's a different error
+              }
+            }
           }
         } catch (error: any) {
-          results.errors.push(`Failed to sync user ${clerkUser.id}: ${error.message}`);
-          console.error(`Error syncing user ${clerkUser.id}:`, error);
+          const errorMsg = `Failed to sync user ${clerkUser.id} (${clerkUser.emailAddresses?.[0]?.emailAddress || 'no email'}): ${error.message || error}`;
+          results.errors.push(errorMsg);
+          console.error(`Error syncing user ${clerkUser.id}:`, {
+            error: error.message,
+            code: error.code,
+            meta: error.meta,
+            stack: error.stack,
+          });
         }
       }
 
+      const totalSynced = results.created + results.updated;
       return {
         success: true,
-        message: `Synced ${results.created} new users and updated ${results.updated} existing users`,
+        message: `Synced ${totalSynced} users (${results.created} created, ${results.updated} updated)${results.errors.length > 0 ? ` with ${results.errors.length} error(s)` : ''}`,
         ...results,
       };
     } catch (error: any) {
