@@ -16,6 +16,7 @@ import { ScheduleModule } from './schedule/schedule.module';
 import { NetworkModule } from './network/network.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ActivityModule } from './activity/activity.module';
+import { FeedbackModule } from './feedback/feedback.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { ActivityModule } from './activity/activity.module';
     NetworkModule,
     NotificationsModule,
     ActivityModule,
+    FeedbackModule,
   ],
 })
 export class AppModule {}

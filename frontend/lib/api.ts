@@ -179,17 +179,25 @@ api.interceptors.response.use(
         if (error?.response) errorInfo.hasResponse = true;
         if (error?.request) errorInfo.hasRequest = true;
         if (error?.config) errorInfo.hasConfig = true;
-        errorInfo.errorType = error?.constructor?.name || typeof error;
+        const errorType = error?.constructor?.name || typeof error;
+        if (errorType && errorType !== 'object') errorInfo.errorType = errorType;
         
-        // Only log if we have meaningful content
-        if (Object.keys(errorInfo).length > 1 || errorInfo.errorType !== 'object') {
+        // Only log if we have meaningful content (at least one non-boolean property)
+        const meaningfulKeys = Object.keys(errorInfo).filter(key => 
+          key !== 'hasResponse' && key !== 'hasRequest' && key !== 'hasConfig'
+        );
+        
+        if (meaningfulKeys.length > 0) {
+          console.error('❌ API call failed:', errorInfo);
+        } else if (errorInfo.hasResponse || errorInfo.hasRequest || errorInfo.hasConfig) {
+          // At least we know something about the error structure
           console.error('❌ API call failed:', errorInfo);
         } else {
-          // If error is empty or malformed, log the raw error
+          // Error is completely empty or malformed
           console.error('⚠️ API call failed - Error object appears empty or malformed:', {
             errorType: typeof error,
             errorConstructor: error?.constructor?.name,
-            errorKeys: Object.keys(error || {}),
+            errorKeys: error ? Object.keys(error) : [],
             rawError: error,
           });
           try {
@@ -747,6 +755,10 @@ export const analyticsApi = {
 
 // Coach API
 export const coachApi = {
+  upgradeToCoach: async (data: any) => {
+    const response = await api.post('/coaches/upgrade', data);
+    return response.data;
+  },
   getProfile: async () => {
     const response = await api.get('/coaches/profile');
     return response.data;
@@ -773,6 +785,92 @@ export const coachApi = {
   },
   getClientAssignments: async (clientId: string) => {
     const response = await api.get(`/coaches/clients/${clientId}/assignments`);
+    return response.data;
+  },
+  assignWorkout: async (clientId: string, data: { workoutId: string; scheduledFor?: string; dueDate?: string; notes?: string }) => {
+    const response = await api.post(`/coaches/clients/${clientId}/workouts`, data);
+    return response.data;
+  },
+  getClientWorkouts: async (clientId: string) => {
+    const response = await api.get(`/coaches/clients/${clientId}/workouts`);
+    return response.data;
+  },
+  getClientUpcomingWorkouts: async (clientId: string) => {
+    const response = await api.get(`/coaches/clients/${clientId}/workouts/upcoming`);
+    return response.data;
+  },
+  updateWorkoutAssignmentStatus: async (assignmentId: string, data: { status: string; clientNotes?: string }) => {
+    const response = await api.put(`/coaches/workouts/assignments/${assignmentId}/status`, data);
+    return response.data;
+  },
+  searchClients: async (query: string, limit?: number) => {
+    const params = new URLSearchParams({ q: query });
+    if (limit) params.append('limit', limit.toString());
+    const response = await api.get(`/coaches/search-clients?${params.toString()}`);
+    return response.data;
+  },
+  sendInvitation: async (data: { clientId: string; message?: string }) => {
+    const response = await api.post('/coaches/invitations', data);
+    return response.data;
+  },
+  acceptInvitation: async (coachId: string, inviteCode?: string) => {
+    const response = await api.post(`/coaches/invitations/${coachId}/accept`, { inviteCode });
+    return response.data;
+  },
+  declineInvitation: async (coachId: string) => {
+    const response = await api.post(`/coaches/invitations/${coachId}/decline`);
+    return response.data;
+  },
+  getPendingInvitations: async () => {
+    const response = await api.get('/coaches/invitations/pending');
+    return response.data;
+  },
+  getClientProgress: async (clientId: string, startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    const response = await api.get(`/coaches/clients/${clientId}/progress?${params.toString()}`);
+    return response.data;
+  },
+  getClientStats: async (clientId: string) => {
+    const response = await api.get(`/coaches/clients/${clientId}/stats`);
+    return response.data;
+  },
+  getClientWorkoutHistory: async (clientId: string) => {
+    const response = await api.get(`/coaches/clients/${clientId}/history`);
+    return response.data;
+  },
+  getClientTrends: async (clientId: string, metric?: string) => {
+    const params = metric ? `?metric=${metric}` : '';
+    const response = await api.get(`/coaches/clients/${clientId}/trends${params}`);
+    return response.data;
+  },
+  scheduleSession: async (data: { clientId: string; scheduledAt: string; workoutId?: string; location?: string }) => {
+    const response = await api.post('/coaches/sessions', data);
+    return response.data;
+  },
+  generateQRCode: async (sessionId: string) => {
+    const response = await api.post(`/coaches/sessions/${sessionId}/qr-code`);
+    return response.data;
+  },
+  checkInWithQR: async (sessionId: string, qrCodeId: string) => {
+    const response = await api.post(`/coaches/sessions/${sessionId}/check-in`, { qrCodeId });
+    return response.data;
+  },
+  startSession: async (sessionId: string) => {
+    const response = await api.post(`/coaches/sessions/${sessionId}/start`);
+    return response.data;
+  },
+  completeSession: async (sessionId: string, data: { notes?: string; clientFeedback?: string }) => {
+    const response = await api.post(`/coaches/sessions/${sessionId}/complete`, data);
+    return response.data;
+  },
+  getUpcomingSessions: async () => {
+    const response = await api.get('/coaches/sessions');
+    return response.data;
+  },
+  getClientSessions: async (clientId: string) => {
+    const response = await api.get(`/coaches/clients/${clientId}/sessions`);
     return response.data;
   },
 };
@@ -863,6 +961,26 @@ export const gamificationApi = {
   },
   checkAchievements: async () => {
     const response = await api.post('/gamification/achievements/check');
+    return response.data;
+  },
+};
+
+// Feedback API
+export const feedbackApi = {
+  create: async (data: {
+    type: 'BUG_REPORT' | 'FEATURE_REQUEST' | 'GENERAL_FEEDBACK' | 'UI_UX_FEEDBACK' | 'PERFORMANCE_ISSUE' | 'OTHER';
+    title: string;
+    description: string;
+    category?: string;
+    pageUrl?: string;
+    userAgent?: string;
+    metadata?: any;
+  }) => {
+    const response = await api.post('/feedback', data);
+    return response.data;
+  },
+  getMyFeedback: async () => {
+    const response = await api.get('/feedback/my-feedback');
     return response.data;
   },
 };

@@ -11,7 +11,6 @@ import { Icons } from '@/lib/iconMapping';
 import { Moon, Sun } from 'lucide-react';
 import { UserMenu } from './UserMenu';
 import { NotificationBell } from './notifications/NotificationBell';
-import { GenerationIndicator } from './workout/GenerationIndicator';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -54,6 +53,11 @@ export default function Navbar() {
                 Exercises
               </Link>
             )}
+            {(user?.role === 'COACH' || user?.role === 'SUPERADMIN') && (
+              <Link href="/coach" className="text-sm text-node-volt hover:text-node-volt/80 transition-colors font-semibold">
+                Coach
+              </Link>
+            )}
             {user?.isAdmin && (
               <Link href="/admin" className="text-sm text-node-volt hover:text-node-volt/80 transition-colors font-semibold">
                 Admin
@@ -68,10 +72,6 @@ export default function Navbar() {
                 <div className="h-6 w-px bg-border-dark mx-2" />
                 <div className="flex items-center gap-2">
                   <NotificationBell />
-                  {/* Show generation indicator if any workouts are generating */}
-                  {typeof window !== 'undefined' && (
-                    <GenerationIndicator />
-                  )}
                   {/* Theme Toggle - Next to notifications and user menu */}
                   <button
                     onClick={toggleTheme}
@@ -169,6 +169,11 @@ export default function Navbar() {
               <Link href="/exercises" className="flex items-center gap-2 px-4 py-2 text-muted-text hover:text-text-white hover:bg-panel/50 transition-colors rounded" onClick={() => setMobileMenuOpen(false)}>
                 <Icons.EXERCISE_LIBRARY size={16} />
                 Exercises
+              </Link>
+            )}
+            {(user?.role === 'COACH' || user?.role === 'SUPERADMIN') && (
+              <Link href="/coach" className="block px-4 py-2 text-node-volt hover:text-node-volt/80 hover:bg-panel/50 transition-colors font-semibold rounded" onClick={() => setMobileMenuOpen(false)}>
+                Coach
               </Link>
             )}
             {user?.isAdmin && (

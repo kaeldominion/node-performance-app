@@ -61,6 +61,12 @@ import {
   Play,               // Play, start, begin
   Volume2,            // Audio, volume, sound
   Info,               // Information, help, details
+  MessageSquare,      // Comments, feedback
+  Bug,                // Bug reports
+  Lightbulb,          // Ideas, feature requests
+  Palette,            // Design, UI/UX
+  Gauge,              // Performance, speed
+  Send,               // Submit, send
   
   // Training Goals
   TrendingUp,         // Strength, progression
@@ -301,5 +307,12 @@ export const Icons = {
   CLIPBOARD_LIST: ClipboardList, // Clipboard list icon (same as PROGRAMS)
   VOLUME_2: Volume2,       // Audio, volume, sound
   INFO: Info,              // Information, help, details
+  COMMENT: MessageSquare,  // Comments, feedback
+  BUG: Bug,                // Bug reports
+  LIGHTBULB: Lightbulb,    // Ideas, feature requests
+  DESIGN: Palette,         // Design, UI/UX
+  SPEED: Gauge,            // Performance, speed
+  MORE: MoreVertical,      // More options
+  SEND: Send,              // Submit, send
 };
 
