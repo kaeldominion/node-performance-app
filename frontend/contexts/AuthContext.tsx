@@ -12,6 +12,8 @@ export interface User {
   isAdmin?: boolean;
   role?: string;
   networkCode?: string;
+  level?: number;
+  xp?: number;
 }
 
 interface AuthContextType {
