@@ -150,31 +150,45 @@ api.interceptors.response.use(
         });
       } else {
         // Safely extract error information
-        const errorUrl = error?.config?.url || error?.request?.responseURL || 'unknown';
-        const errorMethod = error?.config?.method || 'unknown';
-        const errorStatus = error?.response?.status || error?.status;
+        const errorUrl = error?.config?.url || error?.request?.responseURL || error?.url;
+        const errorMethod = error?.config?.method || error?.method;
+        const errorStatus = error?.response?.status || error?.status || error?.statusCode;
         const errorMessage = error?.response?.data?.message || 
                            error?.response?.data?.error || 
                            error?.message || 
                            (typeof error === 'string' ? error : String(error)) || 
                            'Unknown error';
         
-        // Log the most important info first
-        console.error('❌ API call failed:', {
-          method: errorMethod,
-          url: errorUrl,
-          status: errorStatus,
-          message: errorMessage,
-          hasResponse: !!error?.response,
-          hasRequest: !!error?.request,
-          hasConfig: !!error?.config,
-          errorType: error?.constructor?.name || typeof error,
-        });
+        // Build error info object, only including properties that have values
+        const errorInfo: any = {};
+        if (errorMethod && errorMethod !== 'unknown') errorInfo.method = errorMethod;
+        if (errorUrl && errorUrl !== 'unknown') errorInfo.url = errorUrl;
+        if (errorStatus) errorInfo.status = errorStatus;
+        if (errorMessage && errorMessage !== 'Unknown error') errorInfo.message = errorMessage;
+        if (error?.response) errorInfo.hasResponse = true;
+        if (error?.request) errorInfo.hasRequest = true;
+        if (error?.config) errorInfo.hasConfig = true;
+        const errorType = error?.constructor?.name || typeof error;
+        if (errorType && errorType !== 'object') errorInfo.errorType = errorType;
         
-        // If error is empty or malformed, log the raw error
-        if (!error?.response && !error?.request && !error?.message && !error?.config) {
-          console.error('⚠️ Error object appears empty or malformed. Raw error:', error);
-          console.error('Error keys:', Object.keys(error || {}));
+        // Only log if we have meaningful content (at least one non-boolean property)
+        const meaningfulKeys = Object.keys(errorInfo).filter(key => 
+          key !== 'hasResponse' && key !== 'hasRequest' && key !== 'hasConfig'
+        );
+        
+        if (meaningfulKeys.length > 0) {
+          console.error('❌ API call failed:', errorInfo);
+        } else if (errorInfo.hasResponse || errorInfo.hasRequest || errorInfo.hasConfig) {
+          // At least we know something about the error structure
+          console.error('❌ API call failed:', errorInfo);
+        } else {
+          // Error is completely empty or malformed
+          console.error('⚠️ API call failed - Error object appears empty or malformed:', {
+            errorType: typeof error,
+            errorConstructor: error?.constructor?.name,
+            errorKeys: error ? Object.keys(error) : [],
+            rawError: error,
+          });
           try {
             console.error('Error stringified:', JSON.stringify(error, null, 2));
           } catch (e) {
