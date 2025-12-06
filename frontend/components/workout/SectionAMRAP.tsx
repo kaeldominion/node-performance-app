@@ -11,6 +11,8 @@ interface ExerciseBlock {
   exerciseName: string;
   description?: string;
   repScheme?: string;
+  exerciseImageUrl?: string;
+  exerciseInstructions?: string;
   tierSilver?: { load?: string; targetReps?: number; distance?: number; distanceUnit?: string; notes?: string };
   tierGold?: { load?: string; targetReps?: number; distance?: number; distanceUnit?: string; notes?: string };
   tierBlack?: { load?: string; targetReps?: number; distance?: number; distanceUnit?: string; notes?: string };
