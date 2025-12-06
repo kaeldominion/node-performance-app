@@ -17,6 +17,22 @@ export class WorkoutsService implements OnModuleInit {
     private exercisesService: ExercisesService,
   ) {}
 
+  async onModuleInit() {
+    // Run auto-fix on module initialization (non-blocking)
+    this.logger.log('Running database auto-fix on startup...');
+    autoFixDatabase()
+      .then((result) => {
+        if (result.success) {
+          this.logger.log('Database auto-fix completed successfully');
+        } else {
+          this.logger.warn(`Database auto-fix completed with errors: ${result.errors.join(', ')}`);
+        }
+      })
+      .catch((error) => {
+        this.logger.error('Database auto-fix failed:', error);
+      });
+  }
+
   async findOne(id: string) {
     const workout = await this.prisma.workout.findUnique({
       where: { id },
