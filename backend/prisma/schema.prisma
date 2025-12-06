@@ -136,7 +136,7 @@ model User {
   email            String           @unique
   passwordHash     String
   name             String?
-  username         String?           @unique // Username for network connections
+  username         String?          @unique // Username for network connections
   role             UserRole         @default(HOME_USER)
   isAdmin          Boolean          @default(false) // Legacy - use role instead
   subscriptionTier SubscriptionTier @default(FREE)
@@ -146,22 +146,22 @@ model User {
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
-  profile           UserProfile?
-  programs          UserProgram[]
-  sessions          SessionLog[]
-  scheduledWorkouts ScheduledWorkout[]   @relation("ScheduledWorkouts")
-  coachProfile      CoachProfile?
-  gymProfile        GymProfile?
-  clients           CoachClient[]        @relation("CoachClients")
-  assignedBy        CoachClient[]        @relation("AssignedBy")
-  gymMemberships    GymMember[]
-  classAttendance   GymClassAttendance[]
+  profile            UserProfile?
+  programs           UserProgram[]
+  sessions           SessionLog[]
+  scheduledWorkouts  ScheduledWorkout[]   @relation("ScheduledWorkouts")
+  coachProfile       CoachProfile?
+  gymProfile         GymProfile?
+  clients            CoachClient[]        @relation("CoachClients")
+  assignedBy         CoachClient[]        @relation("AssignedBy")
+  gymMemberships     GymMember[]
+  classAttendance    GymClassAttendance[]
   networkAsRequester Network[]            @relation("NetworkRequester")
-  networkAsAddressee Network[]             @relation("NetworkAddressee")
+  networkAsAddressee Network[]            @relation("NetworkAddressee")
   networkCode        String?              @unique // QR code for adding to network
-  notifications     Notification[]
+  notifications      Notification[]
   activityLogs       ActivityLog[]
-  createdWorkouts   Workout[]             @relation("CreatedWorkouts")
+  createdWorkouts    Workout[]            @relation("CreatedWorkouts")
   achievements       UserAchievement[]
   workoutRatings     WorkoutRating[]
   favoriteWorkouts   WorkoutFavorite[]
@@ -175,14 +175,14 @@ model UserProfile {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Profile picture (from Clerk or custom upload)
-  imageUrl      String?
-  
+  imageUrl String?
+
   // Physical stats
-  weight        Float?   // in kg
-  height        Float?   // in cm
-  location      String?  // City, Country, etc.
-  bio           String?  // About me / bio
-  
+  weight   Float? // in kg
+  height   Float? // in cm
+  location String? // City, Country, etc.
+  bio      String? // About me / bio
+
   // Training info
   trainingLevel  TrainingLevel
   primaryGoal    TrainingGoal?
@@ -284,14 +284,16 @@ model ExerciseBlock {
   section   WorkoutSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   order     Int
 
-  label          String?
-  exerciseName   String
-  description    String?
-  repScheme      String?
-  tempo          String? // Tempo notation (e.g., "2220", "2s pause", "3s eccentric")
-  loadPercentage String? // Load percentage (e.g., "@ 40-45-50-55%")
-  distance       Int?
-  distanceUnit   String?
+  label            String?
+  exerciseName     String
+  description      String? // Legacy field - use shortDescription and longDescription instead
+  shortDescription String? // Brief description (max 80 characters) for card display
+  longDescription  String? // Full detailed description for popup
+  repScheme        String?
+  tempo            String? // Tempo notation (e.g., "2220", "2s pause", "3s eccentric")
+  loadPercentage   String? // Load percentage (e.g., "@ 40-45-50-55%")
+  distance         Int?
+  distanceUnit     String?
 
   tierPrescriptions TierPrescription[]
 
@@ -395,25 +397,25 @@ model SessionLog {
 }
 
 model WorkoutRating {
-  id               String     @id @default(cuid())
-  sessionLogId     String?    @unique
-  sessionLog       SessionLog? @relation(fields: [sessionLogId], references: [id], onDelete: Cascade)
-  userId           String
-  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workoutId        String
-  workout          Workout    @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  id           String      @id @default(cuid())
+  sessionLogId String?     @unique
+  sessionLog   SessionLog? @relation(fields: [sessionLogId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workoutId    String
+  workout      Workout     @relation(fields: [workoutId], references: [id], onDelete: Cascade)
 
-  starRating       Int        // 1-5 stars
-  difficultyRating  Int?       // 1-10
-  enjoymentRating   Int?       // 1-10
-  effectivenessRating Int?    // 1-10
-  wouldDoAgain     Boolean?
-  tags             String[]   @default([]) // e.g., "Too Easy", "Perfect", "Too Hard", "Loved It"
-  notes            String?
-  favoriteExercises String[]  @default([]) // Exercise names that were favorites
+  starRating          Int // 1-5 stars
+  difficultyRating    Int? // 1-10
+  enjoymentRating     Int? // 1-10
+  effectivenessRating Int? // 1-10
+  wouldDoAgain        Boolean?
+  tags                String[] @default([]) // e.g., "Too Easy", "Perfect", "Too Hard", "Loved It"
+  notes               String?
+  favoriteExercises   String[] @default([]) // Exercise names that were favorites
 
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([userId, workoutId, sessionLogId])
   @@index([workoutId])
@@ -422,11 +424,11 @@ model WorkoutRating {
 }
 
 model WorkoutFavorite {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   workoutId String
-  workout   Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -463,18 +465,18 @@ model Exercise {
   regressionTips  String? // Tips for regressing the exercise if too difficult
   aiGenerated     Boolean  @default(false) // Track if exercise was AI-generated
   usageCount      Int      @default(0) // Track how many times this exercise has been used
-  
+
   // Exercise variations and nuances
-  weightRanges    Json? // Weight ranges by tier: {silver: "12-16kg", gold: "20-24kg", black: "28-32kg"}
-  durationRanges  Json? // Duration ranges for time-based exercises: {silver: "30-45s", gold: "45-60s", black: "60-90s"}
-  intensityLevels Json? // Intensity variations: {silver: "Low-Moderate", gold: "Moderate-High", black: "High-Max"}
-  repRanges       Json? // Rep ranges by tier: {silver: "8-12", gold: "12-15", black: "15-20"}
-  tempoOptions    Json? // Tempo variations: ["2020", "2220", "2s pause", "3s eccentric"]
+  weightRanges        Json? // Weight ranges by tier: {silver: "12-16kg", gold: "20-24kg", black: "28-32kg"}
+  durationRanges      Json? // Duration ranges for time-based exercises: {silver: "30-45s", gold: "45-60s", black: "60-90s"}
+  intensityLevels     Json? // Intensity variations: {silver: "Low-Moderate", gold: "Moderate-High", black: "High-Max"}
+  repRanges           Json? // Rep ranges by tier: {silver: "8-12", gold: "12-15", black: "15-20"}
+  tempoOptions        Json? // Tempo variations: ["2020", "2220", "2s pause", "3s eccentric"]
   equipmentVariations Json? // Equipment variations: ["Dumbbells", "Kettlebells", "Barbell", "Bodyweight"]
   movementVariations  Json? // Movement variations: ["Standard", "Pause", "Tempo", "Explosive"]
-  
+
   // AI-generated image
-  imageUrl        String? // URL to AI-generated brutalist style image of the exercise
+  imageUrl         String? // URL to AI-generated brutalist style image of the exercise
   imageGeneratedAt DateTime? // When the image was generated
 
   tiers ExerciseTier[]
@@ -646,14 +648,14 @@ model WorkoutTemplate {
 }
 
 model Network {
-  id        String   @id @default(cuid())
+  id          String        @id @default(cuid())
   requesterId String
-  requester  User    @relation("NetworkRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  requester   User          @relation("NetworkRequester", fields: [requesterId], references: [id], onDelete: Cascade)
   addresseeId String
-  addressee  User    @relation("NetworkAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
-  status    NetworkStatus @default(PENDING) // PENDING, ACCEPTED, BLOCKED
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  addressee   User          @relation("NetworkAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+  status      NetworkStatus @default(PENDING) // PENDING, ACCEPTED, BLOCKED
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   @@unique([requesterId, addresseeId])
   @@map("network")
@@ -678,15 +680,15 @@ enum NotificationType {
 }
 
 model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      NotificationType
-  networkId String?          // Reference to Network record if applicable
-  activityLogId String?      // Reference to ActivityLog if applicable
-  activityLog ActivityLog?   @relation(fields: [activityLogId], references: [id], onDelete: SetNull)
-  read      Boolean          @default(false)
-  createdAt DateTime         @default(now())
+  id            String           @id @default(cuid())
+  userId        String
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          NotificationType
+  networkId     String? // Reference to Network record if applicable
+  activityLogId String? // Reference to ActivityLog if applicable
+  activityLog   ActivityLog?     @relation(fields: [activityLogId], references: [id], onDelete: SetNull)
+  read          Boolean          @default(false)
+  createdAt     DateTime         @default(now())
 
   @@index([userId, read])
   @@index([userId, createdAt])
@@ -708,15 +710,15 @@ enum ActivityType {
 }
 
 model ActivityLog {
-  id        String       @id @default(cuid())
-  userId    String?
-  user      User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
-  type      ActivityType
-  entityType String?    // e.g., 'workout', 'session', 'program'
-  entityId  String?      // ID of the related entity
-  message   String       // Human-readable message
-  metadata  Json?        // Additional data (workout name, stats, etc.)
-  createdAt DateTime     @default(now())
+  id         String       @id @default(cuid())
+  userId     String?
+  user       User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  type       ActivityType
+  entityType String? // e.g., 'workout', 'session', 'program'
+  entityId   String? // ID of the related entity
+  message    String // Human-readable message
+  metadata   Json? // Additional data (workout name, stats, etc.)
+  createdAt  DateTime     @default(now())
 
   notifications Notification[]
 
@@ -743,10 +745,10 @@ model Achievement {
   name        String
   description String
   category    AchievementCategory
-  icon        String              // Icon identifier
+  icon        String // Icon identifier
   rarity      String              @default("COMMON") // COMMON, RARE, EPIC, LEGENDARY
   xpReward    Int                 @default(0)
-  metadata    Json?               // Additional data (thresholds, conditions, etc.)
+  metadata    Json? // Additional data (thresholds, conditions, etc.)
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
 
@@ -762,7 +764,7 @@ model UserAchievement {
   achievementId String
   achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
   earnedAt      DateTime    @default(now())
-  metadata      Json?       // Additional data (value when earned, etc.)
+  metadata      Json? // Additional data (value when earned, etc.)
 
   @@unique([userId, achievementId])
   @@index([userId, earnedAt])

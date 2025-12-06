@@ -1236,8 +1236,9 @@ function ExerciseCard({ block }: { block: any }) {
       <h3 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
         {block.exerciseName}
       </h3>
-      {block.description && (
-        <p className="text-muted-text text-xs sm:text-sm mb-3 sm:mb-4">{block.description}</p>
+      {/* ONLY show shortDescription, NEVER description or longDescription */}
+      {block.shortDescription && block.shortDescription.length <= 80 && (
+        <p className="text-muted-text text-xs sm:text-sm mb-3 sm:mb-4">{block.shortDescription}</p>
       )}
       
       {block.repScheme && !isErg && (

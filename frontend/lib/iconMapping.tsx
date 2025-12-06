@@ -59,6 +59,8 @@ import {
   Trash2,             // Delete action
   Users,              // People, participants, group
   Play,               // Play, start, begin
+  Volume2,            // Audio, volume, sound
+  Info,               // Information, help, details
   
   // Training Goals
   TrendingUp,         // Strength, progression
@@ -297,5 +299,7 @@ export const Icons = {
   WORKOUT: Dumbbell,        // Workout icon (same as SESSIONS/PR1ME)
   PLAY: Play,               // Play/start icon
   CLIPBOARD_LIST: ClipboardList, // Clipboard list icon (same as PROGRAMS)
+  VOLUME_2: Volume2,       // Audio, volume, sound
+  INFO: Info,              // Information, help, details
 };
 

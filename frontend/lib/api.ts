@@ -114,24 +114,29 @@ api.interceptors.response.use(
       const baseURL = error?.config?.baseURL || api.defaults.baseURL;
       const fullURL = baseURL + error?.config?.url;
       
-      // Log detailed error info in both dev and production for debugging
-      console.error('⚠️ NETWORK ERROR - Backend unreachable', {
-        attemptedURL: fullURL,
-        baseURL: baseURL,
-        endpoint: error?.config?.url,
-        method: error?.config?.method,
-        timeout: error?.code === 'ECONNABORTED' ? 'Request timed out' : 'Connection failed',
-        errorCode: error?.code,
-        errorMessage: error?.message,
-        envAPIUrl: process.env.NEXT_PUBLIC_API_URL || 'NOT SET (using default)',
-      });
-      
-      // Only log detailed errors in development to avoid console spam
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('💡 TROUBLESHOOTING:');
-        console.warn('1. Make sure the backend is running on', baseURL);
-        console.warn('2. Start the backend: cd backend && npm run start:dev');
-        console.warn('3. Verify NEXT_PUBLIC_API_URL is set correctly');
+      // Log network errors as warnings (not errors) since backend may be intentionally offline
+      // Only log once per session to avoid console spam
+      if (!(window as any).__backendUnreachableLogged) {
+        console.warn('⚠️ Backend unreachable - some features may be unavailable', {
+          baseURL: baseURL,
+          endpoint: error?.config?.url,
+        });
+        (window as any).__backendUnreachableLogged = true;
+        
+        // Only log detailed errors in development
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('💡 TROUBLESHOOTING:', {
+            attemptedURL: fullURL,
+            method: error?.config?.method,
+            timeout: error?.code === 'ECONNABORTED' ? 'Request timed out' : 'Connection failed',
+            errorCode: error?.code,
+            errorMessage: error?.message,
+            envAPIUrl: process.env.NEXT_PUBLIC_API_URL || 'NOT SET (using default)',
+          });
+          console.debug('1. Make sure the backend is running on', baseURL);
+          console.debug('2. Start the backend: cd backend && npm run start:dev');
+          console.debug('3. Verify NEXT_PUBLIC_API_URL is set correctly');
+        }
       }
     } else if (isPublicEndpoint) {
       // For public endpoints, only log a simple warning
@@ -382,6 +387,10 @@ export const workoutsApi = {
   },
   delete: async (id: string) => {
     const response = await api.delete(`/workouts/${id}`);
+    return response.data;
+  },
+  deleteAdmin: async (id: string) => {
+    const response = await api.delete(`/workouts/admin/${id}`);
     return response.data;
   },
   generateShareLink: async (id: string) => {
@@ -706,8 +715,16 @@ export const analyticsApi = {
     return response.data;
   },
   getPercentiles: async () => {
-    const response = await api.get('/analytics/percentiles');
-    return response.data;
+    try {
+      const response = await api.get('/analytics/percentiles');
+      return response.data;
+    } catch (error: any) {
+      // Silently handle 404s (endpoint doesn't exist yet)
+      if (error?.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
   },
   getMonthTrends: async () => {
     const response = await api.get('/analytics/month-trends');

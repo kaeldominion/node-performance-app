@@ -69,6 +69,12 @@ export class WorkoutsController {
     return this.workoutsService.toggleRecommended(id, body.isRecommended);
   }
 
+  @Delete('admin/:id')
+  @UseGuards(ClerkAdminGuard)
+  async deleteAdmin(@Request() req: any, @Param('id') id: string) {
+    return this.workoutsService.deleteAdmin(id);
+  }
+
   @Delete(':id')
   @UseGuards(ClerkAuthGuard)
   async delete(@Request() req: any, @Param('id') id: string) {

@@ -100,8 +100,9 @@ export default function SectionSuperset({ title, note, blocks }: SectionSuperset
                       {block.exerciseInstructions}
                     </div>
                   )}
-                  {block.description && (
-                    <p className="text-muted-text text-center mb-3 text-sm">{block.description}</p>
+                  {/* ONLY show shortDescription, NEVER longDescription or description */}
+                  {block.shortDescription && block.shortDescription.length < 100 && (
+                    <p className="text-muted-text text-center mb-3 text-sm">{block.shortDescription}</p>
                   )}
                   {block.repScheme && !shouldHideRepScheme(block) && (
                     <div className="text-xl text-node-volt font-bold text-center mb-4">{block.repScheme}</div>

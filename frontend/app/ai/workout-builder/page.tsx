@@ -6,10 +6,12 @@ export const dynamic = 'force-dynamic';
 import { Icons } from '@/lib/iconMapping';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWorkoutGeneration } from '@/contexts/WorkoutGenerationContext';
 import { aiApi, workoutsApi, programsApi, userApi, scheduleApi } from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 import { GenerationTerminal } from '@/components/workout/GenerationTerminal';
+import { WorkoutGenerationNotification } from '@/components/workout/WorkoutGenerationNotification';
 import { getTierDisplayValue } from '@/components/workout/tierDisplayUtils';
 
 const TRAINING_GOALS = [
@@ -51,6 +53,7 @@ const EQUIPMENT_CATEGORIES = {
   ],
   'Space & Environment': [
     'running route',
+    'wall balls',
   ],
 };
 
@@ -59,6 +62,7 @@ const EQUIPMENT_OPTIONS = Object.values(EQUIPMENT_CATEGORIES).flat();
 
 function WorkoutBuilderPageContent() {
   const { user, loading: authLoading } = useAuth();
+  const { startGeneration, completeGeneration, unsavedWorkouts, isGenerating } = useWorkoutGeneration();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -66,6 +70,7 @@ function WorkoutBuilderPageContent() {
   const [generatedWorkout, setGeneratedWorkout] = useState<any>(null);
   const [error, setError] = useState<string | null>('');
   const [showTerminal, setShowTerminal] = useState(false);
+  const [currentGenerationId, setCurrentGenerationId] = useState<string | null>(null);
   const [startDate, setStartDate] = useState<string>(() => {
     // Default to tomorrow
     const tomorrow = new Date();
@@ -87,9 +92,27 @@ function WorkoutBuilderPageContent() {
   const [savedWorkoutId, setSavedWorkoutId] = useState<string | null>(null);
   const [showSaveSuccessModal, setShowSaveSuccessModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [customWorkoutName, setCustomWorkoutName] = useState<string>('');
+
+  // Load unsaved workout if workoutId is in URL
+  useEffect(() => {
+    const workoutId = searchParams.get('workoutId');
+    if (workoutId) {
+      const unsaved = unsavedWorkouts.find((w) => w.id === workoutId);
+      if (unsaved) {
+        setGeneratedWorkout(unsaved.workout);
+        setFormData(unsaved.formData);
+        setShowTerminal(false);
+      }
+    }
+  }, [searchParams, unsavedWorkouts]);
 
   // Load form data from URL query parameters (from dashboard mini form or HYROX page)
   useEffect(() => {
+    // Don't override if we're loading an unsaved workout
+    if (searchParams.get('workoutId')) return;
+    
     const goalParam = searchParams.get('goal');
     const archetypeParam = searchParams.get('archetype');
     const workoutTypeParam = searchParams.get('workoutType');
@@ -172,100 +195,136 @@ function WorkoutBuilderPageContent() {
       return;
     }
 
+    // Generate unique ID for this generation
+    const generationId = `gen_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    setCurrentGenerationId(generationId);
+    
+    // Start generation tracking
+    startGeneration(generationId);
     setLoading(true);
     setError('');
     setGeneratedWorkout(null);
-    setReviewing(false); // Start with reviewing false
-    setShowTerminal(true); // Show terminal
+    setReviewing(false);
+    setShowTerminal(true);
 
-    try {
-      // Determine if this is a HYROX workout
-      const isHyrox = formData.workoutType === 'single' && formData.workoutDuration === 'hyrox';
-      
-      // Calculate available minutes based on workout duration
-      const availableMinutes = isHyrox ? 90 : 55; // Standard: 50-60min (use 55), HYROX: 90min
-      
-      // Start generation phase - reviewing will start after generation completes
-      const workout = await aiApi.generateWorkout({
-        goal: isHyrox ? 'CONDITIONING' : formData.goal, // HYROX always uses CONDITIONING
-        trainingLevel: 'ADVANCED', // Used only for workout complexity/duration guidance
-        equipment: formData.equipment,
-        availableMinutes: availableMinutes,
-        // Only pass archetype for single workouts (not HYROX, not multi-day)
-        // For multi-day programs, AI will randomly select archetypes based on goal
-        archetype: (formData.workoutType === 'single' && !isHyrox) ? formData.archetype : undefined,
-        sectionPreferences: formData.sectionPreferences,
-        workoutType: formData.workoutType,
-        // Don't pass cycle for 4-week programs (automatic progression)
-        cycle: formData.workoutType === 'month' ? undefined : formData.cycle,
-        isHyrox: isHyrox, // Only true for single HYROX workouts
-        includeHyrox: formData.workoutType !== 'single' ? formData.includeHyrox : undefined, // For multi-day programs
-      });
-      
-      // Generation is complete - now start review phase (only for single workouts)
-      // The review happens in reviewAndAdjustWorkout on the backend, but we show it in UI
-      if (formData.workoutType === 'single') {
-        setLoading(false); // Generation phase complete
-        setReviewing(true); // Start review phase
-        // Simulate review phase duration to match backend processing
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        setReviewing(false);
-      } else {
-        // Multi-day programs don't go through review phase
-        setLoading(false);
-      }
-      
-      setGeneratedWorkout(workout);
-    } catch (err: any) {
-      console.error('Workout generation error:', err);
-      
-      // Handle different error types
-      let errorMessage = 'Failed to generate workout. Please try again.';
-      
-      if (err.response?.data?.message) {
-        // Backend returned a specific error message
-        errorMessage = err.response.data.message;
-      } else if (!err.response && err.request) {
-        // Network error - no response from server
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-        const attemptedUrl = err.config?.baseURL || apiUrl;
-        console.error('🔴 Network Error Details:', {
-          attemptedURL: attemptedUrl + (err.config?.url || ''),
-          baseURL: err.config?.baseURL,
-          endpoint: err.config?.url,
-          envAPIUrl: process.env.NEXT_PUBLIC_API_URL || 'NOT SET (using default)',
-          errorCode: err.code,
-          errorMessage: err.message,
-          hasRequest: !!err.request,
-          hasResponse: !!err.response,
+    // Generate in background (non-blocking)
+    (async () => {
+      try {
+        // Determine if this is a HYROX workout
+        const isHyrox = formData.workoutType === 'single' && formData.workoutDuration === 'hyrox';
+        
+        // Calculate available minutes based on workout duration
+        const availableMinutes = isHyrox ? 90 : 55; // Standard: 50-60min (use 55), HYROX: 90min
+        
+        // Start generation phase - reviewing will start after generation completes
+        const workout = await aiApi.generateWorkout({
+          goal: isHyrox ? 'CONDITIONING' : formData.goal, // HYROX always uses CONDITIONING
+          trainingLevel: 'ADVANCED', // Used only for workout complexity/duration guidance
+          equipment: formData.equipment,
+          availableMinutes: availableMinutes,
+          // Only pass archetype for single workouts (not HYROX, not multi-day)
+          // For multi-day programs, AI will randomly select archetypes based on goal
+          archetype: (formData.workoutType === 'single' && !isHyrox) ? formData.archetype : undefined,
+          sectionPreferences: formData.sectionPreferences,
+          workoutType: formData.workoutType,
+          // Don't pass cycle for 4-week programs (automatic progression)
+          cycle: formData.workoutType === 'month' ? undefined : formData.cycle,
+          isHyrox: isHyrox, // Only true for single HYROX workouts
+          includeHyrox: formData.workoutType !== 'single' ? formData.includeHyrox : undefined, // For multi-day programs
         });
         
-        // Check for specific connection reset errors (Railway timeout)
-        if (err.code === 'ERR_CONNECTION_RESET' || err.code === 'ERR_NETWORK' || err.message?.includes('Connection reset') || err.message?.includes('ERR_CONNECTION_RESET')) {
-          errorMessage = 'Connection was reset during generation. The AI request is taking longer than Railway\'s timeout allows. Try: 1) Reducing workout duration, 2) Using fewer equipment options, 3) Selecting a specific archetype. Then retry.';
+        // Generation is complete - now start review phase (only for single workouts)
+        // The review happens in reviewAndAdjustWorkout on the backend, but we show it in UI
+        if (formData.workoutType === 'single') {
+          setLoading(false); // Generation phase complete
+          setReviewing(true); // Start review phase
+          // Simulate review phase duration to match backend processing
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          setReviewing(false);
         } else {
-          errorMessage = `Network Error: Unable to connect to the backend API. Please check that the backend is running and the API URL is configured correctly (${apiUrl}).`;
+          // Multi-day programs don't go through review phase
+          setLoading(false);
         }
-      } else if (err.code === 'ECONNABORTED' || err.message?.includes('timeout') || err.code === 'ETIMEDOUT') {
-        // Request timeout
-        errorMessage = 'Request timed out. The AI service is taking longer than expected (over 3 minutes). Please try again with a simpler workout configuration or reduce the workout duration.';
-      } else if (err.code === 'ERR_CONNECTION_RESET' || err.code === 'ERR_NETWORK') {
-        // Connection reset - likely Railway timeout
-        errorMessage = 'Connection was reset during generation. This usually happens when the request takes too long. Try: 1) Reducing workout duration, 2) Using fewer equipment options, 3) Selecting a specific archetype. Then retry.';
-      } else if (err.message) {
-        // Use the error message from the error object
-        errorMessage = err.message;
+        
+        // Complete generation and store in context
+        // This will dispatch the notification event
+        completeGeneration(generationId, workout, formData);
+        console.log('✅ Workout generation complete, calling completeGeneration:', { generationId, hasWorkout: !!workout });
+        
+        // If user is still on this page, show the workout
+        if (currentGenerationId === generationId) {
+          setGeneratedWorkout(workout);
+        }
+      } catch (err: any) {
+        console.error('Workout generation error:', err);
+        
+        // Handle different error types
+        let errorMessage = 'Failed to generate workout. Please try again.';
+        
+        if (err.response?.data?.message) {
+          // Backend returned a specific error message
+          errorMessage = err.response.data.message;
+        } else if (!err.response && err.request) {
+          // Network error - no response from server
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+          const attemptedUrl = err.config?.baseURL || apiUrl;
+          console.error('🔴 Network Error Details:', {
+            attemptedURL: attemptedUrl + (err.config?.url || ''),
+            baseURL: err.config?.baseURL,
+            endpoint: err.config?.url,
+            envAPIUrl: process.env.NEXT_PUBLIC_API_URL || 'NOT SET (using default)',
+            errorCode: err.code,
+            errorMessage: err.message,
+            hasRequest: !!err.request,
+            hasResponse: !!err.response,
+          });
+          
+          // Check for specific connection reset errors (Railway timeout)
+          if (err.code === 'ERR_CONNECTION_RESET' || err.code === 'ERR_NETWORK' || err.message?.includes('Connection reset') || err.message?.includes('ERR_CONNECTION_RESET')) {
+            errorMessage = 'Connection was reset during generation. The AI request is taking longer than Railway\'s timeout allows. Try: 1) Reducing workout duration, 2) Using fewer equipment options, 3) Selecting a specific archetype. Then retry.';
+          } else {
+            errorMessage = `Network Error: Unable to connect to the backend API. Please check that the backend is running and the API URL is configured correctly (${apiUrl}).`;
+          }
+        } else if (err.code === 'ECONNABORTED' || err.message?.includes('timeout') || err.code === 'ETIMEDOUT') {
+          // Request timeout
+          errorMessage = 'Request timed out. The AI service is taking longer than expected (over 3 minutes). Please try again with a simpler workout configuration or reduce the workout duration.';
+        } else if (err.code === 'ERR_CONNECTION_RESET' || err.code === 'ERR_NETWORK') {
+          // Connection reset - likely Railway timeout
+          errorMessage = 'Connection was reset during generation. This usually happens when the request takes too long. Try: 1) Reducing workout duration, 2) Using fewer equipment options, 3) Selecting a specific archetype. Then retry.';
+        } else if (err.message) {
+          // Use the error message from the error object
+          errorMessage = err.message;
+        }
+        
+        // Only show error if user is still on this page
+        if (currentGenerationId === generationId) {
+          setError(errorMessage);
+          setReviewing(false);
+          setShowTerminal(true); // Keep terminal visible for errors
+        }
+      } finally {
+        if (currentGenerationId === generationId) {
+          setLoading(false);
+        }
       }
-      
-      setError(errorMessage);
-      setReviewing(false);
-      setShowTerminal(true); // Keep terminal visible for errors
-    } finally {
-      setLoading(false);
-    }
+    })();
   };
 
   const handleSaveWorkout = async () => {
+    if (!generatedWorkout) return;
+
+    // For single workouts, show rename modal first
+    if (!Array.isArray(generatedWorkout)) {
+      setCustomWorkoutName(generatedWorkout.name || '');
+      setShowRenameModal(true);
+      return;
+    }
+
+    // For programs, save directly
+    await saveWorkoutDirectly();
+  };
+
+  const saveWorkoutDirectly = async (customName?: string) => {
     if (!generatedWorkout) return;
 
     try {
@@ -315,11 +374,17 @@ function WorkoutBuilderPageContent() {
         // Navigate to programs page or the program detail
         router.push(`/programs/${program.slug}`);
       } else {
-        // Single workout - save first, then show success modal
-        const savedWorkout = await workoutsApi.create(generatedWorkout);
+        // Single workout - update name if custom name provided
+        const workoutToSave = {
+          ...generatedWorkout,
+          name: customName || generatedWorkout.name,
+        };
+        
+        const savedWorkout = await workoutsApi.create(workoutToSave);
         console.log('Workout saved successfully:', savedWorkout);
         setSavedWorkoutId(savedWorkout.id);
         setShowSaveSuccessModal(true);
+        setShowRenameModal(false);
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to save workout. Please try again.');
@@ -1146,6 +1211,64 @@ function WorkoutBuilderPageContent() {
             setShowSaveSuccessModal(false);
           }}
         />
+      )}
+
+      {/* Rename Workout Modal */}
+      {showRenameModal && generatedWorkout && !Array.isArray(generatedWorkout) && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-panel thin-border rounded-lg max-w-md w-full p-6">
+            <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+              Save Workout
+            </h2>
+            <p className="text-muted-text mb-4">
+              Give your workout a custom name or use the default:
+            </p>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2">
+                Workout Name
+              </label>
+              <input
+                type="text"
+                value={customWorkoutName}
+                onChange={(e) => setCustomWorkoutName(e.target.value)}
+                placeholder={generatedWorkout.name || 'Enter workout name'}
+                className="w-full bg-deep-asphalt border border-tech-grey rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    saveWorkoutDirectly(customWorkoutName.trim() || generatedWorkout.name);
+                  }
+                }}
+              />
+              {generatedWorkout.displayCode && (
+                <p className="text-xs text-muted-text mt-2">
+                  Code: {generatedWorkout.displayCode}
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowRenameModal(false);
+                  setCustomWorkoutName('');
+                }}
+                className="flex-1 bg-panel thin-border text-text-white px-6 py-3 rounded-lg hover:border-node-volt hover:text-node-volt transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => saveWorkoutDirectly(customWorkoutName.trim() || generatedWorkout.name)}
+                disabled={loading}
+                className="flex-1 bg-node-volt text-dark font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+                style={{ fontFamily: 'var(--font-space-grotesk)' }}
+              >
+                {loading ? 'Saving...' : 'Save Workout'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -87,8 +87,13 @@ export default function LandingPage() {
         try {
           const percentilesData = await analyticsApi.getPercentiles();
           setPercentiles(percentilesData);
-        } catch (err) {
-          console.error('Failed to load percentiles:', err);
+        } catch (err: any) {
+          // Silently fail - percentiles are optional data
+          // Only log in development if it's not a 404 (endpoint doesn't exist)
+          if (process.env.NODE_ENV === 'development' && err?.response?.status !== 404) {
+            console.debug('Percentiles endpoint not available:', err?.response?.status || 'network error');
+          }
+          setPercentiles(null);
         }
       };
       loadPercentiles();

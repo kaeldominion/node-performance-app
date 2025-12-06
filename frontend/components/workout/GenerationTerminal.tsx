@@ -392,11 +392,30 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onComplet
   const shutdownBlur = isShuttingDown ? shutdownProgress * 10 : 0;
 
   return (
-    <div 
-      className={`${theme === 'light' ? 'bg-gray-100' : 'bg-black'} border-2 ${theme === 'light' ? 'border-blue-500/40' : 'border-node-volt/30'} rounded-lg p-6 font-mono text-sm overflow-hidden relative transition-all duration-300`}
-      style={{
-        opacity: shutdownOpacity,
-        transform: `scale(${shutdownScale})`,
+    <div className="space-y-4">
+      {/* Info Box - You can browse while generating */}
+      {(isGenerating || isReviewing) && !isShuttingDown && (
+        <div className="bg-node-volt/10 border-2 border-node-volt/50 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <Icons.INFO size={20} className="text-node-volt flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-bold text-text-white mb-1">
+                Generation in Progress
+              </p>
+              <p className="text-xs text-muted-text leading-relaxed">
+                You're free to browse the site while your workout generates. This process typically takes 1-3 minutes. 
+                You'll receive a notification when it's ready, and you can find it in your notifications or return here anytime.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      <div 
+        className={`${theme === 'light' ? 'bg-gray-100' : 'bg-black'} border-2 ${theme === 'light' ? 'border-blue-500/40' : 'border-node-volt/30'} rounded-lg p-6 font-mono text-sm overflow-hidden relative transition-all duration-300`}
+        style={{
+          opacity: shutdownOpacity,
+          transform: `scale(${shutdownScale})`,
         filter: `blur(${shutdownBlur}px)`,
       }}
     >
@@ -565,6 +584,7 @@ export function GenerationTerminal({ isGenerating, isReviewing, error, onComplet
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 }

@@ -100,8 +100,9 @@ export default function SectionEMOM({ title, note, blocks, workSec, restSec, rou
                 {block.exerciseInstructions}
               </div>
             )}
-            {block.description && (
-              <p className="text-sm text-muted-text text-center mb-2">{block.description}</p>
+            {/* ONLY show shortDescription, NEVER longDescription or description */}
+            {block.shortDescription && block.shortDescription.length < 100 && (
+              <p className="text-sm text-muted-text text-center mb-2">{block.shortDescription}</p>
             )}
             {(() => {
               // Check if we should hide repScheme (when tiers have different distance/calories/reps)

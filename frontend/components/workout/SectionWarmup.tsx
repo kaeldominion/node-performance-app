@@ -7,7 +7,9 @@ interface ExerciseBlock {
   id: string;
   label?: string;
   exerciseName: string;
-  description?: string;
+  description?: string; // Legacy field
+  shortDescription?: string; // Brief form cue (max 80 chars)
+  longDescription?: string; // Detailed instructions
   repScheme?: string;
   exerciseImageUrl?: string;
   exerciseInstructions?: string;
@@ -59,9 +61,13 @@ export default function SectionWarmup({ title, note, blocks }: SectionWarmupProp
                 {block.exerciseInstructions}
               </div>
             )}
-            {block.description && (
-              <p className="text-muted-text mb-4">{block.description}</p>
+            {/* Short Description - ONLY show shortDescription, NEVER longDescription */}
+            {block.shortDescription && (
+              <p className="text-muted-text mb-2 text-center">
+                {block.shortDescription}
+              </p>
             )}
+            {/* Long Description - COMPLETELY REMOVED - Should only be in tooltip or modal, never in main view */}
             {block.repScheme && (
               <div className="text-xl text-node-volt font-bold mb-4">{block.repScheme}</div>
             )}

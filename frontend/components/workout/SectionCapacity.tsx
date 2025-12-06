@@ -85,8 +85,9 @@ export default function SectionCapacity({ title, note, blocks, durationSec }: Se
                 {block.exerciseInstructions}
               </div>
             )}
-            {block.description && (
-              <p className="text-muted-text mb-4">{block.description}</p>
+            {/* ONLY show shortDescription, NEVER longDescription or description */}
+            {block.shortDescription && block.shortDescription.length < 100 && (
+              <p className="text-muted-text mb-4">{block.shortDescription}</p>
             )}
             {(() => {
               // Check if we should hide repScheme (when tiers have different distance/calories/reps)

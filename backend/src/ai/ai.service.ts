@@ -58,26 +58,64 @@ export class AiService {
     const hasRunningRoute = params.equipment.some((eq) => 
       eq.toLowerCase().includes('running') || eq.toLowerCase().includes('route') || eq.toLowerCase().includes('outdoor')
     );
+    
+    // Check if wall balls is selected as space/environment (not equipment)
+    const hasWallBallsSpace = params.equipment.some((eq) => 
+      eq.toLowerCase().includes('wall balls') || eq.toLowerCase().includes('wallball') || eq.toLowerCase().includes('wall_ball')
+    );
+    
+    // Check if wall ball equipment is NOT selected (need to exclude wall ball exercises)
+    const hasWallBallEquipment = params.equipment.some((eq) => {
+      const eqLower = eq.toLowerCase();
+      return eqLower.includes('wall ball') || eqLower.includes('wallball') || eqLower.includes('wall_ball') || eqLower === 'wall ball';
+    });
+    
+    // Check if erg equipment is available (rower, bike_erg, ski_erg, air_bike)
+    const hasErgEquipment = params.equipment.some((eq) => {
+      const eqLower = eq.toLowerCase();
+      return eqLower.includes('rower') || 
+             eqLower.includes('bike_erg') || 
+             eqLower.includes('bike erg') ||
+             eqLower.includes('ski_erg') || 
+             eqLower.includes('ski erg') ||
+             eqLower.includes('air_bike') ||
+             eqLower.includes('assault bike') ||
+             eqLower.includes('echo bike');
+    });
 
     // REVL and Hyrox workout examples
     const workoutExamples = this.getWorkoutExamples();
     
+    // Calculate minimum required time based on available minutes
+    const minRequiredMinutes = Math.max(35, Math.floor(params.availableMinutes * 0.85)); // At least 35min or 85% of available time
+    const targetMinutes = Math.max(40, Math.floor(params.availableMinutes * 0.9)); // Target 40min+ or 90% of available time
+    
     const systemPrompt = `You are an elite hybrid coach designing sessions for the NØDE performance training system, following REVL-style programming with extreme detail and precision.
+
+⚠️ CRITICAL WORKOUT DURATION REQUIREMENT:
+- User has ${params.availableMinutes} minutes available
+- MINIMUM workout duration: ${minRequiredMinutes} minutes (MUST NOT be less than this)
+- TARGET workout duration: ${targetMinutes} minutes (aim for this or higher)
+- NEVER create a workout that is 30 minutes or less - this is unacceptable
+- If the workout is too short, ADD more main sections or EXTEND existing section durations
 
 ${archetypeGuidance ? archetypeGuidance + '\n\n' : ''}
 
 CRITICAL: Generate exercises FREELY based on:
 - Available equipment: ${params.equipment.join(', ')}
+${hasRunningRoute ? '- ⚠️ RUNNING EQUIPMENT DETECTED: For HYROX workouts, you MUST include a "Run" exercise block between each main exercise (Exercise 1 → Run → Exercise 2 → Run → Exercise 3, etc.)' : ''}
+${hasWallBallsSpace ? '- ⚠️ WALL BALLS SPACE/ENVIRONMENT DETECTED: Wall balls is available as a SPACE/ENVIRONMENT (wall ball target/station), NOT as equipment. You MUST NOT include "Wall Ball Shot" or any wall ball exercises in the workout. The wall ball target is available for use, but do not create exercises that use it.' : ''}
+${!hasWallBallEquipment && !hasWallBallsSpace ? '- ⚠️ WALL BALL EQUIPMENT NOT AVAILABLE: Wall ball equipment is NOT in the available equipment list. You MUST NOT include "Wall Ball Shot", "Wall Ball", or any wall ball exercises in the workout. These exercises require wall ball equipment which is not available.' : ''}
 - Movement patterns needed for the archetype
 - REVL-style naming conventions (e.g., "BB FFE Rev Lunge", "SA DB Strict Press", "DBall TNG GTS")
 - Compound movements and variations
 
 IMPORTANT EXERCISES TO KNOW:
 - WALL BALL: Essential for HYROX workouts. Squat to target, throw ball to wall target. Standard weights: 9kg (men) / 6kg (women). Use in high-rep conditioning blocks (20-100 reps per set).
+${hasWallBallsSpace ? '⚠️ EXCEPTION: If "wall balls" is selected as SPACE/ENVIRONMENT (not equipment), you MUST NOT include Wall Ball Shot exercises. The wall ball target/station is available as space, but do not create exercises using it.' : !hasWallBallEquipment ? '⚠️ EXCEPTION: Wall ball equipment is NOT available. You MUST NOT include "Wall Ball Shot", "Wall Ball", or any wall ball exercises in the workout.' : 'When "wall ball" equipment is available, you can use: Wall Ball Shot exercises'}
 - SLAM BALL: Explosive overhead slam to ground. Great for power and conditioning. Use in circuits, finishers, and conditioning blocks.
 - BALLS TO OVERHEAD (or Balls Over Shoulder): Carry ball from ground to overhead/shoulder position. Excellent for grip, core, and shoulder stability. Use in carry circuits and conditioning blocks.
 - When "slam balls" equipment is available, you can use: Slam Ball, Balls to Overhead, Balls Over Shoulder exercises
-- When "wall ball" or similar equipment is available, you can use: Wall Ball Shot exercises
 
 REVL WORKOUT FORMATTING EXAMPLES (study these EXACTLY):
 ${workoutExamples}
@@ -107,7 +145,7 @@ FOR MULTI-DAY PROGRAMS (4-day, 7-day, 4-week):
       "title": "Section Title",
       "type": "WARMUP" | "EMOM" | "AMRAP" | "FOR_TIME" | "FINISHER" | "COOLDOWN" | "WAVE" | "SUPERSET" | "CIRCUIT" | "CAPACITY" | "FLOW" | "INTERVAL",
       "order": 1,
-      "durationSec": 720 (REQUIRED for ALL sections except EMOM/INTERVAL - must be specified in seconds. WARMUP: 300-600s, COOLDOWN: 300s, WAVE: 600-1200s, SUPERSET: 600-900s, AMRAP/FOR_TIME/CAPACITY: 480-1800s, FINISHER: 180-600s, FLOW: 600-900s),
+      "durationSec": 720 (REQUIRED for ALL sections except EMOM/INTERVAL - must be specified in seconds. WARMUP: 300s (5 min) for non-HYROX, 600-900s for HYROX, COOLDOWN: 300s, WAVE: 600-1200s, SUPERSET: 600-900s, AMRAP/FOR_TIME/CAPACITY: 480-1800s, FINISHER: 180-600s, FLOW: 600-900s),
       "emomWorkSec": 45 (REQUIRED for EMOM - work duration in seconds),
       "emomRestSec": 15 (REQUIRED for EMOM - rest duration in seconds),
       "emomRounds": 12 (REQUIRED for EMOM - total number of rounds),
@@ -116,13 +154,15 @@ FOR MULTI-DAY PROGRAMS (4-day, 7-day, 4-week):
       "intervalRounds": 8 (REQUIRED for INTERVAL - number of rounds),
       "rounds": 4 (REQUIRED for SUPERSET sections - number of rounds to complete the superset pair, typically 4-6 rounds. OPTIONAL for FOR_TIME: number of rounds when format is "X:XX Cap × Y Rounds"),
       "restBetweenRounds": 30 (REQUIRED for SUPERSET sections with rounds - rest duration in seconds between rounds (30-60s). OPTIONAL for FOR_TIME: rest duration in seconds between rounds),
-      "note": "REQUIRED for AMRAP/CIRCUIT/FOR_TIME/SUPERSET/CAPACITY sections - MUST include: 'Complete [X] rounds of the superset pair. Rest [X] seconds between rounds.' OR 'Complete as many rounds as possible in [X:XX]. Rest [X] seconds between rounds if needed. Move through exercises in order: [exercise order].' For AMRAP/CIRCUIT sections, MUST include tier-based round targets: 'Target rounds: SILVER [X-X] rounds, GOLD [X-X] rounds, BLACK [X-X] rounds' (e.g., 'Target rounds: SILVER 3-4 rounds, GOLD 4-5 rounds, BLACK 5-6 rounds'). For CAPACITY sections, MUST mention: 'Target number of rounds according to tier' or similar guidance about tier-based round targets. Include pacing strategy, rest guidance, and round structure.",
+      "note": "REQUIRED for AMRAP/CIRCUIT/FOR_TIME/SUPERSET/CAPACITY/FINISHER sections - MUST include clear instructions on what to do. For FOR_TIME sections (especially HYROX workouts with 60-90 min caps): MUST explicitly state 'Complete as many rounds as possible in [X:XX]. Move through exercises in order: [list all exercises]. When you finish all exercises, immediately start again from the first exercise and repeat until time cap.' MUST include tier-based round targets: 'Target rounds: SILVER [X-X] rounds, GOLD [X-X] rounds, BLACK [X-X] rounds' (e.g., for a 60-min HYROX with 5 exercises: 'Target rounds: SILVER 3-4 rounds, GOLD 4-5 rounds, BLACK 5-6 rounds'). For AMRAP/CIRCUIT sections: MUST include tier-based round targets: 'Target rounds: SILVER [X-X] rounds, GOLD [X-X] rounds, BLACK [X-X] rounds'. For FINISHER sections (time-capped): MUST include tier-based TOTAL REP targets: 'Target total reps: SILVER [X-X] reps, GOLD [X-X] reps, BLACK [X-X] reps'. For SUPERSET sections: 'Complete [X] rounds of the superset pair. Rest [X] seconds between rounds.' For CAPACITY sections: MUST mention: 'Target number of rounds according to tier'. Always include pacing strategy, rest guidance, and clear round structure.",
       "blocks": [
         {
           "label": "01",
           "exerciseName": "Exercise Name (use REVL naming: BB FFE Rev Lunge, SA DB Strict Press, DBall TNG GTS, etc.)",
-          "description": "Form cues, tempo notation (e.g., '2220', '2s pause', '3s eccentric'), or special instructions",
-          "repScheme": "MUST be specific: '10-8-8-8' (wave), '16-14-12' (descending), '8-7-6-5+' (descending with max), '10' (fixed), 'AMRAP' (only if truly unlimited), or specific rep ranges like '8-10'",
+          "shortDescription": "REQUIRED: Brief form cue or key instruction. MUST be 50-80 characters (not shorter, not longer). This is the PRIMARY description shown to users. Examples: 'Keep back flat, drive through heels, brace core' (65 chars) or 'Explosive hip extension, control descent, full range' (58 chars) or 'Row at steady pace, focus on smooth strokes' (47 chars - TOO SHORT, make it longer). Make it informative and actionable.",
+          "longDescription": "Detailed step-by-step instructions on how to perform this exercise correctly. Include: starting position, movement pattern, key form cues, breathing, common mistakes to avoid, and tempo guidance if applicable. 3-5 sentences.",
+          "description": "Legacy field - use shortDescription and longDescription instead",
+          "repScheme": "MUST be specific based on section type: For WAVE sections: '10-8-8-8' (wave), '16-14-12' (descending), '8-7-6-5+' (descending with max). For SUPERSET sections: '10' (fixed reps per exercise). For AMRAP/FOR_TIME/FINISHER sections (time-capped): MUST use 'AMRAP' - these are 'as many reps as possible' within the time cap, NOT round-based rep schemes. For FINISHER sections, NEVER use descending rep schemes like '12-10-8' - use 'AMRAP' instead. For other sections: specific rep ranges like '8-10' or fixed reps like '10'.",
           "tempo": "Optional: '2220', '2020', '2s pause', '3s eccentric', 'First 4 Reps: R1-2 = 2220'",
           "loadPercentage": "Optional: '@ 40-45-50-55%' (progressive across rounds) or '@ 60-65-70-75%'",
           "order": 1,
@@ -162,13 +202,28 @@ FOR MULTI-DAY PROGRAMS: Each workout in the workouts array follows the same stru
   ]
 }
 
-Section Types by Archetype:
-- PR1ME: WARMUP → WAVE (main lift) → SUPERSET (secondary) → Optional FINISHER → COOLDOWN
-- FORGE: WARMUP → SUPERSET (Block A) → SUPERSET (Block B) → Optional FINISHER → COOLDOWN
-- ENGIN3: WARMUP → EMOM (skill + engine + loaded movement) → Optional FINISHER → COOLDOWN
-- CIRCUIT_X: WARMUP → AMRAP (4-8 min) → AMRAP (4-8 min) → Optional FINISHER → COOLDOWN
-- CAPAC1TY: WARMUP → CAPACITY (12-20 min long block) → COOLDOWN
-- FLOWSTATE: WARMUP → FLOW (tempo work, KB flows, slow EMOMs) → COOLDOWN
+MANDATORY WORKOUT STRUCTURE REQUIREMENTS:
+⚠️ CRITICAL: ALL workouts MUST meet these minimum requirements:
+1. MINIMUM DURATION: Total workout time MUST be at least 35-40 minutes (NOT 30 minutes or less)
+2. MINIMUM SECTIONS: Every workout MUST have:
+   - WARMUP (5 min = 300s)
+   - AT LEAST 2 MAIN WORK SECTIONS (e.g., EMOM + AMRAP, or EMOM + FOR_TIME, or AMRAP + CIRCUIT, etc.)
+   - FINISHER (optional but recommended for workouts under 45 min)
+   - COOLDOWN (5 min = 300s)
+3. MAIN WORK SECTIONS: Must total at least 20-25 minutes of actual work time
+   - If using EMOM: Calculate (workSec + restSec) × rounds to ensure it's at least 12-16 minutes
+   - If using AMRAP: Must be at least 10-15 minutes duration
+   - If using FOR_TIME: Must be at least 15-20 minutes time cap
+   - If using CAPACITY: Must be at least 12-20 minutes
+4. TOTAL TIME CALCULATION: WARMUP (5min) + Main Work 1 (12-20min) + Main Work 2 (10-15min) + FINISHER (3-5min) + COOLDOWN (5min) = 35-50 minutes minimum
+
+Section Types by Archetype (MUST follow minimum structure above):
+- PR1ME: WARMUP → WAVE (main lift, 10-15min) → SUPERSET (secondary, 10-12min) → FINISHER (3-5min) → COOLDOWN = 33-37min minimum
+- FORGE: WARMUP → SUPERSET (Block A, 10-12min) → SUPERSET (Block B, 10-12min) → FINISHER (3-5min) → COOLDOWN = 33-37min minimum
+- ENGIN3: WARMUP → EMOM (12-16min) → AMRAP or FOR_TIME (10-15min) → FINISHER (3-5min) → COOLDOWN = 35-41min minimum
+- CIRCUIT_X: WARMUP → AMRAP (10-15min) → AMRAP (8-12min) → FINISHER (3-5min) → COOLDOWN = 31-37min minimum
+- CAPAC1TY: WARMUP → CAPACITY (12-20min) → FINISHER (3-5min) → COOLDOWN = 25-35min (if only one main section, MUST add second main section or extend CAPACITY to 18-25min)
+- FLOWSTATE: WARMUP → FLOW (10-15min) → AMRAP or EMOM (10-12min) → FINISHER (3-5min) → COOLDOWN = 33-37min minimum
 
 INTERVAL Section Type (Sprint Sessions):
 - Use INTERVAL for sprint/interval work with specific work:rest ratios
@@ -179,7 +234,11 @@ INTERVAL Section Type (Sprint Sessions):
 - Can be used as FINISHER or standalone section
 
 CRITICAL: EVERY SECTION MUST HAVE A TIME - NO EXCEPTIONS:
-- WARMUP: REQUIRED durationSec: 300-600 seconds (5-10 min). HYROX: 600-900 seconds (10-15 min)
+- WARMUP: REQUIRED durationSec: 300 seconds (5 min) for ALL non-HYROX workouts. HYROX: 600-900 seconds (10-15 min)
+  * ⚠️ NON-HYROX warmups MUST be exactly 300 seconds (5 minutes) - no exceptions
+  * ⚠️ NON-HYROX warmups MUST include minimum 3 exercises, typically 4 exercises
+  * ⚠️ If erg equipment (rower, bike erg, ski erg, assault bike) is available, include 1 erg exercise (~60 seconds) in the warmup
+  * Warmup structure: 1) Dynamic movement/mobility (1-2 exercises), 2) Erg machine if available (~60s), 3) Activation exercises (1-2 exercises)
 - COOLDOWN: REQUIRED durationSec: 300 seconds (5 min). HYROX: 300-600 seconds (5-10 min)
 - WAVE: REQUIRED durationSec: 600-1200 seconds (10-20 min) - total time for all waves
 - SUPERSET: REQUIRED durationSec: 600-900 seconds (10-15 min) - total time for superset block
@@ -199,21 +258,77 @@ CRITICAL: EVERY SECTION MUST HAVE A TIME - NO EXCEPTIONS:
 - INTERVAL: REQUIRED intervalWorkSec + intervalRestSec + intervalRounds (total time = (workSec + restSec) × rounds)
 
 TIME MANAGEMENT GUIDELINES:
-- WARMUP: 5-10 minutes (movement prep, activation, light cardio). HYROX: 10-15 minutes
+⚠️ CRITICAL: Total workout time MUST be at least 35-40 minutes. NEVER create a workout that is 30 minutes or less.
+
+- WARMUP: EXACTLY 5 minutes (300 seconds) for ALL non-HYROX workouts. Must include minimum 3 exercises, typically 4 exercises. If erg equipment (rower, bike erg, ski erg, assault bike) is available, include 1 erg exercise (~60 seconds). HYROX: 10-15 minutes
 - COOLDOWN: 5 minutes (mobility, stretching, breathing). HYROX: 5-10 minutes
-- Main work sections should fit within remaining time
-- EMOM calculations: (workSec + restSec) × rounds = total time (e.g., 45s+15s × 12 = 12:00)
-- Custom intervals: "Every 1:10" = 70s total (calculate work:rest ratio), "Every 3:30" = 210s total
-- AMRAP/FOR_TIME: Duration should be realistic for training level
-  * BEGINNER: 8-12 min AMRAPs, 15-20 min FOR_TIME caps
-  * INTERMEDIATE: 10-15 min AMRAPs, 20-30 min FOR_TIME caps
-  * ADVANCED: 12-20 min AMRAPs, 30-45 min FOR_TIME caps
-  * ELITE: 15-25 min AMRAPs, 45-60 min FOR_TIME caps
-  * HYROX: 20-40 min AMRAPs, 30-60 min FOR_TIME caps (long endurance blocks)
+- MAIN WORK SECTIONS: MUST have at least 2 main work sections totaling 20-25+ minutes
+  * First main section: 12-20 minutes (EMOM, AMRAP, FOR_TIME, CAPACITY, etc.)
+  * Second main section: 10-15 minutes (different format from first, e.g., if first is EMOM, second should be AMRAP or FOR_TIME)
+  * If archetype only specifies one main section (e.g., CAPAC1TY), you MUST add a second main section or extend the single section significantly
+- EMOM calculations: (workSec + restSec) × rounds = total time
+  * Example: 45s+15s × 16 = 16:00 (good for first main section)
+  * Example: 45s+15s × 12 = 12:00 (minimum for main section, pair with second section)
+  * ⚠️ NEVER create an EMOM shorter than 12 minutes for a main section
+- AMRAP/FOR_TIME: Duration should be realistic for training level AND fill available time
+  * BEGINNER: 10-15 min AMRAPs (minimum 10min), 15-20 min FOR_TIME caps
+  * INTERMEDIATE: 12-18 min AMRAPs (minimum 12min), 20-30 min FOR_TIME caps
+  * ADVANCED: 15-20 min AMRAPs (minimum 15min), 30-45 min FOR_TIME caps
+  * ELITE: 18-25 min AMRAPs (minimum 18min), 45-60 min FOR_TIME caps
+  * HYROX: 20-40 min AMRAPs, 60-90 min FOR_TIME caps (long endurance blocks)
 - FOR_TIME with rounds: "1:40 Cap × 4 Rounds" = durationSec: 100, rounds: 4, restBetweenRounds: 30-45
-- Total workout time = WARMUP + Main Work + FINISHER (optional) + COOLDOWN
+- FOR_TIME for HYROX workouts (60-90 min caps):
+  * ⚠️ CRITICAL: HYROX workouts can use TWO different formats - randomly vary between them:
+    1. ROUNDS FORMAT: Multiple rounds of all exercises (traditional HYROX)
+    2. TIMED STATIONS FORMAT: Each station has 5-10 minutes, then move to next station (new format)
+  
+  **FORMAT 1: ROUNDS FORMAT (Traditional HYROX)**
+  * ⚠️ CRITICAL: HYROX FOR_TIME sections MUST have multiple rounds to fill the time cap
+  * ⚠️ If durationSec is 3600 (60 min) or more, exercises MUST be repeated multiple times
+  * ⚠️ Calculate minimum rounds needed: For 5 exercises taking ~10-12 min per round, a 60-min cap needs 5-6 rounds minimum
+  * ⚠️ RUNNING BETWEEN EXERCISES: If running/running route equipment is available, you MUST include a "Run" exercise block between each main exercise
+    - Pattern: Exercise 1 → Run → Exercise 2 → Run → Exercise 3 → Run → Exercise 4 → Run → Exercise 5 → Run (back to Exercise 1)
+    - Run distance should be tier-based: SILVER 100-200m, GOLD 200-300m, BLACK 300-400m per run
+    - Each run should be a separate exercise block in the sequence
+    - Example: If you have 5 main exercises, you'll have 10 total blocks (5 exercises + 5 runs)
+  * ⚠️ note field MUST explicitly state: "Complete as many rounds as possible in [X:XX]. Move through exercises in order: [list all exercises including runs]. When you finish all exercises, immediately start again from the first exercise and repeat until time cap."
+  * ⚠️ MUST include tier-based round targets: "Target rounds: SILVER [X-X] rounds, GOLD [X-X] rounds, BLACK [X-X] rounds"
+  * Example: 60-min HYROX with 5 exercises + running (Wall Ball, Run, SkiErg, Run, Sandbag Lunges, Run, Rower, Run, Burpee Broad Jump, Run)
+    - Each round takes ~10-12 minutes (including runs)
+    - Target rounds: SILVER 4-5 rounds, GOLD 5-6 rounds, BLACK 6-7 rounds
+    - note: "Complete as many rounds as possible in 60:00. Move through exercises in order: Wall Ball Shot, Run, SkiErg, Run, Sandbag Lunges, Run, Rower, Run, Burpee Broad Jump, Run. When you finish all exercises, immediately start again from Wall Ball Shot and repeat until time cap. Target rounds: SILVER 4-5 rounds, GOLD 5-6 rounds, BLACK 6-7 rounds."
+  
+  **FORMAT 2: TIMED STATIONS FORMAT (New HYROX Format)**
+  * ⚠️ Use this format approximately 40-50% of the time for HYROX workouts to add variety
+  * ⚠️ Each exercise station has a fixed time duration (5-10 minutes), then automatically moves to next station
+  * ⚠️ Structure: Exercise 1 (5-10 min) → Exercise 2 (5-10 min) → Exercise 3 (5-10 min) → ... → Exercise N (5-10 min) → Repeat from Exercise 1 until time cap
+  * ⚠️ RUNNING BETWEEN EXERCISES: If running/running route equipment is available, you MUST include a "Run" exercise block between each main exercise
+    - Pattern: Exercise 1 (5-10 min) → Run (1-2 min) → Exercise 2 (5-10 min) → Run (1-2 min) → Exercise 3 (5-10 min) → ...
+    - Run distance should be tier-based: SILVER 100-200m, GOLD 200-300m, BLACK 300-400m per run
+  * ⚠️ For TIMED STATIONS format, you MUST:
+    - Set type to "FOR_TIME"
+    - Add field "stationDurationSec": 300-600 (5-10 minutes per station in seconds)
+    - Add field "isTimedStations": true (to indicate this is timed stations format, not rounds format)
+    - note field MUST state: "TIMED STATIONS FORMAT: Spend [X:XX] minutes at each station, then move to the next. Complete as many rounds as possible within [total time cap]. Move through stations in order: [list all stations]. When you finish all stations, immediately start again from the first station. Target rounds: SILVER [X-X] rounds, GOLD [X-X] rounds, BLACK [X-X] rounds."
+  * Example: 60-min HYROX with 5 exercises + running in TIMED STATIONS format
+    - stationDurationSec: 480 (8 minutes per station)
+    - Each round: 5 exercises × 8 min + 5 runs × 1.5 min = ~47.5 minutes
+    - Target rounds: SILVER 1 round, GOLD 1-2 rounds, BLACK 2 rounds
+    - note: "TIMED STATIONS FORMAT: Spend 8:00 minutes at each station, then move to the next. Complete as many rounds as possible within 60:00. Move through stations in order: Wall Ball Shot, Run, SkiErg, Run, Sandbag Lunges, Run, Rower, Run, Burpee Broad Jump, Run. When you finish all stations, immediately start again from Wall Ball Shot. Target rounds: SILVER 1 round, GOLD 1-2 rounds, BLACK 2 rounds."
+- FINISHER: 3-5 minutes (180-300 seconds) - HIGHLY RECOMMENDED for workouts under 45 minutes
+  * ⚠️ CRITICAL: FINISHER sections are ALWAYS time-capped AMRAP-style exercises
+  * ⚠️ repScheme MUST be 'AMRAP' (NOT descending rep schemes like '12-10-8' or '10-8-6')
+  * ⚠️ tierSilver/tierGold/tierBlack targetReps MUST represent TOTAL reps across the entire time cap (NOT reps per round)
+  * Example: 4-minute finisher with Burpee Box Jump Over
+    - repScheme: 'AMRAP' (NOT '12-10-8')
+    - tierSilver targetReps: 40-50 (total reps in 4 minutes, NOT per round)
+    - tierGold targetReps: 50-60 (total reps in 4 minutes, NOT per round)
+    - tierBlack targetReps: 60-70 (total reps in 4 minutes, NOT per round)
+  * note field MUST include: 'Complete as many reps as possible in [X:XX]. Target total reps: SILVER [X-X] reps, GOLD [X-X] reps, BLACK [X-X] reps'
+- Total workout time = WARMUP (5min) + Main Work 1 (12-20min) + Main Work 2 (10-15min) + FINISHER (3-5min) + COOLDOWN (5min) = 35-50 minutes
 - Always leave 2-3 minutes buffer for transitions
 - ⚠️ NEVER create a section without durationSec (or emomWorkSec/intervalWorkSec for EMOM/INTERVAL)
+- ⚠️ VERIFY: Before finalizing, calculate total time. If less than 35 minutes, ADD another main section or EXTEND existing sections
 
 TIER PRESCRIPTION GUIDELINES:
 - SILVER (Beginner/Intermediate): Focus on mechanics, lighter loads, steady pace, completion goal
@@ -250,6 +365,26 @@ CRITICAL: ERG MACHINES & DISTANCE-BASED EXERCISES - MANDATORY RULES:
 - For bodyweight exercises with reps (Push-ups, Pull-ups, etc.):
   * Use different targetReps per tier (as normal)
   * Distance/calories are NOT required
+
+WARMUP SECTION REQUIREMENTS (CRITICAL - NON-HYROX WORKOUTS ONLY):
+- Duration: EXACTLY 300 seconds (5 minutes) - never less, never more
+- Exercise count: Minimum 3 exercises, typically 4 exercises
+- Structure:
+  1. Dynamic movement/mobility (1-2 exercises): High knees, butt kicks, leg swings, arm circles, cat-cow, etc.
+  2. Erg machine (if available): ${hasErgEquipment ? 'Include 1 erg exercise (~60 seconds). Use rower, bike erg, ski erg, or assault bike based on available equipment. Distance: 200-300m for rower/ski, 10-15 cal for bike/assault bike.' : 'No erg equipment available - skip this step.'}
+  3. Activation exercises (1-2 exercises): Movement prep specific to the workout (e.g., goblet squats, band pull-aparts, dead bugs)
+- Example warmup with erg: 1) Dynamic Run Prep (2 rounds), 2) Easy Row 250m, 3) DB Plank Row (8-10), 4) Band Pull-Aparts (10)
+- Example warmup without erg: 1) Dynamic Run Prep (2 rounds), 2) Goblet Squats (10), 3) DB Plank Row (8-10), 4) Band Pull-Aparts (10)
+- ⚠️ NEVER create a warmup with only 1-2 exercises - always minimum 3, typically 4
+- ⚠️ NEVER create a warmup shorter than 5 minutes (300 seconds) or longer than 5 minutes for non-HYROX workouts
+
+EXERCISE DESCRIPTION REQUIREMENTS (CRITICAL):
+- shortDescription: MUST be 50-80 characters (not shorter, not longer). This is the PRIMARY text shown to users in workout cards.
+  * Too short (< 50 chars): "Row steady pace" (18 chars) ❌
+  * Good (50-80 chars): "Row at steady pace, focus on smooth strokes and controlled breathing" (65 chars) ✅
+  * Too long (> 80 chars): "Row at a comfortable pace to warm up the cardiovascular system and engage the upper and lower body" (103 chars) ❌
+- longDescription: Detailed 3-5 sentence instructions (150-300 characters). Only shown in tooltips/modals, never in main view.
+- Make shortDescription informative, actionable, and specific. Include key form cues, pace, or focus areas.
 
 REALISTIC WORKOUT DESIGN:
 - Ensure workouts are challenging but achievable within the time limit
@@ -385,7 +520,7 @@ CRITICAL REQUIREMENTS - REVL-LEVEL DETAIL:
 
 CRITICAL TIME CONSTRAINTS:
 - Total workout must fit within ${params.availableMinutes} minutes
-- WARMUP: 5-10 minutes
+- WARMUP: EXACTLY 5 minutes (300 seconds) for non-HYROX workouts. Must include minimum 3 exercises, typically 4 exercises. If erg equipment is available, include 1 erg exercise (~60 seconds). HYROX: 10-15 minutes
 - COOLDOWN: 5 minutes
 - Main work sections: ${params.availableMinutes - 15} minutes maximum (accounting for warmup/cooldown)
 - If generating multiple workouts, each must independently fit within ${params.availableMinutes} minutes

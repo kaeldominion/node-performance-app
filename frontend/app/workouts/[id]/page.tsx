@@ -21,6 +21,7 @@ import SectionSuperset from '@/components/workout/SectionSuperset';
 import SectionCapacity from '@/components/workout/SectionCapacity';
 import SectionFlow from '@/components/workout/SectionFlow';
 import ArchetypeBadge from '@/components/workout/ArchetypeBadge';
+import { WorkoutShareModal } from '@/components/workout/WorkoutShareModal';
 
 interface WorkoutSection {
   id: string;
@@ -59,6 +60,7 @@ export default function WorkoutPlayerPage() {
   const [rpe, setRpe] = useState(5);
   const [notes, setNotes] = useState('');
   const [deckMode, setDeckMode] = useState(true);
+  const [showShareModal, setShowShareModal] = useState(false);
   
   // Check URL params for view mode
   useEffect(() => {
@@ -73,10 +75,7 @@ export default function WorkoutPlayerPage() {
     // Allow viewing shared workouts without login
     if (workoutId) {
       loadWorkout();
-      // Only start session if user is logged in
-      if (user && !workoutId.startsWith('share_')) {
-        startSession();
-      }
+      // Don't auto-start session - only start when user actually begins a timer
     }
   }, [user, authLoading, workoutId]);
 
@@ -201,6 +200,11 @@ export default function WorkoutPlayerPage() {
         <LiveDeckPlayer
           workout={workout}
           sessionId={sessionId}
+          onCreateSession={async () => {
+            if (user && !workoutId.startsWith('share_')) {
+              await startSession();
+            }
+          }}
           onComplete={async (rpe: number, notes: string) => {
             await handleCompleteWorkout(rpe, notes);
           }}
@@ -252,24 +256,13 @@ export default function WorkoutPlayerPage() {
               )}
             </button>
           )}
-          {workout.shareId && (
-            <button
-              onClick={async () => {
-                const shareUrl = `${window.location.origin}/workouts/share_${workout.shareId}`;
-                try {
-                  await copyToClipboard(shareUrl);
-                  alert('Workout link copied to clipboard!');
-                } catch (err) {
-                  console.error('Failed to copy link:', err);
-                  alert('Failed to copy link. Please try again.');
-                }
-              }}
-              className="bg-node-volt text-deep-asphalt font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity shadow-lg flex items-center gap-2"
-              style={{ fontFamily: 'var(--font-space-grotesk)' }}
-            >
-              <Icons.SHARE size={20} /> Share Workout
-            </button>
-          )}
+          <button
+            onClick={() => setShowShareModal(true)}
+            className="bg-node-volt text-deep-asphalt font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity shadow-lg flex items-center gap-2"
+            style={{ fontFamily: 'var(--font-space-grotesk)' }}
+          >
+            <Icons.SHARE size={20} /> Share Workout
+          </button>
         </div>
       </>
     );
@@ -452,6 +445,15 @@ export default function WorkoutPlayerPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Share Modal */}
+      {workout && (
+        <WorkoutShareModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          workout={workout}
+        />
       )}
     </div>
   );

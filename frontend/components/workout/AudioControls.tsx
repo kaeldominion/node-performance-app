@@ -24,14 +24,13 @@ export function AudioControls({ compact = false }: AudioControlsProps) {
     return (
       <button
         onClick={toggleMute}
-        className="bg-panel/90 backdrop-blur-sm thin-border text-text-white px-3 py-1.5 rounded-lg hover:bg-panel transition-colors"
-        style={{ minWidth: config.touchTargetSize, minHeight: config.touchTargetSize }}
+        className="bg-panel thin-border text-text-white px-3 py-1.5 rounded-lg hover:border-node-volt transition-colors"
         title={settings.muted ? 'Unmute' : 'Mute'}
       >
         {settings.muted ? (
-          <Icons.X size={18} />
+          <Icons.X size={16} />
         ) : (
-          <span className="text-sm">🔊</span>
+          <Icons.VOLUME_2 size={16} />
         )}
       </button>
     );
@@ -41,10 +40,9 @@ export function AudioControls({ compact = false }: AudioControlsProps) {
     <div className="relative">
       <button
         onClick={() => setShowSettings(!showSettings)}
-        className="bg-panel/90 backdrop-blur-sm thin-border text-text-white px-3 py-1.5 rounded-lg hover:bg-panel transition-colors flex items-center gap-2"
-        style={{ minWidth: config.touchTargetSize, minHeight: config.touchTargetSize }}
+        className="bg-panel thin-border text-text-white px-3 py-1.5 rounded-lg hover:border-node-volt transition-colors flex items-center gap-2"
       >
-        {settings.muted ? <Icons.X size={18} /> : <span>🔊</span>}
+        {settings.muted ? <Icons.X size={16} /> : <Icons.VOLUME_2 size={16} />}
         <span className="hidden sm:inline text-xs">Audio</span>
       </button>
 
@@ -116,4 +114,5 @@ export function AudioControls({ compact = false }: AudioControlsProps) {
     </div>
   );
 }
+
 
