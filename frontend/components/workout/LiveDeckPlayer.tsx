@@ -53,6 +53,7 @@ interface LiveDeckPlayerProps {
   workout: Workout;
   sessionId: string | null;
   onComplete?: (rpe: number, notes: string) => void;
+  onCreateSession?: () => Promise<void>;
 }
 
 const SECTION_COLORS: Record<string, string> = {
