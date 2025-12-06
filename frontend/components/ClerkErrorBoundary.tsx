@@ -47,7 +47,11 @@ class ClerkErrorBoundaryClass extends Component<
 
   render() {
     if (this.state.hasError && this.props.isProduction) {
-      return <ClerkErrorScreen onRetry={() => window.location.reload()} />;
+      return <ClerkErrorScreen onRetry={() => {
+        if (typeof window !== 'undefined') {
+          window.location.reload();
+        }
+      }} />;
     }
 
     if (this.state.hasError && this.props.isDevMode) {
