@@ -39,25 +39,40 @@ export class WorkoutsService {
     const enrichedBlocks = await Promise.all(
       workout.sections.flatMap((section) =>
         section.blocks.map(async (block) => {
-          const exerciseData = await this.exercisesService.findByExerciseName(block.exerciseName);
-          return {
-            ...block,
-            tierSilver: block.tierPrescriptions.find((t) => t.tier === 'SILVER') || null,
-            tierGold: block.tierPrescriptions.find((t) => t.tier === 'GOLD') || null,
-            tierBlack: block.tierPrescriptions.find((t) => t.tier === 'BLACK') || null,
-            tierPrescriptions: undefined, // Remove from response
-            exerciseImageUrl: exerciseData?.imageUrl || null,
-            exerciseInstructions: exerciseData?.instructions || null,
-            exerciseVariations: exerciseData ? {
-              weightRanges: exerciseData.weightRanges,
-              durationRanges: exerciseData.durationRanges,
-              intensityLevels: exerciseData.intensityLevels,
-              repRanges: exerciseData.repRanges,
-              tempoOptions: exerciseData.tempoOptions,
-              equipmentVariations: exerciseData.equipmentVariations,
-              movementVariations: exerciseData.movementVariations,
-            } : null,
-          };
+          try {
+            const exerciseData = await this.exercisesService.findByExerciseName(block.exerciseName);
+            return {
+              ...block,
+              tierSilver: block.tierPrescriptions.find((t) => t.tier === 'SILVER') || null,
+              tierGold: block.tierPrescriptions.find((t) => t.tier === 'GOLD') || null,
+              tierBlack: block.tierPrescriptions.find((t) => t.tier === 'BLACK') || null,
+              tierPrescriptions: undefined, // Remove from response
+              exerciseImageUrl: exerciseData?.imageUrl || null,
+              exerciseInstructions: exerciseData?.instructions || null,
+              exerciseVariations: exerciseData ? {
+                weightRanges: exerciseData.weightRanges,
+                durationRanges: exerciseData.durationRanges,
+                intensityLevels: exerciseData.intensityLevels,
+                repRanges: exerciseData.repRanges,
+                tempoOptions: exerciseData.tempoOptions,
+                equipmentVariations: exerciseData.equipmentVariations,
+                movementVariations: exerciseData.movementVariations,
+              } : null,
+            };
+          } catch (error) {
+            console.error(`Error enriching exercise data for ${block.exerciseName}:`, error);
+            // Return block without exercise data if lookup fails
+            return {
+              ...block,
+              tierSilver: block.tierPrescriptions.find((t) => t.tier === 'SILVER') || null,
+              tierGold: block.tierPrescriptions.find((t) => t.tier === 'GOLD') || null,
+              tierBlack: block.tierPrescriptions.find((t) => t.tier === 'BLACK') || null,
+              tierPrescriptions: undefined,
+              exerciseImageUrl: null,
+              exerciseInstructions: null,
+              exerciseVariations: null,
+            };
+          }
         })
       )
     );
@@ -97,18 +112,59 @@ export class WorkoutsService {
 
     if (!workout) return null;
 
-    // Transform tierPrescriptions array to tierSilver, tierGold, tierBlack
+    // Enrich blocks with exercise data (images, variations, etc.)
+    const enrichedBlocks = await Promise.all(
+      workout.sections.flatMap((section) =>
+        section.blocks.map(async (block) => {
+          try {
+            const exerciseData = await this.exercisesService.findByExerciseName(block.exerciseName);
+            return {
+              ...block,
+              tierSilver: block.tierPrescriptions.find((t) => t.tier === 'SILVER') || null,
+              tierGold: block.tierPrescriptions.find((t) => t.tier === 'GOLD') || null,
+              tierBlack: block.tierPrescriptions.find((t) => t.tier === 'BLACK') || null,
+              tierPrescriptions: undefined, // Remove from response
+              exerciseImageUrl: exerciseData?.imageUrl || null,
+              exerciseInstructions: exerciseData?.instructions || null,
+              exerciseVariations: exerciseData ? {
+                weightRanges: exerciseData.weightRanges,
+                durationRanges: exerciseData.durationRanges,
+                intensityLevels: exerciseData.intensityLevels,
+                repRanges: exerciseData.repRanges,
+                tempoOptions: exerciseData.tempoOptions,
+                equipmentVariations: exerciseData.equipmentVariations,
+                movementVariations: exerciseData.movementVariations,
+              } : null,
+            };
+          } catch (error) {
+            console.error(`Error enriching exercise data for ${block.exerciseName}:`, error);
+            // Return block without exercise data if lookup fails
+            return {
+              ...block,
+              tierSilver: block.tierPrescriptions.find((t) => t.tier === 'SILVER') || null,
+              tierGold: block.tierPrescriptions.find((t) => t.tier === 'GOLD') || null,
+              tierBlack: block.tierPrescriptions.find((t) => t.tier === 'BLACK') || null,
+              tierPrescriptions: undefined,
+              exerciseImageUrl: null,
+              exerciseInstructions: null,
+              exerciseVariations: null,
+            };
+          }
+        })
+      )
+    );
+
+    // Reconstruct sections with enriched blocks
+    let blockIndex = 0;
     return {
       ...workout,
       sections: workout.sections.map((section) => ({
         ...section,
-        blocks: section.blocks.map((block) => ({
-          ...block,
-          tierSilver: block.tierPrescriptions.find((t) => t.tier === 'SILVER') || null,
-          tierGold: block.tierPrescriptions.find((t) => t.tier === 'GOLD') || null,
-          tierBlack: block.tierPrescriptions.find((t) => t.tier === 'BLACK') || null,
-          tierPrescriptions: undefined,
-        })),
+        blocks: section.blocks.map(() => {
+          const enrichedBlock = enrichedBlocks[blockIndex];
+          blockIndex++;
+          return enrichedBlock;
+        }),
       })),
     };
   }
