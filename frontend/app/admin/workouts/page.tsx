@@ -106,6 +106,21 @@ export default function AdminWorkoutsPage() {
     }
   };
 
+  const handleDelete = async (workoutId: string, workoutName: string) => {
+    if (!confirm(`Are you sure you want to delete "${workoutName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await workoutsApi.deleteAdmin(workoutId);
+      // Remove from list
+      setWorkouts(workouts.filter(w => w.id !== workoutId));
+    } catch (err: any) {
+      console.error('Failed to delete workout:', err);
+      setError(err.response?.data?.message || 'Failed to delete workout');
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center">
@@ -346,6 +361,12 @@ export default function AdminWorkoutsPage() {
                       ) : (
                         'Mark as Recommended'
                       )}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(workout.id, workout.name)}
+                      className="px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/30 rounded text-sm font-semibold hover:bg-red-500/20 transition-colors"
+                    >
+                      Delete
                     </button>
                   </div>
                 </div>

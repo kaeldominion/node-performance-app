@@ -164,17 +164,18 @@ export function ExerciseCard({ block, isActive = false, onClick, sectionColor }:
         {block.exerciseName}
       </h3>
 
-      {/* Description */}
-      {block.description && (
+      {/* Short Description - ONLY show shortDescription, NEVER longDescription or description */}
+      {block.shortDescription && block.shortDescription.length < 100 && (
         <p
           className="text-muted-text mb-3 text-xs uppercase tracking-wider"
           style={{
             lineHeight: 1.4,
           }}
         >
-          {block.description}
+          {block.shortDescription}
         </p>
       )}
+      {/* DO NOT show block.description or block.longDescription - they should NEVER appear */}
 
       {/* Rep Scheme */}
       {block.repScheme && !isErg && (

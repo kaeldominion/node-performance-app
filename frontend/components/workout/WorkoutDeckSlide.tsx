@@ -147,13 +147,14 @@ export function WorkoutDeckSlide({
         );
 
       case 'EMOM':
+      case 'E2MOM':
         return (
           <div className={`text-center max-w-6xl w-full ${isMobile ? 'space-y-4' : 'space-y-6'}`}>
             <div style={{ flexShrink: 0 }}>
               <WorkoutTimer
-                type="EMOM"
-                workSec={section.emomWorkSec || 45}
-                restSec={section.emomRestSec || 15}
+                type={section.type === 'E2MOM' ? 'E2MOM' : 'EMOM'}
+                workSec={section.emomWorkSec || (section.type === 'E2MOM' ? 90 : 45)}
+                restSec={section.emomRestSec || (section.type === 'E2MOM' ? 30 : 15)}
                 rounds={section.emomRounds || 12}
                 onComplete={() => setTimerComplete(true)}
               />

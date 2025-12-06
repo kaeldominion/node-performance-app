@@ -21,6 +21,7 @@ import SectionSuperset from '@/components/workout/SectionSuperset';
 import SectionCapacity from '@/components/workout/SectionCapacity';
 import SectionFlow from '@/components/workout/SectionFlow';
 import ArchetypeBadge from '@/components/workout/ArchetypeBadge';
+import { WorkoutShareModal } from '@/components/workout/WorkoutShareModal';
 
 interface WorkoutSection {
   id: string;
@@ -48,6 +49,8 @@ interface Workout {
 
 export default function WorkoutPlayerPage() {
   const { user, loading: authLoading } = useAuth();
+  const [showCoachAdminBypassConfirm, setShowCoachAdminBypassConfirm] = useState(false);
+  const [pendingCompletion, setPendingCompletion] = useState<{ rpe: number; notes: string } | null>(null);
   const router = useRouter();
   const params = useParams();
   const workoutId = params.id as string;
@@ -59,6 +62,7 @@ export default function WorkoutPlayerPage() {
   const [rpe, setRpe] = useState(5);
   const [notes, setNotes] = useState('');
   const [deckMode, setDeckMode] = useState(true);
+  const [showShareModal, setShowShareModal] = useState(false);
   
   // Check URL params for view mode
   useEffect(() => {
@@ -73,10 +77,7 @@ export default function WorkoutPlayerPage() {
     // Allow viewing shared workouts without login
     if (workoutId) {
       loadWorkout();
-      // Only start session if user is logged in
-      if (user && !workoutId.startsWith('share_')) {
-        startSession();
-      }
+      // Don't auto-start session - only start when user actually begins a timer
     }
   }, [user, authLoading, workoutId]);
 
@@ -117,7 +118,7 @@ export default function WorkoutPlayerPage() {
     }
   };
 
-  const handleCompleteWorkout = async (finalRpe: number, finalNotes: string) => {
+  const handleCompleteWorkout = async (finalRpe: number, finalNotes: string, bypassValidation: boolean = false) => {
     if (!sessionId) return;
 
     try {
@@ -125,6 +126,7 @@ export default function WorkoutPlayerPage() {
         completed: true,
         rpe: finalRpe,
         notes: finalNotes,
+        bypassValidation,
       });
       
       // Check for newly earned achievements
@@ -201,6 +203,11 @@ export default function WorkoutPlayerPage() {
         <LiveDeckPlayer
           workout={workout}
           sessionId={sessionId}
+          onCreateSession={async () => {
+            if (user && !workoutId.startsWith('share_')) {
+              await startSession();
+            }
+          }}
           onComplete={async (rpe: number, notes: string) => {
             await handleCompleteWorkout(rpe, notes);
           }}
@@ -252,24 +259,13 @@ export default function WorkoutPlayerPage() {
               )}
             </button>
           )}
-          {workout.shareId && (
-            <button
-              onClick={async () => {
-                const shareUrl = `${window.location.origin}/workouts/share_${workout.shareId}`;
-                try {
-                  await copyToClipboard(shareUrl);
-                  alert('Workout link copied to clipboard!');
-                } catch (err) {
-                  console.error('Failed to copy link:', err);
-                  alert('Failed to copy link. Please try again.');
-                }
-              }}
-              className="bg-node-volt text-deep-asphalt font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity shadow-lg flex items-center gap-2"
-              style={{ fontFamily: 'var(--font-space-grotesk)' }}
-            >
-              <Icons.SHARE size={20} /> Share Workout
-            </button>
-          )}
+          <button
+            onClick={() => setShowShareModal(true)}
+            className="bg-node-volt text-deep-asphalt font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity shadow-lg flex items-center gap-2"
+            style={{ fontFamily: 'var(--font-space-grotesk)' }}
+          >
+            <Icons.SHARE size={20} /> Share Workout
+          </button>
         </div>
       </>
     );
@@ -448,6 +444,55 @@ export default function WorkoutPlayerPage() {
                 className="flex-1 bg-node-volt text-dark font-bold px-4 py-2 rounded hover:opacity-90"
               >
                 Save & Complete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share Modal */}
+      {workout && (
+        <WorkoutShareModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          workout={workout}
+        />
+      )}
+
+      {/* Coach/Admin Bypass Confirmation */}
+      {showCoachAdminBypassConfirm && pendingCompletion && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-panel thin-border rounded-lg max-w-md w-full p-6 sm:p-8 space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                Mark as Complete Without Requirements?
+              </h2>
+              <p className="text-muted-text text-sm">
+                You have coach/admin permissions. This will bypass completion validation requirements.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <button
+                onClick={() => {
+                  setShowCoachAdminBypassConfirm(false);
+                  setPendingCompletion(null);
+                }}
+                className="flex-1 bg-panel thin-border text-text-white px-6 py-3 rounded-lg hover:bg-panel transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  setShowCoachAdminBypassConfirm(false);
+                  if (pendingCompletion) {
+                    await handleCompleteWorkout(pendingCompletion.rpe, pendingCompletion.notes, true);
+                    setPendingCompletion(null);
+                  }
+                }}
+                className="flex-1 bg-node-volt text-dark font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
+                style={{ fontFamily: 'var(--font-space-grotesk)' }}
+              >
+                Mark Complete
               </button>
             </div>
           </div>

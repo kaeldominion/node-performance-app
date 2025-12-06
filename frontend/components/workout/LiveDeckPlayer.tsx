@@ -29,6 +29,11 @@ interface WorkoutSection {
   emomWorkSec?: number;
   emomRestSec?: number;
   emomRounds?: number;
+  intervalWorkSec?: number;
+  intervalRestSec?: number;
+  intervalRounds?: number;
+  stationDurationSec?: number; // For timed stations format (5-10 min per station)
+  isTimedStations?: boolean; // Flag for timed stations format vs rounds format
   note?: string;
   blocks: any[];
 }
@@ -40,6 +45,8 @@ interface Workout {
   archetype?: string;
   description?: string;
   sections: WorkoutSection[];
+  averageRating?: number;
+  ratingCount?: number;
 }
 
 interface LiveDeckPlayerProps {
@@ -58,21 +65,37 @@ const SECTION_COLORS: Record<string, string> = {
   SUPERSET: '#ccff00',
   CAPACITY: '#ff6b6b',
   FLOW: '#9b59b6',
-  FINISHER: '#ff6b6b',
+  FINISHER: '#0066ff', // Blue to match timer color scheme
   COOLDOWN: '#4a9eff',
 };
 
-export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlayerProps) {
+export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession }: LiveDeckPlayerProps) {
   const router = useRouter();
   const [showIntro, setShowIntro] = useState(true);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  const [introSlideIndex, setIntroSlideIndex] = useState(0); // For mobile intro slides
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showSectionMenu, setShowSectionMenu] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [showIncompleteWarning, setShowIncompleteWarning] = useState(false);
+  const [showSectionCelebration, setShowSectionCelebration] = useState(false);
+  const [celebratedSectionIndex, setCelebratedSectionIndex] = useState<number | null>(null);
+  const [showCoachAdminBypassConfirm, setShowCoachAdminBypassConfirm] = useState(false);
+  const [pendingCompletion, setPendingCompletion] = useState<any>(null);
   const [participants, setParticipants] = useState<Array<{ id?: string; name: string; email?: string; isSignedUp: boolean; avatarUrl?: string }>>([]);
   const [activeStation, setActiveStation] = useState(0);
   const [currentRound, setCurrentRound] = useState(1);
+  // Track active exercise for AMRAP/CIRCUIT/FOR_TIME sections
+  const [activeExerciseIndex, setActiveExerciseIndex] = useState(0);
+  // Track current phase for rest highlighting
+  const [currentPhase, setCurrentPhase] = useState<'work' | 'rest'>('work');
+  // Track which sections have completed their timers
+  const [completedSections, setCompletedSections] = useState<Set<number>>(new Set());
+  // Track total elapsed time for timed stations sections
+  const [timedStationsElapsedTime, setTimedStationsElapsedTime] = useState(0);
+  // Track if session has been started (only when timer is actually started)
+  const [sessionStarted, setSessionStarted] = useState(false);
   
   const { config, isMobile, isTablet, isDesktop, isTV, getExerciseGridColumns } = useResponsiveLayout();
   const { playSound, playVoice } = useAudioSystem();
@@ -81,6 +104,7 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
   const { theme, toggleTheme } = useTheme();
   
   const controlsTimeoutRef = useRef<number | undefined>(undefined);
+  const introControlsTimeoutRef = useRef<number | undefined>(undefined);
   const sectionRef = useRef<HTMLDivElement>(null);
   const touchStartRef = useRef<number | null>(null);
   const touchEndRef = useRef<number | null>(null);
@@ -113,6 +137,11 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
     }
   }, [safeSectionIndex, currentSectionIndex]);
 
+  // Reset active exercise index when section changes
+  useEffect(() => {
+    setActiveExerciseIndex(0);
+  }, [safeSectionIndex]);
+
   const currentSection = workout.sections[safeSectionIndex];
   if (!currentSection) {
     return (
@@ -122,17 +151,23 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
     );
   }
 
-  const isFirstSection = safeSectionIndex === 0;
+  // Calculate total pages (intro + sections) - available throughout component
+  const totalPages = workout.sections.length + 1; // +1 for intro
+  const currentPage = showIntro ? 1 : safeSectionIndex + 2; // Intro is page 1, first section is page 2
+
+  const isFirstSection = safeSectionIndex === 0 && !showIntro;
   const isLastSection = safeSectionIndex === workout.sections.length - 1;
   const sectionColor = SECTION_COLORS[currentSection.type] || '#ccff00';
   const isHyrox = isHyroxWorkout(workout);
 
-  // Calculate progress
-  const progress = ((safeSectionIndex + 1) / workout.sections.length) * 100;
+  // Calculate progress (includes intro)
+  const progress = showIntro 
+    ? (1 / totalPages) * 100 
+    : ((safeSectionIndex + 2) / totalPages) * 100; // +2 because intro is page 1, first section is page 2
 
-  // Auto-hide controls
+  // Auto-hide controls for live deck
   useEffect(() => {
-    if (showControls) {
+    if (showControls && !showIntro) {
       controlsTimeoutRef.current = window.setTimeout(() => {
         setShowControls(false);
       }, 4000);
@@ -142,12 +177,31 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
         window.clearTimeout(controlsTimeoutRef.current);
       }
     };
-  }, [showControls, currentSectionIndex]);
+  }, [showControls, currentSectionIndex, showIntro]);
+
+  // Auto-hide controls for intro screen
+  useEffect(() => {
+    if (showControls && showIntro) {
+      introControlsTimeoutRef.current = window.setTimeout(() => {
+        setShowControls(false);
+      }, 4000);
+    }
+    return () => {
+      if (introControlsTimeoutRef.current) {
+        window.clearTimeout(introControlsTimeoutRef.current);
+      }
+    };
+  }, [showControls, showIntro]);
 
   // Fullscreen handling
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      const isFull = !!document.fullscreenElement;
+      setIsFullscreen(isFull);
+      // Hide controls in fullscreen
+      if (isFull) {
+        setShowControls(false);
+      }
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
@@ -170,10 +224,22 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
     const minSwipeDistance = 50;
 
     if (Math.abs(diff) > minSwipeDistance) {
+      // If on intro screen and mobile, handle intro slide navigation
+      if (showIntro && isMobile) {
+        if (diff > 0) {
+          // Swipe left - next slide
+          setIntroSlideIndex((prev) => Math.min(prev + 1, 2));
+        } else {
+          // Swipe right - previous slide
+          setIntroSlideIndex((prev) => Math.max(prev - 1, 0));
+        }
+      } else if (!showIntro) {
+        // Regular workout section navigation
       if (diff > 0) {
         handleNextSection();
       } else {
         handlePreviousSection();
+        }
       }
     }
     
@@ -183,7 +249,70 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
 
   const handleMouseMove = useCallback(() => {
     setShowControls(true);
+    // Reset timeout on mouse move
+    if (controlsTimeoutRef.current) {
+      window.clearTimeout(controlsTimeoutRef.current);
+    }
+    if (introControlsTimeoutRef.current) {
+      window.clearTimeout(introControlsTimeoutRef.current);
+    }
   }, []);
+
+  // Check if all timers have been completed
+  const allTimersCompleted = useCallback(() => {
+    // Count sections that have timers (WARMUP, COOLDOWN, and FINISHER don't require timer completion)
+    const sectionsWithTimers = workout.sections.filter((section, idx) => {
+      // Skip WARMUP, COOLDOWN, and FINISHER - they don't need timer completion
+      if (section.type === 'WARMUP' || section.type === 'COOLDOWN' || section.type === 'FINISHER') {
+        return false;
+      }
+      return section.durationSec || 
+             ((section.type === 'EMOM' || section.type === 'E2MOM') && section.emomWorkSec) ||
+             (section.type === 'INTERVAL' && section.intervalWorkSec);
+    });
+    
+    // If no sections have timers, allow completion (e.g., all WARMUP/COOLDOWN)
+    if (sectionsWithTimers.length === 0) {
+      return true;
+    }
+    
+    // Check if all sections with timers have been completed
+    return sectionsWithTimers.every((section) => {
+      const sectionIndex = workout.sections.indexOf(section);
+      return completedSections.has(sectionIndex);
+    });
+  }, [workout.sections, completedSections]);
+
+  const handleSectionTimerComplete = useCallback((sectionIndex: number) => {
+    setCompletedSections((prev) => new Set([...prev, sectionIndex]));
+    
+    // Trigger celebration for section completion
+    const section = workout.sections[sectionIndex];
+    // Only celebrate main sections (not warmup, cooldown, finisher)
+    if (section && section.type !== 'WARMUP' && section.type !== 'COOLDOWN' && section.type !== 'FINISHER') {
+      triggerCelebration();
+      triggerConfetti();
+      playSound('complete');
+      setCelebratedSectionIndex(sectionIndex);
+      setShowSectionCelebration(true);
+      
+      // Auto-hide celebration after 3 seconds
+      setTimeout(() => {
+        setShowSectionCelebration(false);
+        setCelebratedSectionIndex(null);
+      }, 3000);
+    }
+  }, [workout.sections, triggerCelebration, triggerConfetti, playSound]);
+
+  // Reset active station and elapsed time when entering a timed stations section
+  useEffect(() => {
+    if (currentSection.type === 'FOR_TIME' && currentSection.isTimedStations) {
+      setActiveStation(0);
+      setActiveExerciseIndex(0);
+      setCurrentRound(1);
+      setTimedStationsElapsedTime(0);
+    }
+  }, [currentSectionIndex, currentSection.type, currentSection.isTimedStations]);
 
   const handleNextSection = useCallback(() => {
     const safeIndex = Math.min(Math.max(0, currentSectionIndex), workout.sections.length - 1);
@@ -193,15 +322,23 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
       setCurrentSectionIndex(safeIndex + 1);
       setActiveStation(0);
       setCurrentRound(1);
+      setActiveExerciseIndex(0); // Reset active exercise when moving to next section
       if (sectionRef.current) {
         sectionRef.current.scrollTop = 0;
       }
     } else {
+      // Only show rating modal if all timers have been completed
+      if (allTimersCompleted()) {
       setShowRatingModal(true);
+      } else {
+        // Show warning modal that timers were skipped
+        setShowIncompleteWarning(true);
+      }
     }
-  }, [currentSectionIndex, workout.sections.length, playSound, triggerTransition]);
+  }, [currentSectionIndex, workout.sections.length, playSound, triggerTransition, allTimersCompleted]);
 
   const handleStartWorkout = () => {
+    setShowControls(false); // Hide controls when starting
     setShowIntro(false);
     playSound('transition');
   };
@@ -212,6 +349,14 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
       playSound('transition');
       triggerTransition('backward', 500);
       setCurrentSectionIndex(safeIndex - 1);
+      setActiveExerciseIndex(0); // Reset active exercise when moving to previous section
+      if (sectionRef.current) {
+        sectionRef.current.scrollTop = 0;
+      }
+    } else if (safeIndex === 0) {
+      // Go back to intro from first section
+      playSound('transition');
+      setShowIntro(true);
       if (sectionRef.current) {
         sectionRef.current.scrollTop = 0;
       }
@@ -219,11 +364,20 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
   }, [currentSectionIndex, playSound, triggerTransition]);
 
   const handleJumpToSection = (index: number) => {
-    if (index >= 0 && index < workout.sections.length) {
+    if (index === -1) {
+      // Jump to intro
+      playSound('transition');
+      setShowIntro(true);
+      setShowSectionMenu(false);
+    } else if (index >= 0 && index < workout.sections.length) {
       playSound('transition');
       const safeIndex = Math.min(Math.max(0, currentSectionIndex), workout.sections.length - 1);
       triggerTransition(index > safeIndex ? 'forward' : 'backward', 500);
+      setShowIntro(false);
       setCurrentSectionIndex(index);
+      setActiveStation(0);
+      setCurrentRound(1);
+      setActiveExerciseIndex(0); // Reset active exercise when jumping to section
       setShowSectionMenu(false);
       if (sectionRef.current) {
         sectionRef.current.scrollTop = 0;
@@ -254,6 +408,7 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
   };
 
   const handlePhaseChange = (phase: 'work' | 'rest', round: number) => {
+    setCurrentPhase(phase);
     if (phase === 'work' && currentSection.type === 'EMOM') {
       const newStation = (round - 1) % (currentSection.blocks?.length || 1);
       setActiveStation(newStation);
@@ -316,57 +471,257 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
 
     switch (currentSection.type) {
       case 'EMOM':
+      case 'E2MOM':
+        const emomBlockCount = currentSection.blocks?.length || 0;
+        const emomMaxColumns = isHyrox ? 8 : 6; // HYROX can have more
+        const emomActualColumns = Math.min(emomBlockCount, emomMaxColumns);
+        const emomIsSmallLayout = emomBlockCount >= 2 && emomBlockCount <= 4;
+        const emomIsSingleCard = emomBlockCount === 1;
+        // For EMOM, use larger cards to show more info - only compact if 5+ exercises
+        const emomShouldBeCompact = emomBlockCount >= 5;
+        
+        return (
+          <div className="w-full h-full flex flex-col" style={{ gap: isMobile ? '0.75rem' : '1rem', maxHeight: '100%', padding: isMobile ? '0.5rem' : '1rem' }}>
+            {/* Timer and Station Indicator - Top Row */}
+            <div className="flex-shrink-0 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+              <div style={{ flexShrink: 0 }}>
+            <DeckTimer
+                  key={`${currentSection.type.toLowerCase()}-${currentSection.id}-${safeSectionIndex}`}
+              type={currentSection.type === 'E2MOM' ? 'E2MOM' : 'EMOM'}
+              workSec={currentSection.emomWorkSec || (currentSection.type === 'E2MOM' ? 90 : 45)}
+              restSec={currentSection.emomRestSec || (currentSection.type === 'E2MOM' ? 30 : 15)}
+              rounds={currentSection.emomRounds || 12}
+              onPhaseChange={handlePhaseChange}
+              autoStart={false}
+              showPreCountdown={true}
+                  onComplete={async () => {
+                    handleSectionTimerComplete(safeSectionIndex);
+                    // Create session when first timer is started (if not already created)
+                    if (!sessionStarted && !sessionId && onCreateSession) {
+                      await onCreateSession();
+                      setSessionStarted(true);
+                    } else if (!sessionStarted && sessionId) {
+                      setSessionStarted(true);
+                    }
+                  }}
+                />
+              </div>
+              <div style={{ flexShrink: 0 }}>
+            <StationIndicator
+              totalStations={currentSection.blocks?.length || 1}
+              activeStation={activeStation}
+              currentRound={currentRound}
+              totalRounds={currentSection.emomRounds || 12}
+              nextStation={(activeStation + 1) % (currentSection.blocks?.length || 1)}
+              stationNames={currentSection.blocks?.map((b: any) => b.exerciseName)}
+            />
+              </div>
+            </div>
+            
+            {/* Exercise Cards - Fill remaining space */}
+            <div
+              className="grid justify-center w-full flex-1 min-h-0"
+              style={{
+                gridTemplateColumns: emomIsSingleCard ? '1fr' : `repeat(${emomActualColumns}, 1fr)`,
+                gap: emomIsSmallLayout ? (isMobile ? '1rem' : '1.5rem') : (isMobile ? '0.75rem' : '1rem'),
+                maxWidth: emomIsSingleCard ? '600px' : '100%',
+                alignContent: 'start',
+              }}
+            >
+              {currentSection.blocks?.map((block: any, idx: number) => {
+                const isActive = idx === activeStation;
+                const nextStation = (activeStation + 1) % (currentSection.blocks?.length || 1);
+                const isNext = idx === nextStation;
+                // During rest phase, highlight the next exercise with "get ready" style
+                const isRestPhase = currentPhase === 'rest' && isNext && !isActive;
+                
+                return (
+                  <CollapsibleExerciseCard
+                    key={`${currentSection.id}-block-${block.id || idx}`}
+                    block={block}
+                    isActive={isActive}
+                    isRestPhase={isRestPhase}
+                    sectionColor={sectionColor}
+                    compact={emomShouldBeCompact}
+                    largeText={emomIsSmallLayout || emomIsSingleCard}
+                    showFullDescription={emomBlockCount <= 2 && !isMobile}
+                    showTiersAlways={true}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        );
+
+      case 'INTERVAL':
+        // Sprint/interval sessions: short work periods with long rest
+        const intervalBlockCount = currentSection.blocks?.length || 0;
+        const intervalMaxColumns = isHyrox ? 8 : 6;
+        const intervalActualColumns = Math.min(intervalBlockCount, intervalMaxColumns);
+        const intervalIsSmallLayout = intervalBlockCount >= 2 && intervalBlockCount <= 4;
+        const intervalIsSingleCard = intervalBlockCount === 1;
+        
         return (
           <div className="w-full h-full flex flex-col items-center justify-center" style={{ gap: '1rem', maxHeight: '100%' }}>
             <div style={{ flexShrink: 0 }}>
               <DeckTimer
-                key={`emom-${currentSection.id}-${safeSectionIndex}`}
-                type="EMOM"
-                workSec={currentSection.emomWorkSec || 45}
-                restSec={currentSection.emomRestSec || 15}
-                rounds={currentSection.emomRounds || 12}
+                key={`interval-${currentSection.id}-${safeSectionIndex}`}
+                type="INTERVAL"
+                workSec={currentSection.intervalWorkSec || 20}
+                restSec={currentSection.intervalRestSec || 100}
+                rounds={currentSection.intervalRounds || 8}
                 onPhaseChange={handlePhaseChange}
                 autoStart={false}
                 showPreCountdown={true}
-              />
-            </div>
-            <div style={{ flexShrink: 0 }}>
-              <StationIndicator
-                totalStations={currentSection.blocks?.length || 1}
-                activeStation={activeStation}
-                currentRound={currentRound}
-                totalRounds={currentSection.emomRounds || 12}
-                nextStation={(activeStation + 1) % (currentSection.blocks?.length || 1)}
-                stationNames={currentSection.blocks?.map((b: any) => b.exerciseName)}
+                onComplete={async () => {
+                  handleSectionTimerComplete(safeSectionIndex);
+                  // Create session when first timer is started (if not already created)
+                  if (!sessionStarted && !sessionId && onCreateSession) {
+                    await onCreateSession();
+                    setSessionStarted(true);
+                  } else if (!sessionStarted && sessionId) {
+                    setSessionStarted(true);
+                  }
+                }}
               />
             </div>
             <div
               className="grid justify-center w-full"
               style={{
-                gridTemplateColumns: `repeat(${Math.min(currentSection.blocks?.length || 1, getExerciseGridColumns('EMOM'))}, 1fr)`,
-                gap: '0.75rem',
+                gridTemplateColumns: intervalIsSingleCard ? '1fr' : `repeat(${intervalActualColumns}, 1fr)`,
+                gap: intervalIsSmallLayout ? '1.5rem' : '0.75rem',
                 flex: '1 1 auto',
                 minHeight: 0,
                 maxHeight: '100%',
                 overflow: 'hidden',
+                maxWidth: intervalIsSingleCard ? '600px' : '100%',
               }}
             >
               {currentSection.blocks?.map((block: any, idx: number) => (
                 <CollapsibleExerciseCard
                   key={`${currentSection.id}-block-${block.id || idx}`}
                   block={block}
-                  isActive={idx === activeStation}
+                  isActive={idx === activeExerciseIndex}
                   sectionColor={sectionColor}
-                  compact={true}
+                  compact={!intervalIsSmallLayout && !intervalIsSingleCard}
+                  largeText={intervalIsSmallLayout || intervalIsSingleCard}
+                  showFullDescription={intervalBlockCount <= 2 && !isMobile}
+                  onClick={() => setActiveExerciseIndex(idx)}
                 />
               ))}
             </div>
           </div>
         );
 
-      case 'AMRAP':
-      case 'CIRCUIT':
       case 'FOR_TIME':
+        // Check if this is timed stations format
+        if (currentSection.isTimedStations && currentSection.stationDurationSec) {
+          // TIMED STATIONS FORMAT: Each station has fixed duration, then moves to next
+          const timedStationsBlockCount = currentSection.blocks?.length || 0;
+          const timedStationsMaxColumns = isHyrox ? 8 : 6;
+          const timedStationsActualColumns = Math.min(timedStationsBlockCount, timedStationsMaxColumns);
+          const timedStationsIsSmallLayout = timedStationsBlockCount >= 2 && timedStationsBlockCount <= 4;
+          const timedStationsIsSingleCard = timedStationsBlockCount === 1;
+          const timedStationsShouldBeCompact = timedStationsBlockCount >= 5;
+          
+          // Calculate total rounds possible (for display)
+          const stationDuration = currentSection.stationDurationSec;
+          const totalDuration = currentSection.durationSec || 3600;
+          const estimatedRounds = Math.floor(totalDuration / (stationDuration * timedStationsBlockCount));
+          
+          return (
+            <div className="w-full h-full flex flex-col" style={{ gap: isMobile ? '0.75rem' : '1rem', maxHeight: '100%', padding: isMobile ? '0.5rem' : '1rem' }}>
+              {/* Timer and Station Indicator - Top Row */}
+              <div className="flex-shrink-0 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+                <div style={{ flexShrink: 0 }}>
+                  <DeckTimer
+                    key={`timed-station-${currentSection.id}-${safeSectionIndex}-${activeStation}`}
+                    type="COUNTDOWN"
+                    durationSec={stationDuration}
+                    autoStart={false}
+                    showPreCountdown={true}
+                    onComplete={async () => {
+                      // Add this station's duration to elapsed time
+                      let shouldAdvance = false;
+                      let newElapsed = 0;
+                      
+                      setTimedStationsElapsedTime(prev => {
+                        newElapsed = prev + stationDuration;
+                        
+                        // Check if total time cap is reached
+                        if (newElapsed >= totalDuration) {
+                          // Time cap reached - mark section as complete
+                          handleSectionTimerComplete(safeSectionIndex);
+                          return newElapsed;
+                        }
+                        
+                        // Time cap not reached - will advance to next station
+                        shouldAdvance = true;
+                        return newElapsed;
+                      });
+                      
+                      // Move to next station if time cap not reached
+                      if (shouldAdvance && newElapsed < totalDuration) {
+                        const nextStation = (activeStation + 1) % timedStationsBlockCount;
+                        setActiveStation(nextStation);
+                        setActiveExerciseIndex(nextStation);
+                        
+                        // If we've completed all stations, increment round
+                        if (nextStation === 0) {
+                          setCurrentRound(prev => prev + 1);
+                        }
+                      }
+                      
+                      // Create session when first timer is started (if not already created)
+                      if (!sessionStarted && !sessionId && onCreateSession) {
+                        await onCreateSession();
+                        setSessionStarted(true);
+                      } else if (!sessionStarted && sessionId) {
+                        setSessionStarted(true);
+                      }
+                    }}
+                  />
+                </div>
+                <div style={{ flexShrink: 0 }}>
+                  <StationIndicator
+                    totalStations={timedStationsBlockCount}
+                    activeStation={activeStation}
+                    currentRound={currentRound}
+                    totalRounds={estimatedRounds}
+                    nextStation={(activeStation + 1) % timedStationsBlockCount}
+                    stationNames={currentSection.blocks?.map((b: any) => b.exerciseName)}
+                  />
+                </div>
+              </div>
+              
+              {/* Exercise Cards - Fill remaining space */}
+              <div
+                className="grid justify-center w-full flex-1 min-h-0"
+                style={{
+                  gridTemplateColumns: timedStationsIsSingleCard ? '1fr' : `repeat(${timedStationsActualColumns}, 1fr)`,
+                  gap: timedStationsIsSmallLayout ? (isMobile ? '1rem' : '1.5rem') : (isMobile ? '0.75rem' : '1rem'),
+                  maxWidth: timedStationsIsSingleCard ? '600px' : '100%',
+                  alignContent: 'start',
+                }}
+              >
+                {currentSection.blocks?.map((block: any, idx: number) => (
+                  <CollapsibleExerciseCard
+                    key={`${currentSection.id}-block-${block.id || idx}`}
+                    block={block}
+                    isActive={idx === activeStation}
+                    sectionColor={sectionColor}
+                    compact={timedStationsShouldBeCompact}
+                    largeText={timedStationsIsSmallLayout || timedStationsIsSingleCard}
+                    showFullDescription={timedStationsBlockCount <= 2 && !isMobile}
+                    showTiersAlways={true}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        }
+        
+        // Regular FOR_TIME format (rounds-based)
         // Parse tier target rounds from note
         const parseTierTargets = (note: string | undefined) => {
           if (!note) return null;
@@ -382,57 +737,129 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
         };
         
         const tierTargets = parseTierTargets(currentSection.note);
+        const blockCount = currentSection.blocks?.length || 0;
+        const maxColumns = isHyrox ? 8 : 6; // HYROX can have more
+        const actualColumns = Math.min(blockCount, maxColumns);
+        const isSmallLayout = blockCount >= 2 && blockCount <= 4;
+        const isSingleCard = blockCount === 1;
         
         return (
           <div className="w-full h-full flex flex-col items-center justify-center" style={{ gap: '1rem', maxHeight: '100%' }}>
             <div style={{ flexShrink: 0 }}>
-              <DeckTimer
+            <DeckTimer
                 key={`amrap-${currentSection.id}-${safeSectionIndex}`}
-                type="AMRAP"
-                durationSec={currentSection.durationSec || 720}
-                autoStart={false}
-                showPreCountdown={true}
-              />
+              type="AMRAP"
+              durationSec={currentSection.durationSec || 720}
+              autoStart={false}
+              showPreCountdown={true}
+              onComplete={async () => {
+                handleSectionTimerComplete(safeSectionIndex);
+                // Create session when first timer is started (if not already created)
+                if (!sessionStarted && !sessionId && onCreateSession) {
+                  await onCreateSession();
+                  setSessionStarted(true);
+                } else if (!sessionStarted && sessionId) {
+                  setSessionStarted(true);
+                }
+              }}
+            />
             </div>
-            
-            {/* Tier Target Rounds Display - Brutalist */}
-            {tierTargets && (
-              <div className="flex items-center gap-3" style={{ flexShrink: 0 }}>
-                <div className="text-xs text-muted-text uppercase tracking-wider font-mono">Target Rounds:</div>
-                <div className="flex items-center gap-2">
-                  <div className="bg-panel thin-border px-3 py-1.5">
-                    <div className="text-xs text-muted-text uppercase tracking-wider font-mono mb-0.5">SILVER</div>
-                    <div className="text-sm font-bold text-node-volt">{tierTargets.silver}</div>
-                  </div>
-                  <div className="bg-panel thin-border px-3 py-1.5" style={{ borderColor: '#ffd700' }}>
-                    <div className="text-xs text-muted-text uppercase tracking-wider font-mono mb-0.5">GOLD</div>
-                    <div className="text-sm font-bold" style={{ color: '#ffd700' }}>{tierTargets.gold}</div>
-                  </div>
-                  <div className="bg-panel thin-border px-3 py-1.5" style={{ borderColor: 'rgba(255, 255, 255, 0.4)' }}>
-                    <div className="text-xs text-muted-text uppercase tracking-wider font-mono mb-0.5">BLACK</div>
-                    <div className="text-sm font-bold text-white">{tierTargets.black}</div>
-                  </div>
-                </div>
-              </div>
-            )}
             
             <div
               className="grid justify-center w-full"
               style={{
-                gridTemplateColumns: `repeat(${Math.min(currentSection.blocks?.length || 1, getExerciseGridColumns())}, 1fr)`,
-                gap: '0.75rem',
+                gridTemplateColumns: isSingleCard ? '1fr' : `repeat(${actualColumns}, 1fr)`,
+                gap: isSmallLayout ? '1.5rem' : '0.75rem',
                 flex: '1 1 auto',
                 minHeight: 0,
                 maxHeight: '100%',
                 overflow: 'hidden',
+                maxWidth: isSingleCard ? '600px' : '100%',
               }}
             >
               {currentSection.blocks?.map((block: any, idx: number) => (
                 <CollapsibleExerciseCard 
                   key={`${currentSection.id}-block-${block.id || idx}`} 
                   block={block}
+                  isActive={idx === activeExerciseIndex}
                   sectionColor={sectionColor}
-                  compact={true}
+                  compact={!isSmallLayout && !isSingleCard}
+                  largeText={isSmallLayout || isSingleCard}
+                  showFullDescription={blockCount <= 2 && !isMobile}
+                  onClick={() => setActiveExerciseIndex(idx)}
+                />
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'AMRAP':
+      case 'CIRCUIT':
+        // Parse tier target rounds from note
+        const parseTierTargetsAmrap = (note: string | undefined) => {
+          if (!note) return null;
+          const targetMatch = note.match(/Target rounds:\s*SILVER\s+([\d-]+)\s+rounds?,\s*GOLD\s+([\d-]+)\s+rounds?,\s*BLACK\s+([\d-]+)\s+rounds?/i);
+          if (targetMatch) {
+            return {
+              silver: targetMatch[1],
+              gold: targetMatch[2],
+              black: targetMatch[3],
+            };
+          }
+          return null;
+        };
+        
+        const tierTargetsAmrap = parseTierTargetsAmrap(currentSection.note);
+        const blockCountAmrap = currentSection.blocks?.length || 0;
+        const maxColumnsAmrap = isHyrox ? 8 : 6; // HYROX can have more
+        const actualColumnsAmrap = Math.min(blockCountAmrap, maxColumnsAmrap);
+        const isSmallLayoutAmrap = blockCountAmrap >= 2 && blockCountAmrap <= 4;
+        const isSingleCardAmrap = blockCountAmrap === 1;
+        
+        return (
+          <div className="w-full h-full flex flex-col items-center justify-center" style={{ gap: '1rem', maxHeight: '100%' }}>
+            <div style={{ flexShrink: 0 }}>
+            <DeckTimer
+                key={`amrap-${currentSection.id}-${safeSectionIndex}`}
+              type="AMRAP"
+              durationSec={currentSection.durationSec || 720}
+              autoStart={false}
+              showPreCountdown={true}
+              onComplete={async () => {
+                handleSectionTimerComplete(safeSectionIndex);
+                // Create session when first timer is started (if not already created)
+                if (!sessionStarted && !sessionId && onCreateSession) {
+                  await onCreateSession();
+                  setSessionStarted(true);
+                } else if (!sessionStarted && sessionId) {
+                  setSessionStarted(true);
+                }
+              }}
+            />
+            </div>
+            
+            <div
+              className="grid justify-center w-full"
+              style={{
+                gridTemplateColumns: isSingleCardAmrap ? '1fr' : `repeat(${actualColumnsAmrap}, 1fr)`,
+                gap: isSmallLayoutAmrap ? '1.5rem' : '0.75rem',
+                flex: '1 1 auto',
+                minHeight: 0,
+                maxHeight: '100%',
+                overflow: 'hidden',
+                maxWidth: isSingleCardAmrap ? '600px' : '100%',
+              }}
+            >
+              {currentSection.blocks?.map((block: any, idx: number) => (
+                <CollapsibleExerciseCard 
+                  key={`${currentSection.id}-block-${block.id || idx}`} 
+                  block={block}
+                  isActive={idx === activeExerciseIndex}
+                  sectionColor={sectionColor}
+                  compact={!isSmallLayoutAmrap && !isSingleCardAmrap}
+                  largeText={isSmallLayoutAmrap || isSingleCardAmrap}
+                  showFullDescription={blockCountAmrap <= 2 && !isMobile}
+                  onClick={() => setActiveExerciseIndex(idx)}
                 />
               ))}
             </div>
@@ -440,36 +867,57 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
         );
 
       default:
+        const defaultBlockCount = currentSection.blocks?.length || 0;
+        const defaultMaxColumns = isHyrox ? 8 : 6; // HYROX can have more
+        const defaultActualColumns = Math.min(defaultBlockCount, defaultMaxColumns);
+        const defaultIsSmallLayout = defaultBlockCount >= 2 && defaultBlockCount <= 4;
+        const defaultIsSingleCard = defaultBlockCount === 1;
+        
         return (
           <div className="w-full h-full flex flex-col items-center justify-center" style={{ gap: '1rem', maxHeight: '100%' }}>
             {currentSection.durationSec && (
               <div style={{ flexShrink: 0 }}>
-                <DeckTimer
+              <DeckTimer
                   key={`countdown-${currentSection.id}-${safeSectionIndex}`}
-                  type="COUNTDOWN"
-                  durationSec={currentSection.durationSec}
-                  autoStart={false}
-                  showPreCountdown={true}
-                />
+                type="COUNTDOWN"
+                durationSec={currentSection.durationSec}
+                autoStart={false}
+                showPreCountdown={true}
+              onComplete={async () => {
+                handleSectionTimerComplete(safeSectionIndex);
+                // Create session when first timer is started (if not already created)
+                if (!sessionStarted && !sessionId && onCreateSession) {
+                  await onCreateSession();
+                  setSessionStarted(true);
+                } else if (!sessionStarted && sessionId) {
+                  setSessionStarted(true);
+                }
+              }}
+              />
               </div>
             )}
             <div
               className="grid justify-center w-full"
               style={{
-                gridTemplateColumns: `repeat(${Math.min(currentSection.blocks?.length || 1, getExerciseGridColumns())}, 1fr)`,
-                gap: '0.75rem',
+                gridTemplateColumns: defaultIsSingleCard ? '1fr' : `repeat(${defaultActualColumns}, 1fr)`,
+                gap: defaultIsSmallLayout ? '1.5rem' : '0.75rem',
                 flex: '1 1 auto',
                 minHeight: 0,
                 maxHeight: '100%',
                 overflow: 'hidden',
+                maxWidth: defaultIsSingleCard ? '600px' : '100%',
               }}
             >
               {currentSection.blocks?.map((block: any, idx: number) => (
                 <CollapsibleExerciseCard 
                   key={`${currentSection.id}-block-${block.id || idx}`} 
                   block={block}
+                  isActive={idx === activeExerciseIndex}
                   sectionColor={sectionColor}
-                  compact={true}
+                  compact={!defaultIsSmallLayout && !defaultIsSingleCard}
+                  largeText={defaultIsSmallLayout || defaultIsSingleCard}
+                  showFullDescription={defaultBlockCount <= 2 && !isMobile}
+                  onClick={() => setActiveExerciseIndex(idx)}
                 />
               ))}
             </div>
@@ -478,10 +926,10 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
     }
   };
 
-  // Render intro card
+  // Render intro card (content only, no navbar - navbar is handled in parent)
   const renderIntroCard = () => {
     const totalDuration = workout.sections.reduce((acc, section) => {
-      if (section.type === 'EMOM' && section.emomRounds && section.emomWorkSec && section.emomRestSec) {
+      if ((section.type === 'EMOM' || section.type === 'E2MOM') && section.emomRounds && section.emomWorkSec && section.emomRestSec) {
         return acc + (section.emomRounds * (section.emomWorkSec + section.emomRestSec));
       }
       return acc + (section.durationSec || 0);
@@ -503,198 +951,566 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
         COOLDOWN: 'Recovery and mobility work',
       };
       return descriptions[type] || 'Training section';
-    };
+  };
 
-    return (
-      <div className="fixed inset-0 bg-dark overflow-hidden flex items-center justify-center p-4 sm:p-6 md:p-8" style={{ fontFamily: 'var(--font-manrope)' }}>
-        <div className={`bg-panel thin-border rounded-2xl max-w-5xl w-full ${isMobile ? 'h-[95vh] overflow-y-auto' : 'h-[90vh] overflow-hidden'} flex flex-col p-4 sm:p-6 md:p-8`}>
-          {/* NØDE Branding */}
-          <div className="flex justify-center mb-4 flex-shrink-0">
-            <Logo showOS={true} className="text-2xl" />
-          </div>
+  return (
+    <div className="w-full h-full">
+          {isMobile ? (
+            <div className="w-full h-full overflow-y-auto">
+              <div className="bg-panel thin-border rounded-2xl flex flex-col p-4">
+                {/* Header */}
+                <div className="text-center mb-3 flex-shrink-0">
+                  {workout.archetype && (
+                    <div className="flex justify-center mb-2">
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-node-volt/10 border border-node-volt/30 rounded-lg">
+                        {(() => {
+                          const ArchetypeIcon = Icons[workout.archetype as keyof typeof Icons] || Icons.WORKOUT;
+                          return <ArchetypeIcon size={14} className="text-node-volt" />;
+                        })()}
+                        <span className="text-node-volt font-bold uppercase tracking-wider text-xs">{workout.archetype}</span>
+                      </div>
+                    </div>
+                  )}
+                  <h1
+                    className="font-bold mb-1"
+                    style={{
+                      fontFamily: 'var(--font-space-grotesk)',
+                      fontSize: '1.5rem',
+                      color: 'var(--node-volt)',
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    {workout.name}
+                  </h1>
+                  {workout.displayCode && (
+                    <div className="text-node-volt font-mono text-xs mb-2">
+                      {workout.displayCode}
+                    </div>
+                  )}
+                  {workout.description && (
+                    <p className="text-text-white text-xs mb-3 line-clamp-3">
+                      {workout.description}
+                    </p>
+                  )}
+                  
+                  {/* Duration Only */}
+                  <div className={`thin-border rounded-lg p-3 text-center inline-block ${theme === 'light' ? 'bg-gray-100 border-gray-300' : 'bg-dark-contrast'}`}>
+                    <div className={`text-[10px] mb-1 uppercase tracking-wider ${theme === 'light' ? 'text-gray-600' : 'text-text-white'}`}>Duration</div>
+                    <div className={`text-2xl font-bold text-node-volt`}>{totalMinutes} min</div>
+                  </div>
+                </div>
 
-          {/* Header */}
-          <div className="text-center mb-4 flex-shrink-0">
-            <h1
-              className="font-bold mb-4"
+                {/* Workout Breakdown */}
+                <div className="mb-4">
+                  <h2 className="font-bold mb-2 text-text-white text-base flex-shrink-0" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                    Workout Breakdown
+                  </h2>
+                  <div className="space-y-2">
+                    {workout.sections.map((section, idx) => {
+                      const sectionColor = SECTION_COLORS[section.type] || '#ccff00';
+                      const blockCount = section.blocks?.length || 0;
+                      const totalExercises = blockCount;
+
+  return (
+    <div
+                          key={section.id || idx}
+                          className="bg-panel thin-border rounded-lg p-3"
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm flex-shrink-0"
+                              style={{ backgroundColor: `${sectionColor}20`, color: sectionColor }}
+                            >
+                              {idx + 1}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-bold text-text-white text-sm truncate">{section.title}</div>
+                              <div className="text-node-volt uppercase tracking-wider text-xs">{section.type}</div>
+                            </div>
+                          </div>
+                          {section.note && (
+                            <p className="text-text-white text-xs mb-2 italic line-clamp-2">{section.note}</p>
+                          )}
+                          <div className="grid grid-cols-2 gap-2 mb-2">
+                            {section.durationSec && (
+                              <div className={`rounded p-2 ${theme === 'light' ? 'bg-gray-100' : 'bg-panel/30'}`}>
+                                <div className="text-text-white text-[10px] mb-0.5">Duration</div>
+                                <div className="font-bold text-node-volt text-sm">{Math.ceil(section.durationSec / 60)} min</div>
+                              </div>
+                            )}
+                            {totalExercises > 0 && (
+                              <div className={`rounded p-2 ${theme === 'light' ? 'bg-gray-100' : 'bg-panel/30'}`}>
+                                <div className="text-text-white text-[10px] mb-0.5">Exercises</div>
+                                <div className="font-bold text-node-volt text-sm">{totalExercises}</div>
+                              </div>
+                            )}
+                          </div>
+                          {section.blocks && section.blocks.length > 0 && (
+                            <div className="mt-2">
+                              <div className="text-text-white uppercase tracking-wider text-[10px] mb-1.5">Exercises</div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {section.blocks.map((block: any, blockIdx: number) => (
+                                  <div
+                                    key={blockIdx}
+                                    className={`px-2 py-1 thin-border rounded text-xs ${theme === 'light' ? 'bg-gray-100 border-gray-200' : 'bg-panel/50'}`}
+                                  >
+                                    {block.label && <span className="text-node-volt font-mono mr-1 text-[10px]">{block.label}</span>}
+                                    <span className="text-text-white truncate">{block.exerciseName}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Participants */}
+                <div className="mb-4">
+                  <h2 className="font-bold mb-2 text-text-white text-base flex-shrink-0" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                    Participants
+                  </h2>
+                  <div className="mb-3">
+                    <ParticipantManager
+                      participants={participants}
+                      onAdd={(p) => setParticipants(prev => [...prev, p])}
+                      onRemove={(idx) => setParticipants(prev => prev.filter((_, i) => i !== idx))}
+                    />
+                  </div>
+                  {participants.length > 0 && (
+                    <div className="space-y-2">
+                      {participants.map((p, idx) => (
+                        <div key={idx} className="flex items-center gap-2 bg-dark-contrast thin-border rounded-lg p-2">
+                          {p.avatarUrl ? (
+                            <img src={p.avatarUrl} alt={p.name} className="w-8 h-8 rounded-full" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-node-volt/20 flex items-center justify-center text-xs font-bold text-node-volt">
+                              {p.name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <span className="text-text-white text-sm flex-1 truncate">{p.name}</span>
+                          <button
+                            onClick={() => setParticipants(prev => prev.filter((_, i) => i !== idx))}
+                            className="text-muted-text hover:text-text-white"
+                          >
+                            <Icons.X size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Start Button at Bottom */}
+                <div className="sticky bottom-0 pt-4 pb-2 bg-panel -mx-4 -mb-4 px-4">
+                  <button
+                    onClick={() => {
+                      setShowIntro(false);
+                      setCurrentSectionIndex(0);
+                    }}
+                    className="bg-node-volt text-dark font-bold px-6 py-4 rounded-lg hover:opacity-90 transition-opacity text-base flex items-center gap-2 w-full justify-center"
+                    style={{
+                      fontFamily: 'var(--font-space-grotesk)',
+                      minHeight: config.touchTargetSize,
+                    }}
+                  >
+                    <Icons.PLAY size={20} />
+                    Start Workout
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div 
+              className="bg-panel thin-border rounded-2xl w-full overflow-hidden flex flex-col relative"
               style={{
-                fontFamily: 'var(--font-space-grotesk)',
-                fontSize: isMobile ? '2.5rem' : '4rem',
-                color: 'var(--node-volt)',
-                lineHeight: 1.1,
+                height: showControls && !isFullscreen 
+                  ? (isTablet ? 'calc(100vh - 100px)' : 'calc(100vh - 130px)')
+                  : 'calc(100vh - 20px)',
+                maxHeight: '100vh',
+                padding: isTablet ? '1.5rem' : (isDesktop ? '2rem' : '1.5rem'),
               }}
             >
-              {workout.name}
-            </h1>
-            {workout.displayCode && (
-              <div className="text-node-volt font-mono text-xl sm:text-2xl mb-4">
-                {workout.displayCode}
+              {/* Duration - Top Right Corner */}
+              <div className="absolute top-6 right-6 z-10 flex-shrink-0">
+                <div className={`thin-border rounded-lg text-center ${theme === 'light' ? 'bg-gray-100 border-gray-300' : 'bg-dark-contrast'}`} style={{ 
+                  padding: isDesktop ? '1rem 1.5rem' : '0.75rem 1rem',
+                  minWidth: isDesktop ? '120px' : '100px',
+                }}>
+                  <div className={`uppercase tracking-wider ${theme === 'light' ? 'text-gray-600' : 'text-text-white'}`} style={{ 
+                    fontSize: isDesktop ? '0.75rem' : '0.688rem', 
+                    marginBottom: isDesktop ? '0.5rem' : '0.375rem',
+                    letterSpacing: '0.05em',
+                  }}>Duration</div>
+                  <div className={`font-bold text-node-volt`} style={{ fontSize: isDesktop ? '2.25rem' : '1.75rem', lineHeight: 1 }}>{totalMinutes} min</div>
+                </div>
               </div>
-            )}
-            {workout.description && (
-              <p className="text-text-white text-lg sm:text-xl max-w-2xl mx-auto mb-4">
-                {workout.description}
-              </p>
-            )}
-            {workout.archetype && (
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-node-volt/10 border border-node-volt/30 rounded-lg">
-                {(() => {
-                  const ArchetypeIcon = Icons[workout.archetype as keyof typeof Icons] || Icons.WORKOUT;
-                  return <ArchetypeIcon size={18} className="text-node-volt" />;
-                })()}
-                <span className="text-node-volt font-bold uppercase tracking-wider text-sm">{workout.archetype}</span>
-              </div>
-            )}
-          </div>
 
-          {/* Workout Overview */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 flex-shrink-0">
-            <div className="bg-dark-contrast thin-border rounded-lg p-4 text-center">
-              <div className="text-text-white text-sm mb-2 uppercase tracking-wider">Sections</div>
-              <div className="text-3xl font-bold text-node-volt">{workout.sections.length}</div>
-            </div>
-            <div className="bg-dark-contrast thin-border rounded-lg p-4 text-center">
-              <div className="text-text-white text-sm mb-2 uppercase tracking-wider">Duration</div>
-              <div className="text-3xl font-bold text-node-volt">{totalMinutes} min</div>
-            </div>
-            <div className="bg-dark-contrast thin-border rounded-lg p-4 text-center">
-              <div className="text-text-white text-sm mb-2 uppercase tracking-wider">Archetype</div>
-              <div className="text-xl font-bold text-node-volt">{workout.archetype || 'N/A'}</div>
-            </div>
-          </div>
-
-          {/* Detailed Sections List - Scrollable */}
-          <div className="flex-1 overflow-y-auto mb-4 min-h-0">
-            <h2 className="text-2xl font-bold mb-4 text-text-white" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-              Workout Breakdown
-            </h2>
-            <div className="space-y-4">
-              {workout.sections.map((section, idx) => {
-                const sectionColor = SECTION_COLORS[section.type] || '#ccff00';
-                const blockCount = section.blocks?.length || 0;
-                const totalExercises = blockCount;
-                
-                return (
-                  <div
-                    key={section.id || idx}
-                    className="bg-dark-contrast thin-border rounded-lg p-5 sm:p-6"
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-4">
-                        <div
-                          className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg flex-shrink-0"
-                          style={{ backgroundColor: `${sectionColor}20`, color: sectionColor }}
-                        >
-                          {idx + 1}
-                        </div>
-                        <div>
-                          <div className="font-bold text-xl mb-1 text-text-white">{section.title}</div>
-                          <div className="text-sm text-node-volt uppercase tracking-wider mb-2">{section.type}</div>
-                          <div className="text-sm text-text-white">{getSectionTypeDescription(section.type)}</div>
-                        </div>
-                      </div>
+              {/* Header - Clean Layout */}
+              <div className="mb-3 flex-shrink-0" style={{ paddingRight: isDesktop ? '140px' : '0' }}>
+                {workout.archetype && (
+                  <div className="flex justify-center mb-2">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-node-volt/10 border border-node-volt/30 rounded-lg">
+                      {(() => {
+                        const ArchetypeIcon = Icons[workout.archetype as keyof typeof Icons] || Icons.WORKOUT;
+                        return <ArchetypeIcon size={isDesktop ? 18 : 14} className="text-node-volt" />;
+                      })()}
+                      <span className="text-node-volt font-bold uppercase tracking-wider" style={{ fontSize: isDesktop ? '0.875rem' : '0.75rem' }}>{workout.archetype}</span>
                     </div>
-                    
-                    {section.note && (
-                      <div className="mb-4 p-3 bg-panel/50 rounded-lg">
-                        <p className="text-sm text-text-white italic">{section.note}</p>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                      {section.type === 'EMOM' && (
-                        <>
-                          {section.emomRounds && (
-                            <div className="bg-panel/30 rounded p-2">
-                              <div className="text-xs text-text-white mb-1">Rounds</div>
-                              <div className="text-sm font-bold text-node-volt">{section.emomRounds}</div>
-                            </div>
-                          )}
-                          {section.emomWorkSec && (
-                            <div className="bg-panel/30 rounded p-2">
-                              <div className="text-xs text-text-white mb-1">Work</div>
-                              <div className="text-sm font-bold text-node-volt">{section.emomWorkSec}s</div>
-                            </div>
-                          )}
-                          {section.emomRestSec && (
-                            <div className="bg-panel/30 rounded p-2">
-                              <div className="text-xs text-text-white mb-1">Rest</div>
-                              <div className="text-sm font-bold text-node-volt">{section.emomRestSec}s</div>
-                            </div>
-                          )}
-                        </>
-                      )}
-                      {section.durationSec && (
-                        <div className="bg-panel/30 rounded p-2">
-                          <div className="text-xs text-text-white mb-1">Duration</div>
-                          <div className="text-sm font-bold text-node-volt">{Math.ceil(section.durationSec / 60)} min</div>
-                        </div>
-                      )}
-                      {totalExercises > 0 && (
-                        <div className="bg-panel/30 rounded p-2">
-                          <div className="text-xs text-text-white mb-1">Exercises</div>
-                          <div className="text-sm font-bold text-node-volt">{totalExercises}</div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Exercise List */}
-                    {section.blocks && section.blocks.length > 0 && (
-                      <div className="mt-4">
-                        <div className="text-xs text-text-white uppercase tracking-wider mb-2">Exercises</div>
-                        <div className="flex flex-wrap gap-2">
-                          {section.blocks.map((block: any, blockIdx: number) => (
-                            <div
-                              key={blockIdx}
-                              className="px-3 py-1.5 bg-panel/50 thin-border rounded text-sm"
-                            >
-                              {block.label && <span className="text-node-volt font-mono mr-2">{block.label}</span>}
-                              <span className="text-text-white">{block.exerciseName}</span>
-                            </div>
-                          ))}
-                        </div>
+                  </div>
+                )}
+                <div className="flex items-start gap-4">
+                  <div className="flex-1 text-center">
+                    <h1
+                      className="font-bold mb-2"
+                      style={{
+                        fontFamily: 'var(--font-space-grotesk)',
+                        fontSize: isTablet ? '2.5rem' : (isDesktop ? '3.5rem' : '2.5rem'),
+                        color: 'var(--node-volt)',
+                        lineHeight: 1.1,
+                      }}
+                    >
+                      {workout.name}
+                    </h1>
+                    {workout.displayCode && (
+                      <div className="text-node-volt font-mono mb-2" style={{ fontSize: isDesktop ? '1rem' : '0.875rem' }}>
+                        {workout.displayCode}
                       </div>
                     )}
                   </div>
-                );
-              })}
+                  {(workout.description || workout.averageRating) && (
+                    <div className="bg-panel thin-border rounded-lg" style={{ 
+                      padding: isDesktop ? '1rem 1.25rem' : '0.75rem 1rem',
+                      minWidth: isDesktop ? '280px' : '200px',
+                      maxWidth: isDesktop ? '320px' : '240px',
+                    }}>
+                      {workout.description && (
+                        <p className="text-text-white mb-2" style={{ 
+                          fontSize: isDesktop ? '0.875rem' : '0.75rem', 
+                          lineHeight: 1.5,
+                        }}>
+                          {workout.description}
+                        </p>
+                      )}
+                      {workout.averageRating && workout.averageRating > 0 && (
+                        <div className="flex items-center gap-2 pt-2 border-t thin-border">
+                          <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Icons.STAR
+                                key={star}
+                                size={isDesktop ? 16 : 14}
+                                className={star <= Math.round(workout.averageRating) ? 'text-node-volt fill-node-volt' : 'text-muted-text'}
+                              />
+                            ))}
+                          </div>
+                          <div className="text-text-white" style={{ fontSize: isDesktop ? '0.875rem' : '0.75rem' }}>
+                            {workout.averageRating.toFixed(1)}
+                            {workout.ratingCount && workout.ratingCount > 0 && (
+                              <span className="text-muted-text ml-1">({workout.ratingCount})</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Detailed Sections List - Grid layout - Fill space */}
+              <div className="flex-1 min-h-0 flex flex-col">
+                <h2 className="font-bold mb-2 text-text-white flex-shrink-0" style={{ fontFamily: 'var(--font-space-grotesk)', fontSize: isDesktop ? '1.25rem' : '1rem' }}>
+                  Workout Breakdown
+                </h2>
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                  <div 
+                    className={`grid ${isTablet ? 'grid-cols-2' : isDesktop ? 'grid-cols-3' : 'grid-cols-3'}`}
+                    style={{ gap: isDesktop ? '1rem' : '0.5rem' }}
+                  >
+                    {workout.sections.map((section, idx) => {
+                      const sectionColor = SECTION_COLORS[section.type] || '#ccff00';
+                      const blockCount = section.blocks?.length || 0;
+                      const totalExercises = blockCount;
+                      
+                      return (
+                        <div
+                          key={section.id || idx}
+                          className="bg-panel thin-border rounded-lg flex flex-col"
+                          style={{ padding: isDesktop ? '1.25rem' : '0.5rem' }}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                              <div
+                                className="rounded-lg flex items-center justify-center font-bold flex-shrink-0"
+                                style={{ 
+                                  backgroundColor: `${sectionColor}20`, 
+                                  color: sectionColor,
+                                  width: isDesktop ? '2.5rem' : '1.75rem',
+                                  height: isDesktop ? '2.5rem' : '1.75rem',
+                                  fontSize: isDesktop ? '1.125rem' : '0.75rem',
+                                }}
+                              >
+                                {idx + 1}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="font-bold text-text-white truncate" style={{ fontSize: isDesktop ? '1rem' : '0.75rem' }}>{section.title}</div>
+                                <div className="text-node-volt uppercase tracking-wider" style={{ fontSize: isDesktop ? '0.688rem' : '0.563rem' }}>{section.type}</div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {section.note && (
+                            <div className={`mb-2 rounded-lg ${theme === 'light' ? 'bg-gray-100' : 'bg-panel/50'}`} style={{ padding: isDesktop ? '0.75rem' : '0.375rem' }}>
+                              <p className={`text-text-white italic ${isDesktop ? 'line-clamp-3' : 'line-clamp-2'}`} style={{ fontSize: isDesktop ? '0.813rem' : '0.563rem' }}>{section.note}</p>
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-2 mb-2" style={{ gap: isDesktop ? '0.625rem' : '0.25rem' }}>
+                            {section.type === 'EMOM' && (
+                              <>
+                                {section.emomRounds && (
+                                  <div className={`rounded ${theme === 'light' ? 'bg-gray-100' : 'bg-panel/30'}`} style={{ padding: isDesktop ? '0.625rem' : '0.25rem' }}>
+                                    <div className={`text-text-white mb-0.5`} style={{ fontSize: isDesktop ? '0.688rem' : '0.5rem' }}>Rounds</div>
+                                    <div className={`font-bold text-node-volt`} style={{ fontSize: isDesktop ? '0.938rem' : '0.563rem' }}>{section.emomRounds}</div>
+                                  </div>
+                                )}
+                                {section.emomWorkSec && (
+                                  <div className={`rounded ${theme === 'light' ? 'bg-gray-100' : 'bg-panel/30'}`} style={{ padding: isDesktop ? '0.625rem' : '0.25rem' }}>
+                                    <div className={`text-text-white mb-0.5`} style={{ fontSize: isDesktop ? '0.688rem' : '0.5rem' }}>Work</div>
+                                    <div className={`font-bold text-node-volt`} style={{ fontSize: isDesktop ? '0.938rem' : '0.563rem' }}>{section.emomWorkSec}s</div>
+                                  </div>
+                                )}
+                                {section.emomRestSec && (
+                                  <div className={`rounded ${theme === 'light' ? 'bg-gray-100' : 'bg-panel/30'}`} style={{ padding: isDesktop ? '0.625rem' : '0.25rem' }}>
+                                    <div className={`text-text-white mb-0.5`} style={{ fontSize: isDesktop ? '0.688rem' : '0.5rem' }}>Rest</div>
+                                    <div className={`font-bold text-node-volt`} style={{ fontSize: isDesktop ? '0.938rem' : '0.563rem' }}>{section.emomRestSec}s</div>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                            {section.durationSec && (
+                              <div className={`rounded ${theme === 'light' ? 'bg-gray-100' : 'bg-panel/30'}`} style={{ padding: isDesktop ? '0.625rem' : '0.25rem' }}>
+                                <div className={`text-text-white mb-0.5`} style={{ fontSize: isDesktop ? '0.688rem' : '0.5rem' }}>Duration</div>
+                                <div className={`font-bold text-node-volt`} style={{ fontSize: isDesktop ? '0.938rem' : '0.563rem' }}>{Math.ceil(section.durationSec / 60)} min</div>
+                              </div>
+                            )}
+                            {totalExercises > 0 && (
+                              <div className={`rounded ${theme === 'light' ? 'bg-gray-100' : 'bg-panel/30'}`} style={{ padding: isDesktop ? '0.625rem' : '0.25rem' }}>
+                                <div className={`text-text-white mb-0.5`} style={{ fontSize: isDesktop ? '0.688rem' : '0.5rem' }}>Exercises</div>
+                                <div className={`font-bold text-node-volt`} style={{ fontSize: isDesktop ? '0.938rem' : '0.563rem' }}>{totalExercises}</div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Exercise List */}
+                          {section.blocks && section.blocks.length > 0 && (
+                            <div className="mt-1.5">
+                              <div className={`text-text-white uppercase tracking-wider mb-1.5`} style={{ fontSize: isDesktop ? '0.688rem' : '0.5rem' }}>Exercises</div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {section.blocks.map((block: any, blockIdx: number) => (
+                                  <div
+                                    key={blockIdx}
+                                    className={`thin-border rounded ${theme === 'light' ? 'bg-gray-100 border-gray-200' : 'bg-panel/50'}`}
+                                    style={{ 
+                                      padding: isDesktop ? '0.438rem 0.625rem' : '0.25rem 0.375rem',
+                                      fontSize: isDesktop ? '0.813rem' : '0.563rem',
+                                    }}
+                                  >
+                                    {block.label && <span className="text-node-volt font-mono mr-1" style={{ fontSize: isDesktop ? '0.688rem' : '0.5rem' }}>{block.label}</span>}
+                                    <span className="text-text-white truncate">{block.exerciseName}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+    </div>
+  );
+};
+
+  // If showing intro, render it with the same layout as live deck
+  if (showIntro) {
+    return (
+      <div
+        className="fixed inset-0 bg-dark"
+      onMouseMove={handleMouseMove}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+        style={{
+          fontFamily: 'var(--font-manrope)',
+          overflow: 'hidden',
+          height: '100vh',
+          width: '100vw',
+        }}
+      >
+        {/* Progress Bar */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-panel/30 z-50">
+          <div
+            className="h-full bg-node-volt transition-all duration-500 ease-out"
+            style={{ width: `${(1 / totalPages) * 100}%` }}
+          />
+        </div>
+
+        {/* Top Bar - Brutalist Style (Same as Live Deck) */}
+        {showControls && (
+          <div className="absolute top-0 left-0 right-0 z-40 bg-dark border-b thin-border pt-2 pb-2 px-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {/* Exit Button */}
+                <button
+                  onClick={() => router.back()}
+                  className="bg-panel thin-border text-text-white px-3 py-1.5 hover:border-node-volt transition-colors flex items-center gap-1.5"
+                  title="Go back"
+                >
+                  <Icons.X size={16} />
+                  {!isMobile && <span className="text-xs font-medium">Exit</span>}
+                </button>
+                <Logo showOS={false} className="text-base" />
+                <div className="bg-panel thin-border px-3 py-1.5">
+                  <div className="text-muted-text text-xs font-mono uppercase tracking-wider">
+                    {currentPage} / {totalPages}
+                  </div>
+                  {workout.displayCode && (
+                    <div className="text-node-volt text-[10px] font-mono uppercase tracking-wider mt-0.5">
+                      {workout.displayCode}
+                    </div>
+                  )}
+                </div>
+                {isHyrox && (
+                  <div className="bg-panel thin-border px-3 py-1.5">
+                    <div className="text-red-400 text-xs font-bold uppercase tracking-wider">HYROX</div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <AudioControls compact={isMobile} />
+                <button
+                  onClick={toggleTheme}
+                  className="bg-panel thin-border text-text-white px-3 py-1.5 hover:border-node-volt transition-colors"
+                  title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+                >
+                  {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+                </button>
+                <button
+                  onClick={() => setShowSectionMenu(true)}
+                  className="bg-panel thin-border text-text-white px-3 py-1.5 hover:border-node-volt transition-colors text-xs font-medium uppercase tracking-wider hidden sm:flex items-center gap-2"
+                >
+                  <Icons.MENU size={14} />
+                  Sections
+                </button>
+                {/* Start Button */}
+                <button
+                  onClick={() => {
+                    setShowIntro(false);
+                    setCurrentSectionIndex(0);
+                  }}
+                  className="bg-node-volt text-dark font-bold px-4 py-2 hover:opacity-90 transition-opacity flex items-center gap-1.5 text-sm"
+                  style={{
+                    fontFamily: 'var(--font-space-grotesk)',
+                  }}
+                >
+                  <Icons.PLAY size={16} />
+                  <span className="hidden sm:inline">Start</span>
+                </button>
+              </div>
             </div>
           </div>
+        )}
 
-          {/* Participant Manager */}
-          <div className="mb-4 flex-shrink-0">
-            <h2 className="text-2xl font-bold mb-4 text-text-white" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-              Participants
-            </h2>
-            <ParticipantManager
-              participants={participants}
-              onAdd={(p) => setParticipants(prev => [...prev, p])}
-              onRemove={(idx) => setParticipants(prev => prev.filter((_, i) => i !== idx))}
-            />
-          </div>
-
-          {/* Start Button */}
-          <div className="flex justify-center flex-shrink-0">
-            <button
-              onClick={handleStartWorkout}
-              className="bg-node-volt text-dark font-bold px-12 py-4 rounded-lg hover:opacity-90 transition-opacity text-xl flex items-center gap-3"
-              style={{
-                fontFamily: 'var(--font-space-grotesk)',
-                minWidth: '200px',
-                minHeight: config.touchTargetSize,
-              }}
-            >
-              <Icons.PLAY size={24} />
-              Start Workout
-            </button>
-          </div>
+        {/* Main Content - Intro Card */}
+        <div
+          className="w-full h-full flex items-center justify-center"
+          style={{
+            paddingTop: showControls ? (isMobile ? '60px' : '80px') : '0',
+            paddingBottom: showControls ? (isMobile ? '80px' : '100px') : (isMobile ? '60px' : '80px'),
+            paddingLeft: isMobile ? '0.5rem' : '1rem',
+            paddingRight: isMobile ? '0.5rem' : '1rem',
+            overflow: 'hidden',
+            height: '100vh',
+          }}
+        >
+          {renderIntroCard()}
         </div>
+
+        {/* Section Jump Menu - Brutalist */}
+        {showSectionMenu && (
+          <div className="fixed inset-0 bg-dark/95 z-50 flex items-center justify-center p-4">
+            <div className="bg-panel thin-border max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+              <div className="p-4 border-b thin-border flex items-center justify-between">
+                <h2 className="text-xl font-bold uppercase tracking-wider" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                  Jump to Section
+                </h2>
+                <button
+                  onClick={() => setShowSectionMenu(false)}
+                  className="bg-panel thin-border text-text-white px-3 py-1.5 hover:border-node-volt transition-colors"
+                >
+                  <Icons.X size={16} />
+                </button>
+              </div>
+              <div className="p-4">
+                {/* Intro/Preview Option */}
+                <button
+                  onClick={() => {
+                    setShowIntro(true);
+                    setShowSectionMenu(false);
+                  }}
+                  className={`w-full text-left p-3 mb-2 thin-border rounded transition-colors ${
+                    showIntro ? 'bg-node-volt/20 border-node-volt' : 'bg-panel hover:border-node-volt'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-node-volt font-mono text-sm mb-1">00</div>
+                      <div className="font-bold uppercase tracking-wider" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                        Preview
+                      </div>
+                      <div className="text-muted-text text-xs mt-1">Workout overview and details</div>
+                    </div>
+                    {showIntro && <Icons.CHECK size={16} className="text-node-volt" />}
+                  </div>
+                </button>
+                {/* Section Options */}
+                {workout.sections.map((section: any, idx: number) => (
+                  <button
+                    key={section.id || idx}
+                    onClick={() => {
+                      setShowIntro(false);
+                      setCurrentSectionIndex(idx);
+                      setShowSectionMenu(false);
+                    }}
+                    className={`w-full text-left p-3 mb-2 thin-border rounded transition-colors ${
+                      !showIntro && safeSectionIndex === idx ? 'bg-node-volt/20 border-node-volt' : 'bg-panel hover:border-node-volt'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-node-volt font-mono text-sm mb-1">
+                          {(idx + 1).toString().padStart(2, '0')}
+                        </div>
+                        <div className="font-bold uppercase tracking-wider" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                          {section.title}
+                        </div>
+                        <div className="text-muted-text text-xs mt-1">{section.type}</div>
+                      </div>
+                      {!showIntro && safeSectionIndex === idx && <Icons.CHECK size={16} className="text-node-volt" />}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
-  };
-
-  if (showIntro) {
-    return renderIntroCard();
   }
 
   return (
@@ -743,7 +1559,7 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
               <Logo showOS={false} className="text-base" />
               <div className="bg-panel thin-border px-3 py-1.5">
                 <div className="text-muted-text text-xs font-mono uppercase tracking-wider">
-                  {safeSectionIndex + 1} / {workout.sections.length}
+                  {currentPage} / {totalPages}
                 </div>
                 {workout.displayCode && (
                   <div className="text-node-volt text-[10px] font-mono uppercase tracking-wider mt-0.5">
@@ -759,6 +1575,42 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Target Rounds for AMRAP/CIRCUIT/FOR_TIME */}
+              {((currentSection.type === 'AMRAP' || currentSection.type === 'CIRCUIT' || currentSection.type === 'FOR_TIME') && currentSection.note) && (() => {
+                const parseTierTargets = (note: string | undefined) => {
+                  if (!note) return null;
+                  const targetMatch = note.match(/Target rounds:\s*SILVER\s+([\d-]+)\s+rounds?,\s*GOLD\s+([\d-]+)\s+rounds?,\s*BLACK\s+([\d-]+)\s+rounds?/i);
+                  if (targetMatch) {
+                    return {
+                      silver: targetMatch[1],
+                      gold: targetMatch[2],
+                      black: targetMatch[3],
+                    };
+                  }
+                  return null;
+                };
+                const tierTargets = parseTierTargets(currentSection.note);
+                if (!tierTargets) return null;
+                return (
+                  <div className="bg-panel thin-border px-3 py-1.5 hidden md:flex items-center gap-2">
+                    <div className="text-xs text-muted-text uppercase tracking-wider font-mono">Target:</div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="bg-panel thin-border px-2 py-1">
+                        <div className="text-[10px] text-muted-text uppercase tracking-wider font-mono">S</div>
+                        <div className="text-xs font-bold text-node-volt">{tierTargets.silver}</div>
+                      </div>
+                      <div className="bg-panel thin-border px-2 py-1" style={{ borderColor: '#ffd700' }}>
+                        <div className="text-[10px] text-muted-text uppercase tracking-wider font-mono">G</div>
+                        <div className="text-xs font-bold" style={{ color: '#ffd700' }}>{tierTargets.gold}</div>
+                      </div>
+                      <div className="bg-panel thin-border px-2 py-1" style={{ borderColor: 'rgba(255, 255, 255, 0.4)' }}>
+                        <div className="text-[10px] text-muted-text uppercase tracking-wider font-mono">B</div>
+                        <div className="text-xs font-bold text-white">{tierTargets.black}</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
               <AudioControls compact={isMobile} />
               <button
                 onClick={toggleTheme}
@@ -829,24 +1681,42 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
             maxHeight: '100%',
             overflow: 'hidden',
           }}>
-            {renderSectionContent()}
+          {renderSectionContent()}
           </div>
         </div>
       </div>
 
-      {/* Navigation Dots - Brutalist */}
+      {/* Navigation Dots - Brutalist (includes intro) */}
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-40 flex gap-2 justify-center">
+        {/* Intro dot */}
+        <button
+          onClick={() => {
+            setShowIntro(true);
+            setCurrentSectionIndex(0);
+          }}
+          className={`thin-border transition-all ${
+            showIntro
+              ? 'bg-node-volt border-node-volt'
+              : 'bg-panel hover:border-node-volt'
+          }`}
+          style={{
+            width: showIntro ? '24px' : '8px',
+            height: '8px',
+          }}
+          title="Preview"
+        />
+        {/* Section dots */}
         {workout.sections.map((_, idx) => (
           <button
             key={idx}
             onClick={() => handleJumpToSection(idx)}
             className={`thin-border transition-all ${
-              idx === safeSectionIndex
+              !showIntro && idx === safeSectionIndex
                 ? 'bg-node-volt border-node-volt'
                 : 'bg-panel hover:border-node-volt'
             }`}
             style={{
-              width: idx === safeSectionIndex ? '24px' : '8px',
+              width: !showIntro && idx === safeSectionIndex ? '24px' : '8px',
               height: '8px',
             }}
             title={workout.sections[idx].title}
@@ -859,27 +1729,43 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
         <div className="absolute bottom-4 sm:bottom-8 left-4 sm:left-8 right-4 sm:right-8 z-40 flex justify-between pointer-events-none">
           <button
             onClick={handlePreviousSection}
-            disabled={isFirstSection}
-            className={`bg-panel thin-border text-text-white px-4 py-2 hover:border-node-volt transition-colors pointer-events-auto flex items-center gap-2 uppercase tracking-wider text-xs font-medium ${
-              isFirstSection ? 'opacity-30 cursor-not-allowed' : ''
-            }`}
+            className="bg-panel thin-border text-text-white px-4 py-2 hover:border-node-volt transition-colors pointer-events-auto flex items-center gap-2 uppercase tracking-wider text-xs font-medium"
             style={{ minWidth: config.touchTargetSize, minHeight: config.touchTargetSize }}
           >
             <Icons.CHEVRON_LEFT size={16} />
-            <span className="hidden sm:inline">Previous</span>
+            <span className="hidden sm:inline">{isFirstSection ? 'Preview' : 'Previous'}</span>
           </button>
-          <button
-            onClick={isLastSection ? () => setShowRatingModal(true) : handleNextSection}
-            className="bg-node-volt text-dark font-bold px-4 py-2 sm:px-6 sm:py-3 hover:opacity-90 transition-opacity pointer-events-auto flex items-center gap-2 uppercase tracking-wider text-xs font-medium"
-            style={{
-              fontFamily: 'var(--font-space-grotesk)',
-              minWidth: config.touchTargetSize,
-              minHeight: config.touchTargetSize,
-            }}
-          >
-            <span>{isLastSection ? 'Complete' : 'Next'}</span>
-            {!isLastSection && <Icons.CHEVRON_RIGHT size={16} />}
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Skip Finisher Button - Only show for FINISHER sections */}
+            {currentSection.type === 'FINISHER' && (
+              <button
+                onClick={() => {
+                  // Skip finisher and complete workout
+                  if (allTimersCompleted()) {
+                    setShowRatingModal(true);
+                  } else {
+                    setShowIncompleteWarning(true);
+                  }
+                }}
+                className="bg-panel/80 thin-border text-text-white px-4 py-2 hover:border-node-volt transition-colors pointer-events-auto flex items-center gap-2 uppercase tracking-wider text-xs font-medium"
+                style={{ minWidth: config.touchTargetSize, minHeight: config.touchTargetSize }}
+              >
+                <span>Skip Finisher</span>
+              </button>
+            )}
+            <button
+              onClick={isLastSection ? handleNextSection : handleNextSection}
+              className="bg-node-volt text-dark font-bold px-4 py-2 sm:px-6 sm:py-3 hover:opacity-90 transition-opacity pointer-events-auto flex items-center gap-2 uppercase tracking-wider text-xs font-medium"
+              style={{
+                fontFamily: 'var(--font-space-grotesk)',
+                minWidth: config.touchTargetSize,
+                minHeight: config.touchTargetSize,
+              }}
+            >
+              <span>{isLastSection ? 'Complete' : 'Next'}</span>
+              {!isLastSection && <Icons.CHEVRON_RIGHT size={16} />}
+            </button>
+          </div>
         </div>
       )}
 
@@ -899,12 +1785,37 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
               </button>
             </div>
             <div className="p-4 space-y-2">
+              {/* Intro/Preview Option */}
+              <button
+                onClick={() => {
+                  setShowIntro(true);
+                  setShowSectionMenu(false);
+                }}
+                className={`w-full text-left p-3 transition-colors ${
+                  showIntro
+                    ? 'bg-node-volt text-dark border-2 border-node-volt'
+                    : 'bg-panel thin-border hover:border-node-volt'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-bold text-sm uppercase tracking-wider mb-1">Preview</div>
+                    <div className="text-xs text-muted-text uppercase tracking-wider font-mono">
+                      Workout Overview
+                    </div>
+                  </div>
+                  <div className={`font-mono font-bold text-lg ${showIntro ? 'text-dark' : 'text-node-volt'}`}>
+                    00
+                  </div>
+                </div>
+              </button>
+              {/* Section Options */}
               {workout.sections.map((section, idx) => (
                 <button
                   key={`${workout.id}-section-${section.id || idx}`}
                   onClick={() => handleJumpToSection(idx)}
                   className={`w-full text-left p-3 transition-colors ${
-                    idx === safeSectionIndex
+                    !showIntro && idx === safeSectionIndex
                       ? 'bg-node-volt text-dark border-2 border-node-volt'
                       : 'bg-panel thin-border hover:border-node-volt'
                   }`}
@@ -916,8 +1827,8 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
                         {section.type}
                       </div>
                     </div>
-                    <div className={`font-mono font-bold text-lg ${idx === safeSectionIndex ? 'text-dark' : 'text-node-volt'}`}>
-                      {idx + 1}
+                    <div className={`font-mono font-bold text-lg ${!showIntro && idx === safeSectionIndex ? 'text-dark' : 'text-node-volt'}`}>
+                      {(idx + 1).toString().padStart(2, '0')}
                     </div>
                   </div>
                 </button>
@@ -938,6 +1849,100 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
             handleCompleteWorkout();
           }}
         />
+      )}
+
+      {/* Section Completion Celebration */}
+      {showSectionCelebration && celebratedSectionIndex !== null && (
+        <div className="fixed inset-0 z-[70] flex flex-col items-center justify-center">
+          <div className="text-center animate-fadeIn pointer-events-none mb-8">
+            <div className="mb-4">
+              <div
+                className="text-6xl sm:text-8xl font-bold mb-4 animate-bounce"
+                style={{
+                  fontFamily: 'var(--font-space-grotesk)',
+                  color: sectionColor,
+                  textShadow: `0 0 40px ${sectionColor}80`,
+                }}
+              >
+                🎉
+              </div>
+              <h2
+                className="text-4xl sm:text-6xl font-bold mb-2 animate-pulse"
+                style={{
+                  fontFamily: 'var(--font-space-grotesk)',
+                  color: sectionColor,
+                  textShadow: `0 0 30px ${sectionColor}60`,
+                }}
+              >
+                Section Complete!
+              </h2>
+              <p
+                className="text-2xl sm:text-3xl text-muted-text"
+                style={{ fontFamily: 'var(--font-space-grotesk)' }}
+              >
+                Great work! 💪
+              </p>
+            </div>
+          </div>
+          {/* Prominent Next Section Button */}
+          <button
+            onClick={() => {
+              setShowSectionCelebration(false);
+              setCelebratedSectionIndex(null);
+              handleNextSection();
+            }}
+            className="bg-node-volt text-dark font-bold px-8 py-4 sm:px-12 sm:py-6 rounded-lg hover:opacity-90 transition-opacity text-xl sm:text-2xl uppercase tracking-wider pointer-events-auto shadow-2xl animate-fadeIn"
+            style={{
+              fontFamily: 'var(--font-space-grotesk)',
+              boxShadow: `0 0 40px ${sectionColor}60`,
+            }}
+          >
+            {isLastSection ? 'Finish Workout' : 'Move to Next Section →'}
+          </button>
+        </div>
+      )}
+
+      {/* Incomplete Workout Warning Modal - Brutalist Style */}
+      {showIncompleteWarning && (
+        <div className="fixed inset-0 bg-dark/95 z-[60] flex items-center justify-center p-4">
+          <div className="bg-panel thin-border max-w-md w-full">
+            <div className="p-6">
+              <h2 
+                className="text-2xl font-bold uppercase tracking-wider mb-4 text-node-volt"
+                style={{ fontFamily: 'var(--font-space-grotesk)' }}
+              >
+                Are You Sure?
+              </h2>
+              <p className="text-text-white mb-2 leading-relaxed">
+                The workout timers were skipped, so this workout will <strong>not</strong> be marked as complete in your profile.
+              </p>
+              <p className="text-muted-text text-sm mb-6">
+                Browsing through sections does not count as completion. All timers must be completed to log this workout.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => {
+                    setShowIncompleteWarning(false);
+                    router.push('/workouts');
+                  }}
+                  className="bg-node-volt text-dark font-bold px-6 py-3 hover:opacity-90 transition-opacity uppercase tracking-wider text-sm flex-1"
+                  style={{ fontFamily: 'var(--font-space-grotesk)' }}
+                >
+                  Exit Without Completing
+                </button>
+                <button
+                  onClick={() => {
+                    setShowIncompleteWarning(false);
+                  }}
+                  className="bg-panel thin-border text-text-white px-6 py-3 hover:border-node-volt transition-colors uppercase tracking-wider text-sm flex-1"
+                  style={{ fontFamily: 'var(--font-space-grotesk)' }}
+                >
+                  Back / Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

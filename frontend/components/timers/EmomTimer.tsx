@@ -1,13 +1,15 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useEmomTimer } from '@/hooks/useEmomTimer';
 
 interface EmomTimerProps {
   workSec: number;
   restSec: number;
   rounds: number;
-  onTick?: (time: number, phase: 'work' | 'rest', round: number) => void;
-  onPhaseChange?: (phase: 'work' | 'rest', round: number) => void;
+  betweenRoundRestSec?: number; // Rest period between rounds (default 60s)
+  onTick?: (time: number, phase: 'work' | 'rest' | 'betweenRoundRest', round: number) => void;
+  onPhaseChange?: (phase: 'work' | 'rest' | 'betweenRoundRest', round: number) => void;
   onComplete?: () => void;
   activeStation?: number;
   totalStations?: number;
@@ -17,20 +19,29 @@ export default function EmomTimer({
   workSec,
   restSec,
   rounds,
+  betweenRoundRestSec = 60,
   onTick,
   onPhaseChange,
   onComplete,
   activeStation,
   totalStations,
 }: EmomTimerProps) {
-  const { currentTime, currentPhase, currentRound, isRunning, start, pause, reset } = useEmomTimer({
+  const { currentTime, currentPhase, currentRound, isRunning, start, pause, reset, setExerciseCount } = useEmomTimer({
     workSec,
     restSec,
     rounds,
+    betweenRoundRestSec,
     onTick,
     onPhaseChange,
     onComplete,
   });
+
+  // Set exercise count when totalStations is available
+  useEffect(() => {
+    if (totalStations) {
+      setExerciseCount(totalStations);
+    }
+  }, [totalStations, setExerciseCount]);
 
   const formatTime = (sec: number) => {
     const mins = Math.floor(sec / 60);
@@ -44,11 +55,11 @@ export default function EmomTimer({
         <div className="text-sm text-muted-text mb-2">
           Round {currentRound} of {rounds}
         </div>
-        <div className={`text-6xl font-bold font-mono ${currentPhase === 'work' ? 'text-node-volt' : 'text-text-white'}`}>
+        <div className={`text-6xl font-bold font-mono ${currentPhase === 'work' ? 'text-node-volt' : currentPhase === 'betweenRoundRest' ? 'text-4a9eff' : 'text-text-white'}`}>
           {formatTime(currentTime)}
         </div>
         <div className="text-xl font-medium mt-2">
-          {currentPhase === 'work' ? 'WORK' : 'REST'}
+          {currentPhase === 'work' ? 'WORK' : currentPhase === 'betweenRoundRest' ? 'REST BETWEEN ROUNDS' : 'REST'}
         </div>
       </div>
 

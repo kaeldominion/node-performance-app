@@ -38,7 +38,13 @@ export function XPDisplay({ userId, className = '' }: XPDisplayProps) {
       setPreviousLevel(newStats.level);
       setLoading(false);
     } catch (error: any) {
-      // Only log if it's not a network error (backend might be down)
+      // Silently handle network errors - backend may be offline
+      // Only set loading to false if we haven't loaded stats yet
+      if (!stats) {
+        setLoading(false);
+      }
+      // Don't log network errors - they're already handled gracefully in api.ts
+      // Only log if it's a server error (not a network error)
       if (error?.response) {
         // Server responded with error - log it
         console.error('Failed to load XP stats:', error.response?.status, error.response?.data);

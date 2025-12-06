@@ -12,6 +12,7 @@ import ArchetypeBadge from '@/components/workout/ArchetypeBadge';
 import { WorkoutScheduler } from '@/components/schedule/WorkoutScheduler';
 import { Calendar } from 'lucide-react';
 import { WorkoutDetailsModal } from '@/components/workout/WorkoutDetailsModal';
+import { WorkoutShareModal } from '@/components/workout/WorkoutShareModal';
 
 interface Workout {
   id: string;
@@ -63,11 +64,13 @@ export default function WorkoutsPage() {
   const [favoriteWorkouts, setFavoriteWorkouts] = useState<Workout[]>([]);
   const [topRatedWorkouts, setTopRatedWorkouts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [selectedWorkoutForSchedule, setSelectedWorkoutForSchedule] = useState<{ id: string; name: string } | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [selectedWorkoutForDetails, setSelectedWorkoutForDetails] = useState<Workout | null>(null);
+  const [selectedWorkoutForShare, setSelectedWorkoutForShare] = useState<Workout | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -94,31 +97,109 @@ export default function WorkoutsPage() {
   const loadWorkouts = async () => {
     try {
       setLoading(true);
+      setError(null);
+      
+      // Always load favorites to get favoriteIds for all tabs
+      try {
+        const favorites = await workoutsApi.getFavorites();
+        console.log('Loaded favorites:', favorites);
+        
+        // Ensure we have an array - backend should return array of WorkoutFavorite objects with nested workout
+        let favoriteWorkoutsList: any[] = [];
+        
+        if (Array.isArray(favorites)) {
+          favoriteWorkoutsList = favorites;
+        } else if (favorites && typeof favorites === 'object') {
+          // If it's an object, try to extract array from common properties
+          if (Array.isArray(favorites.workouts)) {
+            favoriteWorkoutsList = favorites.workouts;
+          } else if (Array.isArray(favorites.data)) {
+            favoriteWorkoutsList = favorites.data;
+          } else {
+            // If it's not an array, default to empty array
+            console.warn('Favorites is not an array:', typeof favorites, favorites);
+            favoriteWorkoutsList = [];
+          }
+        } else {
+          // If it's null, undefined, or other non-array, default to empty array
+          console.warn('Favorites is not an array or object:', typeof favorites, favorites);
+          favoriteWorkoutsList = [];
+        }
+        
+        // Extract workout IDs from the list (each favorite has a nested workout object)
+        const favoriteIdsList = favoriteWorkoutsList
+          .map((f: any) => {
+            // Handle WorkoutFavorite objects with nested workout
+            if (f && f.workout && f.workout.id) {
+              return f.workout.id;
+            }
+            // Handle direct workout objects
+            if (f && f.id) {
+              return f.id;
+            }
+            // Handle workoutId property
+            if (f && f.workoutId) {
+              return f.workoutId;
+            }
+            return null;
+          })
+          .filter((id): id is string => id !== null && id !== undefined);
+        
+        setFavoriteIds(new Set(favoriteIdsList));
+        
+        if (activeTab === 'favorites') {
+          // Extract actual workout objects for display
+          const workoutsForDisplay = favoriteWorkoutsList
+            .map((f: any) => {
+              // If it's a WorkoutFavorite object, extract the workout
+              if (f && f.workout) {
+                return f.workout;
+              }
+              // If it's already a workout object, use it directly
+              if (f && f.id && f.name) {
+                return f;
+              }
+              return null;
+            })
+            .filter((w: any): w is any => w !== null && w !== undefined && w.id);
+          setFavoriteWorkouts(workoutsForDisplay);
+        }
+      } catch (favError) {
+        console.error('Failed to load favorites:', favError);
+        setFavoriteIds(new Set());
+        if (activeTab === 'favorites') {
+          setFavoriteWorkouts([]);
+        }
+      }
+      
       if (activeTab === 'my-workouts') {
-        const workouts = await workoutsApi.getMyWorkouts();
-        console.log('Loaded my workouts:', workouts);
-        setMyWorkouts(workouts);
+        try {
+          const workouts = await workoutsApi.getMyWorkouts();
+          console.log('Loaded my workouts:', workouts);
+          // Ensure it's an array
+          setMyWorkouts(Array.isArray(workouts) ? workouts : []);
+        } catch (error) {
+          console.error('Failed to load my workouts:', error);
+          setMyWorkouts([]);
+          setError('Failed to load your workouts. Please try again.');
+        }
       } else if (activeTab === 'programs') {
-        const programs = await programsApi.getAll();
-        setMyPrograms(programs);
+        const programs = await programsApi.getAll().catch(() => []);
+        setMyPrograms(Array.isArray(programs) ? programs : []);
       } else if (activeTab === 'recommended') {
         const [workouts, programs] = await Promise.all([
           workoutsApi.getRecommended().catch(() => []),
           programsApi.getAll().catch(() => []),
         ]);
-        setRecommendedWorkouts(workouts);
-        setRecommendedPrograms(programs);
-      } else if (activeTab === 'favorites') {
-        const favorites = await workoutsApi.getFavorites().catch(() => []);
-        setFavoriteWorkouts(favorites);
-        // Update favoriteIds set
-        setFavoriteIds(new Set(favorites.map((w: any) => w.id)));
+        setRecommendedWorkouts(Array.isArray(workouts) ? workouts : []);
+        setRecommendedPrograms(Array.isArray(programs) ? programs : []);
       } else if (activeTab === 'top-rated') {
         const topRated = await workoutsApi.getTopRated(20).catch(() => []);
-        setTopRatedWorkouts(topRated);
+        setTopRatedWorkouts(Array.isArray(topRated) ? topRated : []);
       }
     } catch (error) {
       console.error('Failed to load workouts:', error);
+      setError('Failed to load workouts. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -132,6 +213,25 @@ export default function WorkoutsPage() {
         <Navbar />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-muted-text">Loading workouts...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && activeTab === 'my-workouts') {
+    return (
+      <div className="min-h-screen bg-dark">
+        <Navbar />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-6 text-center">
+            <p className="text-red-400 mb-4">{error}</p>
+            <button
+              onClick={loadWorkouts}
+              className="bg-node-volt text-dark font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
+            >
+              Retry
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -403,6 +503,30 @@ export default function WorkoutsPage() {
                           <ArchetypeBadge archetype={workout.archetype} size="sm" />
                         )}
                       </Link>
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          const isFavorite = favoriteIds.has(workout.id);
+                          try {
+                            if (isFavorite) {
+                              await workoutsApi.removeFavorite(workout.id);
+                              setFavoriteIds(new Set(Array.from(favoriteIds).filter((id) => id !== workout.id)));
+                            } else {
+                              await workoutsApi.addFavorite(workout.id);
+                              setFavoriteIds(new Set([...favoriteIds, workout.id]));
+                            }
+                          } catch (error) {
+                            console.error('Failed to toggle favorite:', error);
+                            alert('Failed to update favorite. Please try again.');
+                          }
+                        }}
+                        className={`opacity-0 group-hover:opacity-100 p-2 hover:bg-panel rounded transition-all ${
+                          favoriteIds.has(workout.id) ? 'opacity-100 text-yellow-400' : 'text-muted-text'
+                        }`}
+                        title={favoriteIds.has(workout.id) ? 'Remove from favorites' : 'Add to favorites'}
+                      >
+                        <Icons.STAR size={18} className={favoriteIds.has(workout.id) ? 'fill-current' : ''} />
+                      </button>
                     </div>
                     <div className="flex items-center gap-2 mb-2">
                       <div className="flex items-center gap-1">
@@ -485,6 +609,30 @@ export default function WorkoutsPage() {
                               )}
                             </Link>
                             <div className="flex items-center gap-2">
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  const isFavorite = favoriteIds.has(workout.id);
+                                  try {
+                                    if (isFavorite) {
+                                      await workoutsApi.removeFavorite(workout.id);
+                                      setFavoriteIds(new Set(Array.from(favoriteIds).filter((id) => id !== workout.id)));
+                                    } else {
+                                      await workoutsApi.addFavorite(workout.id);
+                                      setFavoriteIds(new Set([...favoriteIds, workout.id]));
+                                    }
+                                  } catch (error) {
+                                    console.error('Failed to toggle favorite:', error);
+                                    alert('Failed to update favorite. Please try again.');
+                                  }
+                                }}
+                                className={`opacity-0 group-hover:opacity-100 p-2 hover:bg-panel rounded transition-all ${
+                                  favoriteIds.has(workout.id) ? 'opacity-100 text-yellow-400' : 'text-muted-text'
+                                }`}
+                                title={favoriteIds.has(workout.id) ? 'Remove from favorites' : 'Add to favorites'}
+                              >
+                                <Icons.STAR size={18} className={favoriteIds.has(workout.id) ? 'fill-current' : ''} />
+                              </button>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -618,6 +766,30 @@ export default function WorkoutsPage() {
                       </Link>
                       <div className="flex items-center gap-2">
                         <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            const isFavorite = favoriteIds.has(workout.id);
+                            try {
+                              if (isFavorite) {
+                                await workoutsApi.removeFavorite(workout.id);
+                                setFavoriteIds(new Set(Array.from(favoriteIds).filter((id) => id !== workout.id)));
+                              } else {
+                                await workoutsApi.addFavorite(workout.id);
+                                setFavoriteIds(new Set([...favoriteIds, workout.id]));
+                              }
+                            } catch (error) {
+                              console.error('Failed to toggle favorite:', error);
+                              alert('Failed to update favorite. Please try again.');
+                            }
+                          }}
+                          className={`opacity-0 group-hover:opacity-100 p-2 hover:bg-panel rounded transition-all ${
+                            favoriteIds.has(workout.id) ? 'opacity-100 text-yellow-400' : 'text-muted-text'
+                          }`}
+                          title={favoriteIds.has(workout.id) ? 'Remove from favorites' : 'Add to favorites'}
+                        >
+                          <Icons.STAR size={18} className={favoriteIds.has(workout.id) ? 'fill-current' : ''} />
+                        </button>
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedWorkoutForSchedule({ id: workout.id, name: workout.name });
@@ -648,17 +820,10 @@ export default function WorkoutsPage() {
                               />
                               <div className="absolute right-0 top-10 z-20 bg-panel thin-border rounded-lg shadow-lg min-w-[160px] overflow-hidden">
                                 <button
-                                  onClick={async (e) => {
+                                  onClick={(e) => {
                                     e.stopPropagation();
                                     setOpenMenuId(null);
-                                    try {
-                                      const shareData = await workoutsApi.generateShareLink(workout.id);
-                                      await copyToClipboard(shareData.shareUrl);
-                                      alert('Share link copied to clipboard!');
-                                    } catch (error) {
-                                      console.error('Failed to generate share link:', error);
-                                      alert('Failed to copy share link. Please try again.');
-                                    }
+                                    setSelectedWorkoutForShare(workout);
                                   }}
                                   className="w-full text-left px-4 py-2 hover:bg-dark transition-colors flex items-center gap-2 text-sm"
                                 >
@@ -751,6 +916,15 @@ export default function WorkoutsPage() {
         <WorkoutDetailsModal
           workout={selectedWorkoutForDetails}
           onClose={() => setSelectedWorkoutForDetails(null)}
+        />
+      )}
+
+      {/* Share Modal */}
+      {selectedWorkoutForShare && (
+        <WorkoutShareModal
+          isOpen={!!selectedWorkoutForShare}
+          onClose={() => setSelectedWorkoutForShare(null)}
+          workout={selectedWorkoutForShare}
         />
       )}
     </div>

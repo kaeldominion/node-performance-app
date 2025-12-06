@@ -4,6 +4,8 @@ import { Analytics } from "@vercel/analytics/next";
 import { ClerkErrorBoundary } from '@/components/ClerkErrorBoundary';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AchievementNotificationProvider } from '@/contexts/AchievementNotificationContext';
+import { WorkoutGenerationProvider } from '@/contexts/WorkoutGenerationContext';
+import { WorkoutGenerationNotificationWrapper } from '@/components/workout/WorkoutGenerationNotificationWrapper';
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -38,7 +40,10 @@ export default function RootLayout({
         >
           <ThemeProvider>
             <AchievementNotificationProvider>
-              {children}
+              <WorkoutGenerationProvider>
+                <WorkoutGenerationNotificationWrapper />
+                {children}
+              </WorkoutGenerationProvider>
             </AchievementNotificationProvider>
           </ThemeProvider>
           <Analytics />

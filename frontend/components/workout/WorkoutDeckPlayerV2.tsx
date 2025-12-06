@@ -841,11 +841,15 @@ function WarmupCooldownSection({ section }: { section: WorkoutSection }) {
 
 function EMOMSection({ section }: { section: WorkoutSection }) {
   const [currentRound, setCurrentRound] = useState(1);
+  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [workTime, setWorkTime] = useState(section.emomWorkSec || 45);
   const [restTime, setRestTime] = useState(section.emomRestSec || 15);
+  const [betweenRoundRestSec] = useState(60); // 1 minute rest between rounds
   const [isWorkPhase, setIsWorkPhase] = useState(true);
+  const [isBetweenRoundRest, setIsBetweenRoundRest] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(workTime);
   const [isActive, setIsActive] = useState(false);
+  const totalExercises = section.blocks.length;
 
   useEffect(() => {
     if (isActive && timeRemaining > 0) {
@@ -854,20 +858,44 @@ function EMOMSection({ section }: { section: WorkoutSection }) {
       }, 1000);
       return () => clearTimeout(timer);
     } else if (isActive && timeRemaining === 0) {
-      if (isWorkPhase) {
+      if (isBetweenRoundRest) {
+        // Between-round rest complete - move to next round
+        if (currentRound < (section.emomRounds || 12)) {
+          setCurrentRound(prev => prev + 1);
+          setCurrentExerciseIndex(0);
+          setIsWorkPhase(true);
+          setIsBetweenRoundRest(false);
+          setTimeRemaining(workTime);
+        } else {
+          // All rounds complete
+          setIsActive(false);
+        }
+      } else if (isWorkPhase) {
+        // Work phase complete - move to rest
         setIsWorkPhase(false);
         setTimeRemaining(restTime);
       } else {
-        if (currentRound < (section.emomRounds || 12)) {
-          setCurrentRound(prev => prev + 1);
+        // Rest phase complete - check if we've done all exercises in this round
+        const nextExerciseIndex = currentExerciseIndex + 1;
+        if (nextExerciseIndex < totalExercises) {
+          // Move to next exercise in the round
+          setCurrentExerciseIndex(nextExerciseIndex);
           setIsWorkPhase(true);
           setTimeRemaining(workTime);
         } else {
-          setIsActive(false);
+          // All exercises in round complete - check if this is the last round
+          if (currentRound >= (section.emomRounds || 12)) {
+            // Last round - no rest after final round, workout complete
+            setIsActive(false);
+          } else {
+            // Insert between-round rest (1 min) before next round
+            setIsBetweenRoundRest(true);
+            setTimeRemaining(betweenRoundRestSec);
+          }
         }
       }
     }
-  }, [isActive, timeRemaining, isWorkPhase, workTime, restTime, currentRound, section.emomRounds]);
+  }, [isActive, timeRemaining, isWorkPhase, isBetweenRoundRest, workTime, restTime, betweenRoundRestSec, currentRound, currentExerciseIndex, totalExercises, section.emomRounds]);
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -877,11 +905,16 @@ function EMOMSection({ section }: { section: WorkoutSection }) {
         onStart={() => setIsActive(true)}
         onPause={() => setIsActive(false)}
         onResume={() => setIsActive(true)}
-        phase={isWorkPhase ? 'WORK' : 'REST'}
+        phase={isBetweenRoundRest ? 'REST' : (isWorkPhase ? 'WORK' : 'REST')}
         round={currentRound}
         totalRounds={section.emomRounds || 12}
         showFlashing={true}
       />
+      {isBetweenRoundRest && (
+        <div className="text-center text-lg text-muted-text mb-4">
+          Rest between rounds - Get ready for Round {currentRound + 1}
+        </div>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         {section.blocks.map((block: any, idx: number) => (
           <ExerciseCard key={block.id || idx} block={block} />
@@ -1236,8 +1269,9 @@ function ExerciseCard({ block }: { block: any }) {
       <h3 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
         {block.exerciseName}
       </h3>
-      {block.description && (
-        <p className="text-muted-text text-xs sm:text-sm mb-3 sm:mb-4">{block.description}</p>
+      {/* ONLY show shortDescription, NEVER description or longDescription */}
+      {block.shortDescription && block.shortDescription.length <= 80 && (
+        <p className="text-muted-text text-xs sm:text-sm mb-3 sm:mb-4">{block.shortDescription}</p>
       )}
       
       {block.repScheme && !isErg && (

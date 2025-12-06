@@ -100,18 +100,16 @@ export function ParticipantManager({
         </div>
       )}
 
-      {/* Add Button - NØDE Branded */}
+      {/* Add Button - Brutalist Style, Compact */}
       <button
         onClick={() => setShowAddModal(true)}
-        className="bg-node-volt text-dark font-bold px-4 py-2.5 rounded-lg hover:opacity-90 transition-opacity text-sm font-medium flex items-center gap-2 shadow-lg shadow-node-volt/20"
+        className="bg-node-volt text-dark font-bold rounded-lg hover:opacity-90 transition-opacity flex items-center gap-1.5 px-3 py-1.5 text-xs"
         style={{
           fontFamily: 'var(--font-space-grotesk)',
-          minWidth: config.touchTargetSize,
-          minHeight: config.touchTargetSize,
         }}
       >
-        <Icons.USER_PLUS size={18} />
-        <span>Add People</span>
+        <Icons.USER_PLUS size={14} />
+        <span className="hidden sm:inline">Add</span>
       </button>
 
       {/* Add Participant Modal */}
