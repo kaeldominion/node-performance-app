@@ -375,8 +375,8 @@ export default function AccountSettingsPage() {
           </div>
         </div>
 
-        {/* Coach Upgrade Section - Only show for HOME_USER */}
-        {user && user.role === 'HOME_USER' && (
+        {/* Coach Upgrade Section - Show for users who aren't already coaches */}
+        {user && user.role !== 'COACH' && (
           <div className="mt-8 bg-gradient-to-r from-node-volt/20 to-node-volt/10 border border-node-volt/50 rounded-xl p-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">

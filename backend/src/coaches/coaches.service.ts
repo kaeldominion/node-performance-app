@@ -24,9 +24,12 @@ export class CoachesService {
       throw new NotFoundException('User not found');
     }
 
-    // Check if user is already a coach
-    if (user.role === 'COACH') {
-      throw new ForbiddenException('User is already a coach');
+    // Check if user already has a coach profile
+    const existingProfile = await this.prisma.coachProfile.findUnique({
+      where: { userId },
+    });
+    if (existingProfile) {
+      throw new ForbiddenException('User already has a coach profile');
     }
 
     // Generate unique invite code
@@ -42,12 +45,15 @@ export class CoachesService {
     }
 
     // Update user role and create coach profile in a transaction
+    // Note: SUPERADMIN keeps their role, others become COACH
     return this.prisma.$transaction(async (tx) => {
-      // Update user role
-      await tx.user.update({
-        where: { id: userId },
-        data: { role: 'COACH' },
-      });
+      // Update user role (unless they're SUPERADMIN - they keep admin privileges)
+      if (user.role !== 'SUPERADMIN') {
+        await tx.user.update({
+          where: { id: userId },
+          data: { role: 'COACH' },
+        });
+      }
 
       // Create coach profile
       return tx.coachProfile.create({
@@ -63,6 +69,7 @@ export class CoachesService {
               id: true,
               email: true,
               name: true,
+              role: true,
             },
           },
         },
@@ -72,10 +79,10 @@ export class CoachesService {
 
   // Coach Profile Management
   async createProfile(userId: string, createDto: CreateCoachProfileDto) {
-    // Check if user has COACH role
+    // Check if user has COACH role or is SUPERADMIN
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user || user.role !== 'COACH') {
-      throw new ForbiddenException('User must have COACH role');
+    if (!user || (user.role !== 'COACH' && user.role !== 'SUPERADMIN')) {
+      throw new ForbiddenException('User must have COACH role or be SUPERADMIN');
     }
 
     return this.prisma.coachProfile.upsert({
@@ -156,11 +163,12 @@ export class CoachesService {
 
   // Client Management
   async addClient(coachId: string, createDto: CreateCoachClientDto) {
-    // Verify coach exists
+    // Verify coach exists and has coach profile
     const coach = await this.prisma.user.findUnique({
       where: { id: coachId },
+      include: { coachProfile: true },
     });
-    if (!coach || coach.role !== 'COACH') {
+    if (!coach || (!coach.coachProfile && coach.role !== 'SUPERADMIN')) {
       throw new ForbiddenException('User is not a coach');
     }
 
@@ -516,12 +524,12 @@ export class CoachesService {
   }
 
   async sendInvitation(coachId: string, clientId: string, message?: string) {
-    // Verify coach exists
+    // Verify coach exists and has coach profile
     const coach = await this.prisma.user.findUnique({
       where: { id: coachId },
       include: { coachProfile: true },
     });
-    if (!coach || coach.role !== 'COACH') {
+    if (!coach || (!coach.coachProfile && coach.role !== 'SUPERADMIN')) {
       throw new ForbiddenException('User is not a coach');
     }
 
