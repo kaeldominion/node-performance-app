@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { coachApi, analyticsApi, programsApi } from '@/lib/api';
+import { coachApi, analyticsApi, programsApi, workoutsApi } from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 import { ClickableUserName } from '@/components/user/ClickableUserName';
@@ -33,7 +33,16 @@ export default function ClientDetailPage() {
   const [trends, setTrends] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showWorkoutAssignModal, setShowWorkoutAssignModal] = useState(false);
   const [selectedProgramId, setSelectedProgramId] = useState('');
+  const [assignedWorkouts, setAssignedWorkouts] = useState<any[]>([]);
+  const [availableWorkouts, setAvailableWorkouts] = useState<any[]>([]);
+  const [workoutAssignData, setWorkoutAssignData] = useState({
+    workoutId: '',
+    scheduledFor: '',
+    dueDate: '',
+    notes: '',
+  });
 
   useEffect(() => {
     if (!authLoading && (!user || (user.role !== 'COACH' && !user.isAdmin))) {
@@ -49,17 +58,21 @@ export default function ClientDetailPage() {
   const loadClientData = async () => {
     try {
       setLoading(true);
-      const [assignmentsData, programsData, statsData, trendsData] = await Promise.all([
+      const [assignmentsData, programsData, statsData, trendsData, workoutsData, myWorkouts] = await Promise.all([
         coachApi.getClientAssignments(clientId).catch(() => []),
         programsApi.getAll().catch(() => []),
         analyticsApi.getClientStats(clientId).catch(() => null),
         analyticsApi.getClientTrends(clientId, 30).catch(() => null),
+        coachApi.getClientWorkouts(clientId).catch(() => []),
+        workoutsApi.getMyWorkouts().catch(() => []),
       ]);
 
       setAssignments(assignmentsData);
       setAvailablePrograms(programsData);
       setStats(statsData);
       setTrends(trendsData);
+      setAssignedWorkouts(workoutsData);
+      setAvailableWorkouts(myWorkouts);
 
       // Get client info - try to get from coach clients list
       try {
@@ -138,13 +151,22 @@ export default function ClientDetailPage() {
             </h1>
             <p className="text-muted-text">Client overview and metrics</p>
           </div>
-          <button
-            onClick={() => setShowAssignModal(true)}
-            className="bg-node-volt text-dark font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
-            style={{ fontFamily: 'var(--font-space-grotesk)' }}
-          >
-            Assign Program
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowWorkoutAssignModal(true)}
+              className="bg-node-volt text-dark font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
+              style={{ fontFamily: 'var(--font-space-grotesk)' }}
+            >
+              Assign Workout
+            </button>
+            <button
+              onClick={() => setShowAssignModal(true)}
+              className="bg-panel thin-border text-text-white font-bold px-6 py-3 rounded-lg hover:bg-panel transition-colors"
+              style={{ fontFamily: 'var(--font-space-grotesk)' }}
+            >
+              Assign Program
+            </button>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -215,6 +237,63 @@ export default function ClientDetailPage() {
             </ResponsiveContainer>
           </div>
         )}
+
+        {/* Assigned Workouts */}
+        <div className="bg-panel thin-border rounded-lg p-6 mb-8">
+          <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+            Assigned Workouts
+          </h2>
+          {assignedWorkouts.length > 0 ? (
+            <div className="space-y-3">
+              {assignedWorkouts.map((assignment) => (
+                <div
+                  key={assignment.id}
+                  className="bg-dark thin-border rounded-lg p-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-text-white text-lg">
+                        {assignment.workout?.name || 'Workout'}
+                      </h3>
+                      <div className="text-sm text-muted-text mt-1">
+                        Assigned: {new Date(assignment.assignedAt).toLocaleDateString()} •{' '}
+                        Status: <span className={`${
+                          assignment.status === 'COMPLETED' ? 'text-node-volt' :
+                          assignment.status === 'PENDING' ? 'text-yellow-400' :
+                          'text-red-400'
+                        }`}>{assignment.status}</span>
+                        {assignment.scheduledFor && (
+                          <> • Scheduled: {new Date(assignment.scheduledFor).toLocaleDateString()}</>
+                        )}
+                      </div>
+                      {assignment.notes && (
+                        <p className="text-sm text-muted-text mt-2">{assignment.notes}</p>
+                      )}
+                    </div>
+                    {assignment.workout && (
+                      <Link
+                        href={`/workouts/${assignment.workout.id}`}
+                        className="text-node-volt hover:underline text-sm"
+                      >
+                        View Workout →
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-text">
+              <p className="mb-4">No workouts assigned yet.</p>
+              <button
+                onClick={() => setShowWorkoutAssignModal(true)}
+                className="text-node-volt hover:underline"
+              >
+                Assign a workout →
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Program Assignments */}
         <div className="bg-panel thin-border rounded-lg p-6 mb-8">
@@ -306,6 +385,114 @@ export default function ClientDetailPage() {
                   style={{ fontFamily: 'var(--font-space-grotesk)' }}
                 >
                   Assign Program
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Assign Workout Modal */}
+        {showWorkoutAssignModal && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-panel thin-border rounded-lg p-8 max-w-md w-full mx-4">
+              <h2 className="text-3xl font-bold mb-6" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                Assign Workout
+              </h2>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-muted-text">
+                    Select Workout
+                  </label>
+                  <select
+                    value={workoutAssignData.workoutId}
+                    onChange={(e) => setWorkoutAssignData({ ...workoutAssignData, workoutId: e.target.value })}
+                    className="w-full bg-dark thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
+                  >
+                    <option value="">Choose a workout...</option>
+                    {availableWorkouts.map((workout) => (
+                      <option key={workout.id} value={workout.id}>
+                        {workout.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-muted-text">
+                    Scheduled For (optional)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={workoutAssignData.scheduledFor}
+                    onChange={(e) => setWorkoutAssignData({ ...workoutAssignData, scheduledFor: e.target.value })}
+                    className="w-full bg-dark thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-muted-text">
+                    Due Date (optional)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={workoutAssignData.dueDate}
+                    onChange={(e) => setWorkoutAssignData({ ...workoutAssignData, dueDate: e.target.value })}
+                    className="w-full bg-dark thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-muted-text">
+                    Notes (optional)
+                  </label>
+                  <textarea
+                    value={workoutAssignData.notes}
+                    onChange={(e) => setWorkoutAssignData({ ...workoutAssignData, notes: e.target.value })}
+                    placeholder="Any instructions or notes for the client..."
+                    className="w-full bg-dark thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt resize-none"
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-4 mt-8">
+                <button
+                  onClick={() => {
+                    setShowWorkoutAssignModal(false);
+                    setWorkoutAssignData({
+                      workoutId: '',
+                      scheduledFor: '',
+                      dueDate: '',
+                      notes: '',
+                    });
+                  }}
+                  className="flex-1 bg-panel thin-border text-text-white px-6 py-3 rounded-lg hover:bg-panel transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!workoutAssignData.workoutId) return;
+                    try {
+                      await coachApi.assignWorkout(clientId, workoutAssignData);
+                      await loadClientData();
+                      setShowWorkoutAssignModal(false);
+                      setWorkoutAssignData({
+                        workoutId: '',
+                        scheduledFor: '',
+                        dueDate: '',
+                        notes: '',
+                      });
+                    } catch (error: any) {
+                      alert(error.response?.data?.message || 'Failed to assign workout');
+                    }
+                  }}
+                  disabled={!workoutAssignData.workoutId}
+                  className="flex-1 bg-node-volt text-dark font-bold px-6 py-3 rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                  style={{ fontFamily: 'var(--font-space-grotesk)' }}
+                >
+                  Assign Workout
                 </button>
               </div>
             </div>

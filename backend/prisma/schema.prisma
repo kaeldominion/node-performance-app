@@ -165,6 +165,10 @@ model User {
   achievements       UserAchievement[]
   workoutRatings     WorkoutRating[]
   favoriteWorkouts   WorkoutFavorite[]
+  coachWorkoutAssignments CoachWorkoutAssignment[] @relation("CoachWorkoutAssignments")
+  assignedWorkouts   CoachWorkoutAssignment[]      @relation("AssignedWorkouts")
+  coachSessions      InPersonSession[]             @relation("CoachSessions")
+  clientSessions     InPersonSession[]             @relation("ClientSessions")
 
   @@map("users")
 }
@@ -238,6 +242,7 @@ model Workout {
   description   String? // Archetype-specific description
   shareId       String?           @unique // For shareable workouts
   isRecommended Boolean           @default(false) // Admin-curated recommended workouts
+  assignedByCoach Boolean        @default(false)
 
   sections          WorkoutSection[]
   sessions          SessionLog[]
@@ -245,6 +250,8 @@ model Workout {
   scheduledWorkouts ScheduledWorkout[] @relation("ScheduledWorkouts")
   ratings           WorkoutRating[]
   favorites         WorkoutFavorite[]
+  coachAssignments  CoachWorkoutAssignment[]
+  inPersonSessions  InPersonSession[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -386,6 +393,11 @@ model SessionLog {
   // Gym class tracking
   gymClassAttendance GymClassAttendance?
 
+  // Coach assignment tracking
+  coachAssignmentId String? @unique
+  coachAssignment  CoachWorkoutAssignment? @relation(fields: [coachAssignmentId], references: [id], onDelete: SetNull)
+  inPersonSession   InPersonSession?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -509,6 +521,12 @@ model CoachProfile {
   website        String?
   instagram      String?
 
+  isActive   Boolean  @default(true)
+  hourlyRate Float?
+  maxClients Int?
+  inviteCode String?  @unique
+  settings   Json?
+
   clients  CoachClient[]
   programs Program[]     @relation("CoachPrograms")
 
@@ -530,7 +548,15 @@ model CoachClient {
   startDate DateTime  @default(now())
   endDate   DateTime?
 
+  invitedAt                DateTime?
+  acceptedAt               DateTime?
+  coachNotes               String?
+  lastActivityAt           DateTime?
+  communicationPreferences Json?
+
   assignments    ProgramAssignment[]
+  workoutAssignments CoachWorkoutAssignment[]
+  inPersonSessions   InPersonSession[]
   CoachProfile   CoachProfile?       @relation(fields: [coachProfileId], references: [id])
   coachProfileId String?
 
@@ -551,6 +577,68 @@ model ProgramAssignment {
 
   @@unique([coachClientId, programId])
   @@map("program_assignments")
+}
+
+model CoachWorkoutAssignment {
+  id        String   @id @default(cuid())
+  coachId   String
+  coach     User     @relation("CoachWorkoutAssignments", fields: [coachId], references: [id])
+  clientId  String
+  client    User     @relation("AssignedWorkouts", fields: [clientId], references: [id])
+  workoutId String
+  workout   Workout  @relation(fields: [workoutId], references: [id])
+
+  coachClientId String
+  coachClient   CoachClient @relation(fields: [coachClientId], references: [id])
+
+  assignedAt    DateTime  @default(now())
+  scheduledFor  DateTime?
+  dueDate       DateTime?
+  status        String    @default("PENDING") // PENDING, COMPLETED, SKIPPED, OVERDUE
+  notes         String?
+  clientNotes   String?
+
+  completedAt   DateTime?
+  sessionLogId  String?   @unique
+  sessionLog    SessionLog? @relation(fields: [sessionLogId], references: [id])
+
+  @@unique([coachClientId, workoutId, scheduledFor])
+  @@map("coach_workout_assignments")
+}
+
+model InPersonSession {
+  id          String   @id @default(cuid())
+  coachId     String
+  coach       User     @relation("CoachSessions", fields: [coachId], references: [id])
+  clientId    String
+  client      User     @relation("ClientSessions", fields: [clientId], references: [id])
+  coachClientId String
+  coachClient CoachClient @relation(fields: [coachClientId], references: [id])
+
+  workoutId   String?
+  workout     Workout? @relation(fields: [workoutId], references: [id])
+  sessionLogId String? @unique
+  sessionLog  SessionLog? @relation(fields: [sessionLogId], references: [id])
+
+  scheduledAt DateTime
+  startedAt    DateTime?
+  completedAt  DateTime?
+  durationSec  Int?
+
+  checkInMethod String? // QR_CODE, MANUAL, SCHEDULED
+  qrCodeId      String? @unique
+  qrCodeExpires DateTime?
+
+  location      String?
+  notes         String?
+  clientFeedback String?
+
+  status        String  @default("SCHEDULED") // SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("in_person_sessions")
 }
 
 // Gym System

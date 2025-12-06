@@ -66,6 +66,7 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
   const router = useRouter();
   const [showIntro, setShowIntro] = useState(true);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  const [introSlideIndex, setIntroSlideIndex] = useState(0); // For mobile intro slides
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showSectionMenu, setShowSectionMenu] = useState(false);
@@ -81,6 +82,7 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
   const { theme, toggleTheme } = useTheme();
   
   const controlsTimeoutRef = useRef<number | undefined>(undefined);
+  const introControlsTimeoutRef = useRef<number | undefined>(undefined);
   const sectionRef = useRef<HTMLDivElement>(null);
   const touchStartRef = useRef<number | null>(null);
   const touchEndRef = useRef<number | null>(null);
@@ -130,9 +132,9 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
   // Calculate progress
   const progress = ((safeSectionIndex + 1) / workout.sections.length) * 100;
 
-  // Auto-hide controls
+  // Auto-hide controls for live deck
   useEffect(() => {
-    if (showControls) {
+    if (showControls && !showIntro) {
       controlsTimeoutRef.current = window.setTimeout(() => {
         setShowControls(false);
       }, 4000);
@@ -142,12 +144,31 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
         window.clearTimeout(controlsTimeoutRef.current);
       }
     };
-  }, [showControls, currentSectionIndex]);
+  }, [showControls, currentSectionIndex, showIntro]);
+
+  // Auto-hide controls for intro screen
+  useEffect(() => {
+    if (showControls && showIntro) {
+      introControlsTimeoutRef.current = window.setTimeout(() => {
+        setShowControls(false);
+      }, 4000);
+    }
+    return () => {
+      if (introControlsTimeoutRef.current) {
+        window.clearTimeout(introControlsTimeoutRef.current);
+      }
+    };
+  }, [showControls, showIntro]);
 
   // Fullscreen handling
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      const isFull = !!document.fullscreenElement;
+      setIsFullscreen(isFull);
+      // Hide controls in fullscreen
+      if (isFull) {
+        setShowControls(false);
+      }
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
@@ -183,6 +204,13 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
 
   const handleMouseMove = useCallback(() => {
     setShowControls(true);
+    // Reset timeout on mouse move
+    if (controlsTimeoutRef.current) {
+      window.clearTimeout(controlsTimeoutRef.current);
+    }
+    if (introControlsTimeoutRef.current) {
+      window.clearTimeout(introControlsTimeoutRef.current);
+    }
   }, []);
 
   const handleNextSection = useCallback(() => {
@@ -202,6 +230,7 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
   }, [currentSectionIndex, workout.sections.length, playSound, triggerTransition]);
 
   const handleStartWorkout = () => {
+    setShowControls(false); // Hide controls when starting
     setShowIntro(false);
     playSound('transition');
   };
@@ -506,69 +535,180 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
     };
 
     return (
-      <div className="fixed inset-0 bg-dark overflow-hidden flex items-center justify-center p-4 sm:p-6 md:p-8" style={{ fontFamily: 'var(--font-manrope)' }}>
-        <div className={`bg-panel thin-border rounded-2xl max-w-5xl w-full ${isMobile ? 'h-[95vh] overflow-y-auto' : 'h-[90vh] overflow-hidden'} flex flex-col p-4 sm:p-6 md:p-8`}>
-          {/* NØDE Branding */}
-          <div className="flex justify-center mb-4 flex-shrink-0">
-            <Logo showOS={true} className="text-2xl" />
-          </div>
-
-          {/* Header */}
-          <div className="text-center mb-4 flex-shrink-0">
-            <h1
-              className="font-bold mb-4"
-              style={{
-                fontFamily: 'var(--font-space-grotesk)',
-                fontSize: isMobile ? '2.5rem' : '4rem',
-                color: 'var(--node-volt)',
-                lineHeight: 1.1,
-              }}
-            >
-              {workout.name}
-            </h1>
-            {workout.displayCode && (
-              <div className="text-node-volt font-mono text-xl sm:text-2xl mb-4">
-                {workout.displayCode}
+      <div
+        className="fixed inset-0 bg-dark overflow-hidden"
+        onMouseMove={handleMouseMove}
+        style={{
+          fontFamily: 'var(--font-manrope)',
+          overflow: 'hidden',
+          height: '100vh',
+          width: '100vw',
+        }}
+      >
+        {/* Top Bar - Navbar Style (same as live deck) */}
+        {showControls && !isFullscreen && (
+          <div className="absolute top-0 left-0 right-0 z-40 bg-dark border-b thin-border pt-2 pb-2 px-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Logo showOS={false} className="text-base" />
+                <div className="bg-panel thin-border px-3 py-1.5">
+                  <div className="text-muted-text text-xs font-mono uppercase tracking-wider">
+                    PREVIEW
+                  </div>
+                  {workout.displayCode && (
+                    <div className="text-node-volt text-[10px] font-mono uppercase tracking-wider mt-0.5">
+                      {workout.displayCode}
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
-            {workout.description && (
-              <p className="text-text-white text-lg sm:text-xl max-w-2xl mx-auto mb-4">
-                {workout.description}
-              </p>
-            )}
-            {workout.archetype && (
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-node-volt/10 border border-node-volt/30 rounded-lg">
-                {(() => {
-                  const ArchetypeIcon = Icons[workout.archetype as keyof typeof Icons] || Icons.WORKOUT;
-                  return <ArchetypeIcon size={18} className="text-node-volt" />;
-                })()}
-                <span className="text-node-volt font-bold uppercase tracking-wider text-sm">{workout.archetype}</span>
+              <div className="flex items-center gap-2">
+                <AudioControls compact={isMobile} />
+                {/* Compact Participants Display */}
+                {participants.length > 0 && (
+                  <div className="flex items-center gap-1 flex-wrap max-w-[120px]">
+                    {participants.map((p, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-1 bg-panel/90 thin-border rounded px-1.5 py-0.5"
+                      >
+                        {p.avatarUrl ? (
+                          <img src={p.avatarUrl} alt={p.name} className="w-4 h-4 rounded-full" />
+                        ) : (
+                          <div className="w-4 h-4 rounded-full bg-node-volt/20 flex items-center justify-center text-[10px] font-bold text-node-volt">
+                            {p.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <button
+                          onClick={() => setParticipants(prev => prev.filter((_, i) => i !== idx))}
+                          className="text-muted-text hover:text-text-white"
+                        >
+                          <Icons.X size={10} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {/* ParticipantManager - Compact version in header */}
+                <div className="flex items-center gap-1">
+                  <ParticipantManager
+                    participants={participants}
+                    onAdd={(p) => setParticipants(prev => [...prev, p])}
+                    onRemove={(idx) => setParticipants(prev => prev.filter((_, i) => i !== idx))}
+                  />
+                </div>
+                {/* Start Button */}
+                <button
+                  onClick={handleStartWorkout}
+                  className={`bg-node-volt text-dark font-bold rounded-lg hover:opacity-90 transition-opacity flex items-center gap-1.5 ${isMobile ? 'px-3 py-1.5 text-xs' : 'px-4 py-2 text-sm'}`}
+                  style={{
+                    fontFamily: 'var(--font-space-grotesk)',
+                  }}
+                >
+                  <Icons.PLAY size={isMobile ? 14 : 16} />
+                  <span className={isMobile ? 'hidden sm:inline' : ''}>Start</span>
+                </button>
+                {/* Theme Toggle */}
+                <button
+                  onClick={toggleTheme}
+                  className="bg-panel thin-border text-text-white px-3 py-1.5 hover:border-node-volt transition-colors"
+                  title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+                >
+                  {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+                </button>
+                {/* Fullscreen Toggle */}
+                <button
+                  onClick={toggleFullscreen}
+                  className="bg-panel thin-border text-text-white px-3 py-1.5 hover:border-node-volt transition-colors"
+                >
+                  {isFullscreen ? <Icons.MINIMIZE size={16} /> : <Icons.MAXIMIZE size={16} />}
+                </button>
               </div>
-            )}
           </div>
+        )}
 
-          {/* Workout Overview */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 flex-shrink-0">
-            <div className="bg-dark-contrast thin-border rounded-lg p-4 text-center">
-              <div className="text-text-white text-sm mb-2 uppercase tracking-wider">Sections</div>
-              <div className="text-3xl font-bold text-node-volt">{workout.sections.length}</div>
-            </div>
-            <div className="bg-dark-contrast thin-border rounded-lg p-4 text-center">
-              <div className="text-text-white text-sm mb-2 uppercase tracking-wider">Duration</div>
-              <div className="text-3xl font-bold text-node-volt">{totalMinutes} min</div>
-            </div>
-            <div className="bg-dark-contrast thin-border rounded-lg p-4 text-center">
-              <div className="text-text-white text-sm mb-2 uppercase tracking-wider">Archetype</div>
-              <div className="text-xl font-bold text-node-volt">{workout.archetype || 'N/A'}</div>
-            </div>
-          </div>
+        {/* Main Content Area - Below Navbar */}
+        <div
+          className="h-full w-full flex items-center justify-center overflow-hidden"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          style={{
+            paddingTop: showControls && !isFullscreen ? (isMobile ? '60px' : '80px') : '0',
+            paddingLeft: isMobile ? '0.5rem' : '1rem',
+            paddingRight: isMobile ? '0.5rem' : '1rem',
+            paddingBottom: isMobile ? '0.5rem' : '1rem',
+            height: '100vh',
+          }}
+        >
+          {isMobile ? (
+            /* Mobile: Swipeable Slides */
+            <div className="relative w-full h-full max-w-5xl">
+              <div 
+                className="flex transition-transform duration-300 ease-out h-full"
+                style={{ transform: `translateX(-${introSlideIndex * 100}%)` }}
+              >
+                {/* Slide 1: Overview */}
+                <div className="min-w-full h-full flex-shrink-0">
+                  <div className="bg-panel thin-border rounded-2xl h-full overflow-y-auto flex flex-col p-4">
+                    {/* Header */}
+                    <div className="text-center mb-4 flex-shrink-0">
+                      <h1
+                        className="font-bold mb-2"
+                        style={{
+                          fontFamily: 'var(--font-space-grotesk)',
+                          fontSize: '1.75rem',
+                          color: 'var(--node-volt)',
+                          lineHeight: 1.1,
+                        }}
+                      >
+                        {workout.name}
+                      </h1>
+                      {workout.displayCode && (
+                        <div className="text-node-volt font-mono text-sm mb-2">
+                          {workout.displayCode}
+                        </div>
+                      )}
+                      {workout.description && (
+                        <p className="text-text-white text-sm max-w-2xl mx-auto mb-2">
+                          {workout.description}
+                        </p>
+                      )}
+                      {workout.archetype && (
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-node-volt/10 border border-node-volt/30 rounded-lg">
+                          {(() => {
+                            const ArchetypeIcon = Icons[workout.archetype as keyof typeof Icons] || Icons.WORKOUT;
+                            return <ArchetypeIcon size={14} className="text-node-volt" />;
+                          })()}
+                          <span className="text-node-volt font-bold uppercase tracking-wider text-xs">{workout.archetype}</span>
+                        </div>
+                      )}
+                    </div>
 
-          {/* Detailed Sections List - Scrollable */}
-          <div className="flex-1 overflow-y-auto mb-4 min-h-0">
-            <h2 className="text-2xl font-bold mb-4 text-text-white" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                    {/* Workout Overview */}
+                    <div className="grid grid-cols-3 gap-3 mb-4 flex-shrink-0">
+                      <div className={`thin-border rounded-lg p-3 text-center ${theme === 'light' ? 'bg-gray-100 border-gray-300' : 'bg-dark-contrast'}`}>
+                        <div className={`text-xs mb-1 uppercase tracking-wider ${theme === 'light' ? 'text-gray-600' : 'text-text-white'}`}>Sections</div>
+                        <div className={`text-2xl font-bold text-node-volt`}>{workout.sections.length}</div>
+                      </div>
+                      <div className={`thin-border rounded-lg p-3 text-center ${theme === 'light' ? 'bg-gray-100 border-gray-300' : 'bg-dark-contrast'}`}>
+                        <div className={`text-xs mb-1 uppercase tracking-wider ${theme === 'light' ? 'text-gray-600' : 'text-text-white'}`}>Duration</div>
+                        <div className={`text-2xl font-bold text-node-volt`}>{totalMinutes} min</div>
+                      </div>
+                      <div className={`thin-border rounded-lg p-3 text-center ${theme === 'light' ? 'bg-gray-100 border-gray-300' : 'bg-dark-contrast'}`}>
+                        <div className={`text-xs mb-1 uppercase tracking-wider ${theme === 'light' ? 'text-gray-600' : 'text-text-white'}`}>Archetype</div>
+                        <div className={`text-lg font-bold text-node-volt`}>{workout.archetype || 'N/A'}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+          {/* Detailed Sections List - Grid layout for better space usage - Now with more vertical space */}
+          <div className={`flex-1 min-h-0 flex flex-col`}>
+            <h2 className={`font-bold mb-1.5 text-text-white flex-shrink-0 ${isMobile ? 'text-base' : isTablet ? 'text-lg' : 'text-xl'}`} style={{ fontFamily: 'var(--font-space-grotesk)' }}>
               Workout Breakdown
             </h2>
-            <div className="space-y-4">
+            <div className={`flex-1 min-h-0 ${isMobile ? 'overflow-y-auto' : 'overflow-hidden'}`}>
+              <div className={`grid ${isMobile ? 'grid-cols-1' : isTablet ? 'grid-cols-2' : 'grid-cols-3'} gap-2 auto-rows-fr h-full`}>
               {workout.sections.map((section, idx) => {
                 const sectionColor = SECTION_COLORS[section.type] || '#ccff00';
                 const blockCount = section.blocks?.length || 0;
@@ -577,79 +717,79 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
                 return (
                   <div
                     key={section.id || idx}
-                    className="bg-dark-contrast thin-border rounded-lg p-5 sm:p-6"
+                    className={`thin-border rounded-lg ${isMobile ? 'p-3' : 'p-2.5'} ${theme === 'light' ? 'bg-gray-50 border-gray-200' : 'bg-dark-contrast'} flex flex-col h-full`}
                   >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
                         <div
-                          className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg flex-shrink-0"
+                          className={`rounded-lg flex items-center justify-center font-bold flex-shrink-0 ${isMobile ? 'w-10 h-10 text-base' : 'w-8 h-8 text-sm'}`}
                           style={{ backgroundColor: `${sectionColor}20`, color: sectionColor }}
                         >
                           {idx + 1}
                         </div>
-                        <div>
-                          <div className="font-bold text-xl mb-1 text-text-white">{section.title}</div>
-                          <div className="text-sm text-node-volt uppercase tracking-wider mb-2">{section.type}</div>
-                          <div className="text-sm text-text-white">{getSectionTypeDescription(section.type)}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className={`font-bold text-text-white ${isMobile ? 'text-base' : 'text-sm'} truncate`}>{section.title}</div>
+                          <div className={`text-node-volt uppercase tracking-wider ${isMobile ? 'text-xs' : 'text-[10px]'}`}>{section.type}</div>
+                          <div className={`text-text-white ${isMobile ? 'text-xs' : 'text-[10px]'} line-clamp-1`}>{getSectionTypeDescription(section.type)}</div>
                         </div>
                       </div>
                     </div>
                     
                     {section.note && (
-                      <div className="mb-4 p-3 bg-panel/50 rounded-lg">
-                        <p className="text-sm text-text-white italic">{section.note}</p>
+                      <div className={`mb-2 p-2 rounded-lg ${theme === 'light' ? 'bg-gray-100' : 'bg-panel/50'}`}>
+                        <p className={`text-text-white italic ${isMobile ? 'text-xs' : 'text-[10px]'} line-clamp-1`}>{section.note}</p>
                       </div>
                     )}
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                    <div className={`grid grid-cols-2 sm:grid-cols-4 gap-1.5 mb-2`}>
                       {section.type === 'EMOM' && (
                         <>
                           {section.emomRounds && (
-                            <div className="bg-panel/30 rounded p-2">
-                              <div className="text-xs text-text-white mb-1">Rounds</div>
-                              <div className="text-sm font-bold text-node-volt">{section.emomRounds}</div>
+                            <div className={`rounded p-1.5 ${theme === 'light' ? 'bg-gray-100' : 'bg-panel/30'}`}>
+                              <div className={`text-text-white mb-0.5 ${isMobile ? 'text-[10px]' : 'text-[9px]'}`}>Rounds</div>
+                              <div className={`font-bold text-node-volt ${isMobile ? 'text-xs' : 'text-[10px]'}`}>{section.emomRounds}</div>
                             </div>
                           )}
                           {section.emomWorkSec && (
-                            <div className="bg-panel/30 rounded p-2">
-                              <div className="text-xs text-text-white mb-1">Work</div>
-                              <div className="text-sm font-bold text-node-volt">{section.emomWorkSec}s</div>
+                            <div className={`rounded p-1.5 ${theme === 'light' ? 'bg-gray-100' : 'bg-panel/30'}`}>
+                              <div className={`text-text-white mb-0.5 ${isMobile ? 'text-[10px]' : 'text-[9px]'}`}>Work</div>
+                              <div className={`font-bold text-node-volt ${isMobile ? 'text-xs' : 'text-[10px]'}`}>{section.emomWorkSec}s</div>
                             </div>
                           )}
                           {section.emomRestSec && (
-                            <div className="bg-panel/30 rounded p-2">
-                              <div className="text-xs text-text-white mb-1">Rest</div>
-                              <div className="text-sm font-bold text-node-volt">{section.emomRestSec}s</div>
+                            <div className={`rounded p-1.5 ${theme === 'light' ? 'bg-gray-100' : 'bg-panel/30'}`}>
+                              <div className={`text-text-white mb-0.5 ${isMobile ? 'text-[10px]' : 'text-[9px]'}`}>Rest</div>
+                              <div className={`font-bold text-node-volt ${isMobile ? 'text-xs' : 'text-[10px]'}`}>{section.emomRestSec}s</div>
                             </div>
                           )}
                         </>
                       )}
                       {section.durationSec && (
-                        <div className="bg-panel/30 rounded p-2">
-                          <div className="text-xs text-text-white mb-1">Duration</div>
-                          <div className="text-sm font-bold text-node-volt">{Math.ceil(section.durationSec / 60)} min</div>
+                        <div className={`rounded p-1.5 ${theme === 'light' ? 'bg-gray-100' : 'bg-panel/30'}`}>
+                          <div className={`text-text-white mb-0.5 ${isMobile ? 'text-[10px]' : 'text-[9px]'}`}>Duration</div>
+                          <div className={`font-bold text-node-volt ${isMobile ? 'text-xs' : 'text-[10px]'}`}>{Math.ceil(section.durationSec / 60)} min</div>
                         </div>
                       )}
                       {totalExercises > 0 && (
-                        <div className="bg-panel/30 rounded p-2">
-                          <div className="text-xs text-text-white mb-1">Exercises</div>
-                          <div className="text-sm font-bold text-node-volt">{totalExercises}</div>
+                        <div className={`rounded p-1.5 ${theme === 'light' ? 'bg-gray-100' : 'bg-panel/30'}`}>
+                          <div className={`text-text-white mb-0.5 ${isMobile ? 'text-[10px]' : 'text-[9px]'}`}>Exercises</div>
+                          <div className={`font-bold text-node-volt ${isMobile ? 'text-xs' : 'text-[10px]'}`}>{totalExercises}</div>
                         </div>
                       )}
                     </div>
 
                     {/* Exercise List */}
                     {section.blocks && section.blocks.length > 0 && (
-                      <div className="mt-4">
-                        <div className="text-xs text-text-white uppercase tracking-wider mb-2">Exercises</div>
-                        <div className="flex flex-wrap gap-2">
+                      <div className="mt-1.5">
+                        <div className={`text-text-white uppercase tracking-wider mb-1 ${isMobile ? 'text-[10px]' : 'text-[9px]'}`}>Exercises</div>
+                        <div className="flex flex-wrap gap-1">
                           {section.blocks.map((block: any, blockIdx: number) => (
                             <div
                               key={blockIdx}
-                              className="px-3 py-1.5 bg-panel/50 thin-border rounded text-sm"
+                              className={`px-2 py-1 thin-border rounded ${theme === 'light' ? 'bg-gray-100 border-gray-200' : 'bg-panel/50'} ${isMobile ? 'text-xs' : 'text-[10px]'}`}
                             >
-                              {block.label && <span className="text-node-volt font-mono mr-2">{block.label}</span>}
-                              <span className="text-text-white">{block.exerciseName}</span>
+                              {block.label && <span className="text-node-volt font-mono mr-1">{block.label}</span>}
+                              <span className="text-text-white truncate max-w-[120px] sm:max-w-[200px]">{block.exerciseName}</span>
                             </div>
                           ))}
                         </div>
@@ -660,34 +800,282 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete }: LiveDeckPlaye
               })}
             </div>
           </div>
-
-          {/* Participant Manager */}
-          <div className="mb-4 flex-shrink-0">
-            <h2 className="text-2xl font-bold mb-4 text-text-white" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-              Participants
-            </h2>
-            <ParticipantManager
-              participants={participants}
-              onAdd={(p) => setParticipants(prev => [...prev, p])}
-              onRemove={(idx) => setParticipants(prev => prev.filter((_, i) => i !== idx))}
-            />
           </div>
+          {isMobile ? (
+            /* Mobile: Close slides container and add indicators */
+            <>
+              {/* Slide 2: Workout Breakdown */}
+              <div className="min-w-full h-full flex-shrink-0">
+                <div className="bg-panel thin-border rounded-2xl h-full overflow-y-auto flex flex-col p-4">
+                  <h2 className="font-bold mb-4 text-text-white text-xl" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                    Workout Breakdown
+                  </h2>
+                  <div className="flex-1 space-y-3">
+                    {workout.sections.map((section, idx) => {
+                      const sectionColor = SECTION_COLORS[section.type] || '#ccff00';
+                      const blockCount = section.blocks?.length || 0;
+                      const totalExercises = blockCount;
+                      
+                      return (
+                        <div
+                          key={section.id || idx}
+                          className={`thin-border rounded-lg p-3 ${theme === 'light' ? 'bg-gray-50 border-gray-200' : 'bg-dark-contrast'}`}
+                        >
+                          <div className="flex items-center gap-3 mb-2">
+                            <div
+                              className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-base flex-shrink-0"
+                              style={{ backgroundColor: `${sectionColor}20`, color: sectionColor }}
+                            >
+                              {idx + 1}
+                            </div>
+                            <div className="flex-1">
+                              <div className="font-bold text-text-white text-base">{section.title}</div>
+                              <div className="text-node-volt uppercase tracking-wider text-xs">{section.type}</div>
+                            </div>
+                          </div>
+                          {section.note && (
+                            <p className="text-text-white text-xs mb-2 italic">{section.note}</p>
+                          )}
+                          <div className="grid grid-cols-2 gap-2 mb-2">
+                            {section.durationSec && (
+                              <div className={`rounded p-2 ${theme === 'light' ? 'bg-gray-100' : 'bg-panel/30'}`}>
+                                <div className="text-text-white text-xs mb-1">Duration</div>
+                                <div className="font-bold text-node-volt text-sm">{Math.ceil(section.durationSec / 60)} min</div>
+                              </div>
+                            )}
+                            {totalExercises > 0 && (
+                              <div className={`rounded p-2 ${theme === 'light' ? 'bg-gray-100' : 'bg-panel/30'}`}>
+                                <div className="text-text-white text-xs mb-1">Exercises</div>
+                                <div className="font-bold text-node-volt text-sm">{totalExercises}</div>
+                              </div>
+                            )}
+                          </div>
+                          {section.blocks && section.blocks.length > 0 && (
+                            <div className="mt-2">
+                              <div className="text-text-white uppercase tracking-wider text-xs mb-2">Exercises</div>
+                              <div className="flex flex-wrap gap-1">
+                                {section.blocks.map((block: any, blockIdx: number) => (
+                                  <div
+                                    key={blockIdx}
+                                    className={`px-2 py-1 thin-border rounded text-xs ${theme === 'light' ? 'bg-gray-100 border-gray-200' : 'bg-panel/50'}`}
+                                  >
+                                    {block.label && <span className="text-node-volt font-mono mr-1">{block.label}</span>}
+                                    <span className="text-text-white">{block.exerciseName}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
 
-          {/* Start Button */}
-          <div className="flex justify-center flex-shrink-0">
-            <button
-              onClick={handleStartWorkout}
-              className="bg-node-volt text-dark font-bold px-12 py-4 rounded-lg hover:opacity-90 transition-opacity text-xl flex items-center gap-3"
-              style={{
-                fontFamily: 'var(--font-space-grotesk)',
-                minWidth: '200px',
-                minHeight: config.touchTargetSize,
-              }}
-            >
-              <Icons.PLAY size={24} />
-              Start Workout
-            </button>
-          </div>
+              {/* Slide 3: Participants & Start */}
+              <div className="min-w-full h-full flex-shrink-0">
+                <div className="bg-panel thin-border rounded-2xl h-full overflow-y-auto flex flex-col p-4">
+                  <h2 className="font-bold mb-4 text-text-white text-xl" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                    Participants
+                  </h2>
+                  <div className="mb-6">
+                    <ParticipantManager
+                      participants={participants}
+                      onAdd={(p) => setParticipants(prev => [...prev, p])}
+                      onRemove={(idx) => setParticipants(prev => prev.filter((_, i) => i !== idx))}
+                    />
+                  </div>
+                  <div className="flex-1 flex items-center justify-center">
+                    <button
+                      onClick={handleStartWorkout}
+                      className="bg-node-volt text-dark font-bold px-8 py-4 rounded-lg hover:opacity-90 transition-opacity text-lg flex items-center gap-3 w-full justify-center"
+                      style={{
+                        fontFamily: 'var(--font-space-grotesk)',
+                        minHeight: config.touchTargetSize,
+                      }}
+                    >
+                      <Icons.PLAY size={24} />
+                      Start Workout
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Slide Indicators */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-40 flex gap-2">
+              {[0, 1, 2].map((idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setIntroSlideIndex(idx)}
+                  className={`thin-border transition-all ${
+                    idx === introSlideIndex
+                      ? 'bg-node-volt border-node-volt'
+                      : 'bg-panel hover:border-node-volt'
+                  }`}
+                  style={{
+                    width: idx === introSlideIndex ? '24px' : '8px',
+                    height: '8px',
+                  }}
+                />
+              ))}
+            </div>
+          </>
+          ) : (
+            /* Desktop/Tablet: Single Screen */
+            <div className={`bg-panel thin-border rounded-2xl max-w-5xl w-full h-[calc(100vh-100px)] overflow-hidden flex flex-col p-3 sm:p-4 md:p-6`}>
+              {/* Header */}
+              <div className="text-center mb-2 sm:mb-3 flex-shrink-0">
+                <h1
+                  className="font-bold mb-1 sm:mb-2"
+                  style={{
+                    fontFamily: 'var(--font-space-grotesk)',
+                    fontSize: isTablet ? '2.5rem' : '3rem',
+                    color: 'var(--node-volt)',
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {workout.name}
+                </h1>
+                {workout.displayCode && (
+                  <div className="text-node-volt font-mono text-base md:text-lg mb-1 sm:mb-2">
+                    {workout.displayCode}
+                  </div>
+                )}
+                {workout.description && (
+                  <p className="text-text-white text-sm md:text-base max-w-2xl mx-auto mb-1 sm:mb-2">
+                    {workout.description}
+                  </p>
+                )}
+                {workout.archetype && (
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-node-volt/10 border border-node-volt/30 rounded-lg">
+                    {(() => {
+                      const ArchetypeIcon = Icons[workout.archetype as keyof typeof Icons] || Icons.WORKOUT;
+                      return <ArchetypeIcon size={14} className="text-node-volt" />;
+                    })()}
+                    <span className="text-node-volt font-bold uppercase tracking-wider text-xs">{workout.archetype}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Workout Overview */}
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-2 sm:mb-3 flex-shrink-0">
+                <div className={`thin-border rounded-lg p-2 sm:p-3 text-center ${theme === 'light' ? 'bg-gray-100 border-gray-300' : 'bg-dark-contrast'}`}>
+                  <div className={`text-xs sm:text-sm mb-1 uppercase tracking-wider ${theme === 'light' ? 'text-gray-600' : 'text-text-white'}`}>Sections</div>
+                  <div className={`text-xl sm:text-2xl md:text-3xl font-bold text-node-volt`}>{workout.sections.length}</div>
+                </div>
+                <div className={`thin-border rounded-lg p-2 sm:p-3 text-center ${theme === 'light' ? 'bg-gray-100 border-gray-300' : 'bg-dark-contrast'}`}>
+                  <div className={`text-xs sm:text-sm mb-1 uppercase tracking-wider ${theme === 'light' ? 'text-gray-600' : 'text-text-white'}`}>Duration</div>
+                  <div className={`text-xl sm:text-2xl md:text-3xl font-bold text-node-volt`}>{totalMinutes} min</div>
+                </div>
+                <div className={`thin-border rounded-lg p-2 sm:p-3 text-center ${theme === 'light' ? 'bg-gray-100 border-gray-300' : 'bg-dark-contrast'}`}>
+                  <div className={`text-xs sm:text-sm mb-1 uppercase tracking-wider ${theme === 'light' ? 'text-gray-600' : 'text-text-white'}`}>Archetype</div>
+                  <div className={`text-base sm:text-lg md:text-xl font-bold text-node-volt`}>{workout.archetype || 'N/A'}</div>
+                </div>
+              </div>
+
+              {/* Detailed Sections List - Grid layout */}
+              <div className={`flex-1 min-h-0 flex flex-col`}>
+                <h2 className={`font-bold mb-1.5 text-text-white flex-shrink-0 ${isTablet ? 'text-lg' : 'text-xl'}`} style={{ fontFamily: 'var(--font-space-grotesk)' }}>
+                  Workout Breakdown
+                </h2>
+                <div className={`flex-1 min-h-0 overflow-hidden`}>
+                  <div className={`grid ${isTablet ? 'grid-cols-2' : 'grid-cols-3'} gap-2 auto-rows-fr h-full`}>
+                    {workout.sections.map((section, idx) => {
+                      const sectionColor = SECTION_COLORS[section.type] || '#ccff00';
+                      const blockCount = section.blocks?.length || 0;
+                      const totalExercises = blockCount;
+                      
+                      return (
+                        <div
+                          key={section.id || idx}
+                          className={`thin-border rounded-lg p-2.5 ${theme === 'light' ? 'bg-gray-50 border-gray-200' : 'bg-dark-contrast'} flex flex-col h-full`}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <div
+                                className="rounded-lg flex items-center justify-center font-bold flex-shrink-0 w-8 h-8 text-sm"
+                                style={{ backgroundColor: `${sectionColor}20`, color: sectionColor }}
+                              >
+                                {idx + 1}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="font-bold text-text-white text-sm truncate">{section.title}</div>
+                                <div className="text-node-volt uppercase tracking-wider text-[10px]">{section.type}</div>
+                                <div className="text-text-white text-[10px] line-clamp-1">{getSectionTypeDescription(section.type)}</div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {section.note && (
+                            <div className={`mb-2 p-2 rounded-lg ${theme === 'light' ? 'bg-gray-100' : 'bg-panel/50'}`}>
+                              <p className={`text-text-white italic text-[10px] line-clamp-1`}>{section.note}</p>
+                            </div>
+                          )}
+
+                          <div className={`grid grid-cols-2 sm:grid-cols-4 gap-1.5 mb-2`}>
+                            {section.type === 'EMOM' && (
+                              <>
+                                {section.emomRounds && (
+                                  <div className={`rounded p-1.5 ${theme === 'light' ? 'bg-gray-100' : 'bg-panel/30'}`}>
+                                    <div className={`text-text-white mb-0.5 text-[9px]`}>Rounds</div>
+                                    <div className={`font-bold text-node-volt text-[10px]`}>{section.emomRounds}</div>
+                                  </div>
+                                )}
+                                {section.emomWorkSec && (
+                                  <div className={`rounded p-1.5 ${theme === 'light' ? 'bg-gray-100' : 'bg-panel/30'}`}>
+                                    <div className={`text-text-white mb-0.5 text-[9px]`}>Work</div>
+                                    <div className={`font-bold text-node-volt text-[10px]`}>{section.emomWorkSec}s</div>
+                                  </div>
+                                )}
+                                {section.emomRestSec && (
+                                  <div className={`rounded p-1.5 ${theme === 'light' ? 'bg-gray-100' : 'bg-panel/30'}`}>
+                                    <div className={`text-text-white mb-0.5 text-[9px]`}>Rest</div>
+                                    <div className={`font-bold text-node-volt text-[10px]`}>{section.emomRestSec}s</div>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                            {section.durationSec && (
+                              <div className={`rounded p-1.5 ${theme === 'light' ? 'bg-gray-100' : 'bg-panel/30'}`}>
+                                <div className={`text-text-white mb-0.5 text-[9px]`}>Duration</div>
+                                <div className={`font-bold text-node-volt text-[10px]`}>{Math.ceil(section.durationSec / 60)} min</div>
+                              </div>
+                            )}
+                            {totalExercises > 0 && (
+                              <div className={`rounded p-1.5 ${theme === 'light' ? 'bg-gray-100' : 'bg-panel/30'}`}>
+                                <div className={`text-text-white mb-0.5 text-[9px]`}>Exercises</div>
+                                <div className={`font-bold text-node-volt text-[10px]`}>{totalExercises}</div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Exercise List */}
+                          {section.blocks && section.blocks.length > 0 && (
+                            <div className="mt-1.5">
+                              <div className={`text-text-white uppercase tracking-wider mb-1 text-[9px]`}>Exercises</div>
+                              <div className="flex flex-wrap gap-1">
+                                {section.blocks.map((block: any, blockIdx: number) => (
+                                  <div
+                                    key={blockIdx}
+                                    className={`px-2 py-1 thin-border rounded ${theme === 'light' ? 'bg-gray-100 border-gray-200' : 'bg-panel/50'} text-[10px]`}
+                                  >
+                                    {block.label && <span className="text-node-volt font-mono mr-1">{block.label}</span>}
+                                    <span className="text-text-white truncate max-w-[120px] sm:max-w-[200px]">{block.exerciseName}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );

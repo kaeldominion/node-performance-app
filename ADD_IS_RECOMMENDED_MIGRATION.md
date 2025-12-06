@@ -59,3 +59,4 @@ npx prisma migrate deploy
 The migration file is located at:
 `backend/prisma/migrations/20251208000000_add_is_recommended_to_workouts/migration.sql`
 
+

@@ -150,3 +150,6 @@ BEGIN
     END IF;
 END $$;
 
+-- 11. Add imageUrl to user_profiles if it doesn't exist
+ALTER TABLE "user_profiles" ADD COLUMN IF NOT EXISTS "imageUrl" TEXT;
+
