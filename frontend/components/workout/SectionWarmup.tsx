@@ -71,19 +71,19 @@ export default function SectionWarmup({ title, note, blocks }: SectionWarmupProp
                 {block.tierSilver && (
                   <div className="bg-panel thin-border rounded p-3" style={{ borderColor: '#94a3b8', backgroundColor: 'rgba(148, 163, 184, 0.1)' }}>
                     <div className="text-sm mb-1 font-bold uppercase tracking-wider" style={{ color: '#94a3b8' }}>SILVER</div>
-                    <div className="font-medium" style={{ color: '#94a3b8' }}>{getTierDisplayValue(block.tierSilver, block.exerciseName, block)}</div>
+                    <div className="font-medium" style={{ color: '#94a3b8' }}>{getTierDisplayValue(block.tierSilver, block.exerciseName, block as any)}</div>
                   </div>
                 )}
                 {block.tierGold && (
                   <div className="bg-panel thin-border rounded p-3" style={{ borderColor: '#fbbf24', backgroundColor: 'rgba(251, 191, 36, 0.1)' }}>
                     <div className="text-sm mb-1 font-bold uppercase tracking-wider" style={{ color: '#fbbf24' }}>GOLD</div>
-                    <div className="font-medium" style={{ color: '#fbbf24' }}>{getTierDisplayValue(block.tierGold, block.exerciseName, block)}</div>
+                    <div className="font-medium" style={{ color: '#fbbf24' }}>{getTierDisplayValue(block.tierGold, block.exerciseName, block as any)}</div>
                   </div>
                 )}
                 {block.tierBlack && (
                   <div className="bg-panel thin-border rounded p-3 border-node-volt" style={{ backgroundColor: theme === 'dark' ? 'rgba(26, 26, 26, 0.8)' : 'rgba(31, 41, 55, 0.8)' }}>
                     <div className="text-sm mb-1 font-bold uppercase tracking-wider text-node-volt">BLACK</div>
-                    <div className="font-medium text-node-volt">{getTierDisplayValue(block.tierBlack, block.exerciseName, block)}</div>
+                    <div className="font-medium text-node-volt">{getTierDisplayValue(block.tierBlack, block.exerciseName, block as any)}</div>
                   </div>
                 )}
               </div>

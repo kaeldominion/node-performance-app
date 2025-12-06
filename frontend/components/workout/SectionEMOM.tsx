@@ -124,17 +124,17 @@ export default function SectionEMOM({ title, note, blocks, workSec, restSec, rou
               <div className="mt-3 space-y-2">
                 {block.tierSilver && (
                   <div className="text-xs bg-panel rounded p-2 thin-border" style={{ borderColor: '#94a3b8', backgroundColor: 'rgba(148, 163, 184, 0.1)' }}>
-                    <div style={{ color: '#94a3b8', fontWeight: 'bold' }}>SILVER: {getTierDisplayValue(block.tierSilver, block.exerciseName, block)}</div>
+                    <div style={{ color: '#94a3b8', fontWeight: 'bold' }}>SILVER: {getTierDisplayValue(block.tierSilver, block.exerciseName, block as any)}</div>
                   </div>
                 )}
                 {block.tierGold && (
                   <div className="text-xs bg-panel rounded p-2 thin-border" style={{ borderColor: '#fbbf24', backgroundColor: 'rgba(251, 191, 36, 0.1)' }}>
-                    <div style={{ color: '#fbbf24', fontWeight: 'bold' }}>GOLD: {getTierDisplayValue(block.tierGold, block.exerciseName, block)}</div>
+                    <div style={{ color: '#fbbf24', fontWeight: 'bold' }}>GOLD: {getTierDisplayValue(block.tierGold, block.exerciseName, block as any)}</div>
                   </div>
                 )}
                 {block.tierBlack && (
                   <div className="text-xs bg-panel border border-node-volt rounded p-2" style={{ backgroundColor: theme === 'dark' ? 'rgba(26, 26, 26, 0.8)' : 'rgba(31, 41, 55, 0.8)' }}>
-                    <div className="text-node-volt font-bold">BLACK: {getTierDisplayValue(block.tierBlack, block.exerciseName, block)}</div>
+                    <div className="text-node-volt font-bold">BLACK: {getTierDisplayValue(block.tierBlack, block.exerciseName, block as any)}</div>
                   </div>
                 )}
               </div>
