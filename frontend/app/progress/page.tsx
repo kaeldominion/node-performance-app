@@ -42,6 +42,7 @@ export default function ProgressPage() {
   const [trendPeriod, setTrendPeriod] = useState<'1m' | '3m' | '6m' | '1y'>('1m');
   const [showShareModal, setShowShareModal] = useState(false);
   const [achievements, setAchievements] = useState<any[]>([]);
+  const [xpStats, setXpStats] = useState<any>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
