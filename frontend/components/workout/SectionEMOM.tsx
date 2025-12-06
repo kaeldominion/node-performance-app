@@ -10,7 +10,9 @@ interface ExerciseBlock {
   id: string;
   label?: string;
   exerciseName: string;
-  description?: string;
+  description?: string; // Legacy field
+  shortDescription?: string; // Brief form cue (max 80 chars)
+  longDescription?: string; // Detailed instructions
   repScheme?: string;
   exerciseImageUrl?: string;
   exerciseInstructions?: string;
@@ -33,16 +35,18 @@ export default function SectionEMOM({ title, note, blocks, workSec, restSec, rou
   const [activeStation, setActiveStation] = useState(0);
   const { speak } = useVoice();
 
-  const handlePhaseChange = (phase: 'work' | 'rest', round: number) => {
+  const handlePhaseChange = (phase: 'work' | 'rest' | 'betweenRoundRest', round: number) => {
     if (phase === 'work') {
       setActiveStation((round - 1) % blocks.length);
       speak(`Round ${round}, Station ${activeStation + 1}, ${blocks[activeStation].exerciseName}`);
-    } else {
+    } else if (phase === 'rest') {
       speak('Rest');
+    } else if (phase === 'betweenRoundRest') {
+      speak('Rest between rounds');
     }
   };
 
-  const handleTick = (time: number, phase: 'work' | 'rest', round: number) => {
+  const handleTick = (time: number, phase: 'work' | 'rest' | 'betweenRoundRest', round: number) => {
     if (phase === 'work' && time === 10) {
       speak('Ten seconds remaining');
     }

@@ -25,7 +25,9 @@ interface WorkoutDetailsModalProps {
         id?: string;
         exerciseName: string;
         exerciseId?: string;
-        description?: string;
+        description?: string; // Legacy field
+        shortDescription?: string; // Brief form cue (max 80 chars)
+        longDescription?: string; // Detailed instructions
         repScheme?: string;
         label?: string;
       }>;

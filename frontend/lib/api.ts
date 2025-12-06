@@ -451,10 +451,6 @@ export const workoutsApi = {
     const response = await api.get(`/workouts/${id}/ratings/user`);
     return response.data;
   },
-  delete: async (id: string) => {
-    const response = await api.delete(`/workouts/${id}`);
-    return response.data;
-  },
 };
 
 // Schedule API
