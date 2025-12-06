@@ -53,6 +53,11 @@ export default function Navbar() {
                 Exercises
               </Link>
             )}
+            {user?.role === 'COACH' && (
+              <Link href="/coach" className="text-sm text-node-volt hover:text-node-volt/80 transition-colors font-semibold">
+                Coach
+              </Link>
+            )}
             {user?.isAdmin && (
               <Link href="/admin" className="text-sm text-node-volt hover:text-node-volt/80 transition-colors font-semibold">
                 Admin
@@ -164,6 +169,11 @@ export default function Navbar() {
               <Link href="/exercises" className="flex items-center gap-2 px-4 py-2 text-muted-text hover:text-text-white hover:bg-panel/50 transition-colors rounded" onClick={() => setMobileMenuOpen(false)}>
                 <Icons.EXERCISE_LIBRARY size={16} />
                 Exercises
+              </Link>
+            )}
+            {user?.role === 'COACH' && (
+              <Link href="/coach" className="block px-4 py-2 text-node-volt hover:text-node-volt/80 hover:bg-panel/50 transition-colors font-semibold rounded" onClick={() => setMobileMenuOpen(false)}>
+                Coach
               </Link>
             )}
             {user?.isAdmin && (

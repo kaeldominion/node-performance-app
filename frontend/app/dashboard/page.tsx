@@ -17,7 +17,6 @@ import { UserProfileModal } from '@/components/user/UserProfileModal';
 import { AchievementShareModal } from '@/components/achievements/AchievementShareModal';
 import { Share2 } from 'lucide-react';
 import { WorkoutCard } from '@/components/workout/WorkoutCard';
-import { coachApi } from '@/lib/api';
 
 // Mini AI Form Component
 function AIMiniForm() {
@@ -166,15 +165,6 @@ export default function Dashboard() {
   const [selectedUserIdForProfile, setSelectedUserIdForProfile] = useState<string | null>(null);
   const [selectedBadgeForShare, setSelectedBadgeForShare] = useState<any | null>(null);
   const [showBadgeShareModal, setShowBadgeShareModal] = useState(false);
-  const [showCoachUpgradeModal, setShowCoachUpgradeModal] = useState(false);
-  const [coachUpgradeData, setCoachUpgradeData] = useState({
-    bio: '',
-    specialties: [] as string[],
-    certifications: [] as string[],
-    website: '',
-    instagram: '',
-  });
-  const [upgrading, setUpgrading] = useState(false);
 
   useEffect(() => {
     // Wait for auth to load
@@ -351,31 +341,6 @@ export default function Dashboard() {
     <div className="min-h-screen bg-deep-asphalt">
       <Navbar />
       
-      {/* Coach Upgrade Banner */}
-      {user && user.role === 'HOME_USER' && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-          <div className="bg-gradient-to-r from-node-volt/20 to-node-volt/10 border border-node-volt/50 rounded-xl p-6 mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-2xl font-bold mb-2" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-                  Become a Coach
-                </h3>
-                <p className="text-muted-text">
-                  Share your expertise and help others achieve their fitness goals. Upgrade to coach status to manage clients, assign workouts, and track progress.
-                </p>
-              </div>
-              <button
-                onClick={() => setShowCoachUpgradeModal(true)}
-                className="bg-node-volt text-dark font-bold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
-                style={{ fontFamily: 'var(--font-space-grotesk)' }}
-              >
-                Upgrade to Coach
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Hero Section with Gradient Background */}
       <div className="relative bg-gradient-to-br from-deep-asphalt via-concrete-grey to-deep-asphalt border-b border-border-dark overflow-hidden">
         {/* Animated background elements */}
@@ -1113,127 +1078,6 @@ export default function Dashboard() {
             value: selectedBadgeForShare.value,
           }}
         />
-      )}
-
-      {/* Coach Upgrade Modal */}
-      {showCoachUpgradeModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-panel thin-border rounded-lg p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-3xl font-bold mb-6" style={{ fontFamily: 'var(--font-space-grotesk)' }}>
-              Upgrade to Coach
-            </h2>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2 text-muted-text">
-                  Bio
-                </label>
-                <textarea
-                  value={coachUpgradeData.bio}
-                  onChange={(e) => setCoachUpgradeData({ ...coachUpgradeData, bio: e.target.value })}
-                  placeholder="Tell us about your coaching experience and philosophy..."
-                  className="w-full bg-dark thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt resize-none"
-                  rows={4}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2 text-muted-text">
-                  Specialties (comma-separated)
-                </label>
-                <input
-                  type="text"
-                  value={coachUpgradeData.specialties.join(', ')}
-                  onChange={(e) => setCoachUpgradeData({
-                    ...coachUpgradeData,
-                    specialties: e.target.value.split(',').map(s => s.trim()).filter(s => s),
-                  })}
-                  placeholder="e.g., Strength Training, Hypertrophy, Conditioning"
-                  className="w-full bg-dark thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2 text-muted-text">
-                  Certifications (comma-separated)
-                </label>
-                <input
-                  type="text"
-                  value={coachUpgradeData.certifications.join(', ')}
-                  onChange={(e) => setCoachUpgradeData({
-                    ...coachUpgradeData,
-                    certifications: e.target.value.split(',').map(s => s.trim()).filter(s => s),
-                  })}
-                  placeholder="e.g., NASM-CPT, CSCS, CrossFit Level 1"
-                  className="w-full bg-dark thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2 text-muted-text">
-                  Website (optional)
-                </label>
-                <input
-                  type="url"
-                  value={coachUpgradeData.website}
-                  onChange={(e) => setCoachUpgradeData({ ...coachUpgradeData, website: e.target.value })}
-                  placeholder="https://yourwebsite.com"
-                  className="w-full bg-dark thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2 text-muted-text">
-                  Instagram (optional)
-                </label>
-                <input
-                  type="text"
-                  value={coachUpgradeData.instagram}
-                  onChange={(e) => setCoachUpgradeData({ ...coachUpgradeData, instagram: e.target.value })}
-                  placeholder="@yourusername"
-                  className="w-full bg-dark thin-border rounded-lg px-4 py-3 text-text-white focus:outline-none focus:border-node-volt"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-4 mt-8">
-              <button
-                onClick={() => {
-                  setShowCoachUpgradeModal(false);
-                  setCoachUpgradeData({
-                    bio: '',
-                    specialties: [],
-                    certifications: [],
-                    website: '',
-                    instagram: '',
-                  });
-                }}
-                className="flex-1 bg-panel thin-border text-text-white px-6 py-3 rounded-lg hover:bg-panel transition-colors font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={async () => {
-                  try {
-                    setUpgrading(true);
-                    await coachApi.upgradeToCoach(coachUpgradeData);
-                    alert('Successfully upgraded to coach! Redirecting...');
-                    window.location.href = '/coach';
-                  } catch (error: any) {
-                    alert(error.response?.data?.message || 'Failed to upgrade to coach');
-                  } finally {
-                    setUpgrading(false);
-                  }
-                }}
-                disabled={upgrading || !coachUpgradeData.bio}
-                className="flex-1 bg-node-volt text-dark font-bold px-6 py-3 rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-                style={{ fontFamily: 'var(--font-space-grotesk)' }}
-              >
-                {upgrading ? 'Upgrading...' : 'Upgrade to Coach'}
-              </button>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );
