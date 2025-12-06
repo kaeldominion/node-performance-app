@@ -4,6 +4,7 @@ import { useState } from 'react';
 import EmomTimer from '@/components/timers/EmomTimer';
 import { useVoice } from '@/hooks/useVoice';
 import { getTierDisplayValue } from './tierDisplayUtils';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface ExerciseBlock {
   id: string;
