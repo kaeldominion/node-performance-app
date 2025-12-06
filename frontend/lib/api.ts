@@ -66,14 +66,21 @@ api.interceptors.request.use((config) => {
       }
     }
   } else if (!isPublicEndpoint) {
-    // Only log error for protected endpoints that need a token
-    console.error('❌ NO TOKEN AVAILABLE FOR REQUEST:', {
-      url: config.url,
-      method: config.method,
-      currentToken: currentToken,
-      tokenIsNull: currentToken === null,
-      tokenIsUndefined: currentToken === undefined,
-    });
+    // Only log warning (not error) for protected endpoints without token
+    // This can happen during initial load before auth is ready, which is normal
+    // Only log as error in production if we're sure auth should be ready
+    if (process.env.NODE_ENV === 'development') {
+      console.log('⚠️ Request made without token (may be normal during initial load):', {
+        url: config?.url || 'unknown',
+        method: config?.method || 'unknown',
+        baseURL: config?.baseURL,
+        isPublicEndpoint: false,
+      });
+    }
+    // In production, only log if we have URL info (to avoid noise)
+    else if (config?.url) {
+      console.warn('⚠️ Request made without token:', config.url);
+    }
   }
   return config;
 });
