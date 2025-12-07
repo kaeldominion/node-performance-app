@@ -76,6 +76,18 @@ export function LiveDeckPlayer({ workout, sessionId, onComplete, onCreateSession
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [introSlideIndex, setIntroSlideIndex] = useState(0); // For mobile intro slides
   const [showControls, setShowControls] = useState(true);
+  
+  // Create session when component mounts to mark workout as previewed (for NEW badge)
+  // This ensures the NEW badge disappears as soon as the live deck is opened
+  useEffect(() => {
+    if (!sessionId && onCreateSession) {
+      onCreateSession().catch((error) => {
+        console.error('Failed to create session on mount:', error);
+        // Don't show error to user - session creation failure is non-critical
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount - we check sessionId and onCreateSession inside
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showSectionMenu, setShowSectionMenu] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);

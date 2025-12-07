@@ -9,6 +9,7 @@ import { workoutsApi, programsApi, scheduleApi } from '@/lib/api';
 import { Icons } from '@/lib/iconMapping';
 import { copyToClipboard } from '@/lib/clipboard';
 import ArchetypeBadge from '@/components/workout/ArchetypeBadge';
+import { WorkoutCard } from '@/components/workout/WorkoutCard';
 import { WorkoutScheduler } from '@/components/schedule/WorkoutScheduler';
 import { Calendar } from 'lucide-react';
 import { WorkoutDetailsModal } from '@/components/workout/WorkoutDetailsModal';
@@ -24,6 +25,9 @@ interface Workout {
   createdAt: string;
   averageRating?: number | null;
   ratingCount?: number;
+  isHyrox?: boolean; // Flag for HYROX workouts
+  aiGenerated?: boolean; // Flag for AI-generated workouts
+  hasBeenPreviewed?: boolean; // Flag indicating if workout has been opened in live deck
 }
 
 export default function WorkoutsPage() {
@@ -79,7 +83,12 @@ export default function WorkoutsPage() {
     }
 
     if (user) {
-      loadWorkouts();
+      // Small delay to ensure token is set in API interceptor
+      const timer = setTimeout(() => {
+        loadWorkouts();
+      }, 100);
+      
+      return () => clearTimeout(timer);
     }
   }, [user, authLoading, activeTab]);
 
@@ -94,10 +103,29 @@ export default function WorkoutsPage() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [user, activeTab]);
 
+  // Refresh workouts when returning from workout page
+  useEffect(() => {
+    const handleWorkoutCompleted = () => {
+      if (user && activeTab === 'my-workouts') {
+        loadWorkouts();
+      }
+    };
+    window.addEventListener('workout-completed', handleWorkoutCompleted);
+    return () => window.removeEventListener('workout-completed', handleWorkoutCompleted);
+  }, [user, activeTab]);
+
   const loadWorkouts = async () => {
     try {
       setLoading(true);
       setError(null);
+      
+      // Check if user is authenticated before making requests
+      if (!user) {
+        console.warn('Cannot load workouts: user not authenticated');
+        setError('Please log in to view your workouts.');
+        setLoading(false);
+        return;
+      }
       
       // Always load favorites to get favoriteIds for all tabs
       try {
@@ -164,8 +192,9 @@ export default function WorkoutsPage() {
             .filter((w: any): w is any => w !== null && w !== undefined && w.id);
           setFavoriteWorkouts(workoutsForDisplay);
         }
-      } catch (favError) {
+      } catch (favError: any) {
         console.error('Failed to load favorites:', favError);
+        // Don't show error for favorites - it's not critical
         setFavoriteIds(new Set());
         if (activeTab === 'favorites') {
           setFavoriteWorkouts([]);
@@ -174,32 +203,128 @@ export default function WorkoutsPage() {
       
       if (activeTab === 'my-workouts') {
         try {
-          const workouts = await workoutsApi.getMyWorkouts();
-          console.log('Loaded my workouts:', workouts);
+          console.log('Loading my workouts for user:', user.id);
+          
+          // Retry logic for network errors or 401s (token might not be set yet)
+          let workouts: any = null;
+          const maxRetries = 2;
+          let lastError: any = null;
+          
+          for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+              if (attempt > 0) {
+                console.log(`Retrying load workouts (attempt ${attempt + 1}/${maxRetries + 1})...`);
+                // Wait a bit longer on retry to ensure token is set
+                await new Promise(resolve => setTimeout(resolve, 300 * attempt));
+              }
+              
+              workouts = await workoutsApi.getMyWorkouts();
+              console.log('Loaded my workouts:', workouts);
+              break; // Success, exit retry loop
+            } catch (err: any) {
+              lastError = err;
+              
+              // If it's a 401 and we haven't exhausted retries, try again
+              if (err?.response?.status === 401 && attempt < maxRetries) {
+                console.log('Got 401, will retry after delay...');
+                continue;
+              }
+              
+              // For network errors, also retry
+              if (!err?.response && err?.request && attempt < maxRetries) {
+                console.log('Network error, will retry...');
+                continue;
+              }
+              
+              // If we've exhausted retries or it's not a retryable error, throw
+              if (attempt === maxRetries) {
+                throw err;
+              }
+            }
+          }
+          
           // Ensure it's an array
-          setMyWorkouts(Array.isArray(workouts) ? workouts : []);
-        } catch (error) {
+          if (workouts !== null) {
+            setMyWorkouts(Array.isArray(workouts) ? workouts : []);
+          } else {
+            throw lastError || new Error('Failed to load workouts after retries');
+          }
+        } catch (error: any) {
           console.error('Failed to load my workouts:', error);
           setMyWorkouts([]);
-          setError('Failed to load your workouts. Please try again.');
+          
+          // Provide more specific error messages
+          let errorMessage = 'Failed to load your workouts. Please try again.';
+          
+          if (error?.response) {
+            // Server responded with an error
+            const status = error.response.status;
+            const statusText = error.response.statusText;
+            const data = error.response.data;
+            
+            if (status === 401) {
+              errorMessage = 'Authentication failed. Please log in again.';
+            } else if (status === 403) {
+              errorMessage = 'You do not have permission to view workouts.';
+            } else if (status === 404) {
+              errorMessage = 'Workouts endpoint not found. Please contact support.';
+            } else if (status >= 500) {
+              errorMessage = 'Server error. Please try again later.';
+            } else if (data?.message) {
+              errorMessage = data.message;
+            } else {
+              errorMessage = `Failed to load workouts (${status} ${statusText}). Please try again.`;
+            }
+          } else if (error?.request && !error?.response) {
+            // Network error - no response from server
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+            errorMessage = `Cannot connect to server. Please ensure the backend is running at ${apiUrl}`;
+          } else if (error?.message) {
+            errorMessage = error.message;
+          }
+          
+          setError(errorMessage);
         }
       } else if (activeTab === 'programs') {
-        const programs = await programsApi.getAll().catch(() => []);
-        setMyPrograms(Array.isArray(programs) ? programs : []);
+        try {
+          const programs = await programsApi.getAll();
+          setMyPrograms(Array.isArray(programs) ? programs : []);
+        } catch (error: any) {
+          console.error('Failed to load programs:', error);
+          setMyPrograms([]);
+          // Don't set error for programs - it's not the main tab
+        }
       } else if (activeTab === 'recommended') {
-        const [workouts, programs] = await Promise.all([
-          workoutsApi.getRecommended().catch(() => []),
-          programsApi.getAll().catch(() => []),
-        ]);
-        setRecommendedWorkouts(Array.isArray(workouts) ? workouts : []);
-        setRecommendedPrograms(Array.isArray(programs) ? programs : []);
+        try {
+          const [workouts, programs] = await Promise.all([
+            workoutsApi.getRecommended().catch((err) => {
+              console.error('Failed to load recommended workouts:', err);
+              return [];
+            }),
+            programsApi.getAll().catch((err) => {
+              console.error('Failed to load recommended programs:', err);
+              return [];
+            }),
+          ]);
+          setRecommendedWorkouts(Array.isArray(workouts) ? workouts : []);
+          setRecommendedPrograms(Array.isArray(programs) ? programs : []);
+        } catch (error: any) {
+          console.error('Failed to load recommended content:', error);
+          setRecommendedWorkouts([]);
+          setRecommendedPrograms([]);
+        }
       } else if (activeTab === 'top-rated') {
-        const topRated = await workoutsApi.getTopRated(20).catch(() => []);
-        setTopRatedWorkouts(Array.isArray(topRated) ? topRated : []);
+        try {
+          const topRated = await workoutsApi.getTopRated(20);
+          setTopRatedWorkouts(Array.isArray(topRated) ? topRated : []);
+        } catch (error: any) {
+          console.error('Failed to load top-rated workouts:', error);
+          setTopRatedWorkouts([]);
+        }
       }
-    } catch (error) {
-      console.error('Failed to load workouts:', error);
-      setError('Failed to load workouts. Please try again.');
+    } catch (error: any) {
+      console.error('Failed to load workouts (outer catch):', error);
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -746,143 +871,15 @@ export default function WorkoutsPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {myWorkouts.map((workout) => (
-                  <div
+                  <WorkoutCard
                     key={workout.id}
-                    className="group bg-panel thin-border rounded-lg p-6 hover:border-node-volt transition-all hover:shadow-lg hover:shadow-node-volt/20 relative"
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <Link href={`/workouts/${workout.id}`} className="flex-1">
-                        {workout.displayCode && (
-                          <div className="text-node-volt font-mono text-sm mb-1">
-                            {workout.displayCode}
-                          </div>
-                        )}
-                        <h3 className="text-xl font-heading font-bold mb-2 group-hover:text-node-volt transition-colors">
-                          {workout.name}
-                        </h3>
-                        {workout.archetype && (
-                          <ArchetypeBadge archetype={workout.archetype} size="sm" />
-                        )}
-                      </Link>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            const isFavorite = favoriteIds.has(workout.id);
-                            try {
-                              if (isFavorite) {
-                                await workoutsApi.removeFavorite(workout.id);
-                                setFavoriteIds(new Set(Array.from(favoriteIds).filter((id) => id !== workout.id)));
-                              } else {
-                                await workoutsApi.addFavorite(workout.id);
-                                setFavoriteIds(new Set([...favoriteIds, workout.id]));
-                              }
-                            } catch (error) {
-                              console.error('Failed to toggle favorite:', error);
-                              alert('Failed to update favorite. Please try again.');
-                            }
-                          }}
-                          className={`opacity-0 group-hover:opacity-100 p-2 hover:bg-panel rounded transition-all ${
-                            favoriteIds.has(workout.id) ? 'opacity-100 text-yellow-400' : 'text-muted-text'
-                          }`}
-                          title={favoriteIds.has(workout.id) ? 'Remove from favorites' : 'Add to favorites'}
-                        >
-                          <Icons.STAR size={18} className={favoriteIds.has(workout.id) ? 'fill-current' : ''} />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedWorkoutForSchedule({ id: workout.id, name: workout.name });
-                            setShowScheduleModal(true);
-                          }}
-                          className="opacity-0 group-hover:opacity-100 bg-node-volt/20 hover:bg-node-volt/30 text-node-volt px-3 py-1.5 rounded text-sm font-medium transition-all flex items-center gap-1"
-                          title="Schedule this workout"
-                        >
-                          <Icons.TIMER size={14} />
-                          Schedule
-                        </button>
-                        <div className="relative">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenMenuId(openMenuId === workout.id ? null : workout.id);
-                            }}
-                            className="opacity-0 group-hover:opacity-100 p-2 hover:bg-panel rounded transition-all"
-                            title="More options"
-                          >
-                            <Icons.MORE_VERTICAL size={18} className="text-muted-text" />
-                          </button>
-                          {openMenuId === workout.id && (
-                            <>
-                              <div
-                                className="fixed inset-0 z-10"
-                                onClick={() => setOpenMenuId(null)}
-                              />
-                              <div className="absolute right-0 top-10 z-20 bg-panel thin-border rounded-lg shadow-lg min-w-[160px] overflow-hidden">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setOpenMenuId(null);
-                                    setSelectedWorkoutForShare(workout);
-                                  }}
-                                  className="w-full text-left px-4 py-2 hover:bg-dark transition-colors flex items-center gap-2 text-sm"
-                                >
-                                  <Icons.SHARE size={16} className="text-muted-text" />
-                                  Share Workout
-                                </button>
-                                <button
-                                  onClick={async (e) => {
-                                    e.stopPropagation();
-                                    setOpenMenuId(null);
-                                    if (confirm('Are you sure you want to delete this workout? This action cannot be undone.')) {
-                                      try {
-                                        await workoutsApi.delete(workout.id);
-                                        loadWorkouts();
-                                      } catch (error) {
-                                        console.error('Failed to delete workout:', error);
-                                        alert('Failed to delete workout. Please try again.');
-                                      }
-                                    }
-                                  }}
-                                  className="w-full text-left px-4 py-2 hover:bg-dark transition-colors flex items-center gap-2 text-sm text-red-400"
-                                >
-                                  <Icons.TRASH size={16} />
-                                  Delete Workout
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    {workout.description && (
-                      <p className="text-muted-text text-sm mb-4 line-clamp-2">
-                        {workout.description}
-                      </p>
-                    )}
-                    {workout.averageRating !== null && workout.averageRating !== undefined && workout.ratingCount !== undefined && workout.ratingCount > 0 && (
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="flex items-center gap-1">
-                          {[...Array(5)].map((_, i) => (
-                            <Icons.STAR
-                              key={i}
-                              size={14}
-                              className={i < Math.round(workout.averageRating!) ? 'text-yellow-400 fill-current' : 'text-muted-text'}
-                            />
-                          ))}
-                        </div>
-                        <span className="text-xs text-muted-text">
-                          {workout.averageRating.toFixed(1)} ({workout.ratingCount} {workout.ratingCount === 1 ? 'rating' : 'ratings'})
-                        </span>
-                      </div>
-                    )}
-                    <Link href={`/workouts/${workout.id}`}>
-                      <div className="flex items-center justify-between text-sm text-muted-text">
-                        <span>{workout.sections?.length || 0} sections</span>
-                        <span className="text-node-volt font-semibold">Start →</span>
-                      </div>
-                    </Link>
-                  </div>
+                    workout={workout}
+                    openMenuId={openMenuId}
+                    setOpenMenuId={setOpenMenuId}
+                    setSelectedWorkoutForSchedule={setSelectedWorkoutForSchedule}
+                    setShowScheduleModal={setShowScheduleModal}
+                    loadWorkouts={loadWorkouts}
+                  />
                 ))}
               </div>
             )}

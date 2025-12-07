@@ -659,99 +659,151 @@ export class WorkoutsService implements OnModuleInit {
   }
 
   async findByUser(userId: string) {
-    console.log('Finding workouts for user:', userId);
-    
-    // First, verify user exists
-    const user = await this.usersService.findOne(userId);
-    console.log('User exists:', !!user, user ? `email: ${user.email}` : 'not found');
-    
-    if (!user) {
-      console.error('User not found:', userId);
-      return [];
-    }
-    
-    // Get workouts created by the user (saved workouts) - this is the primary source
-    const workoutsCreatedByUser = await this.prisma.workout.findMany({
-      where: { createdBy: userId },
-      select: { id: true, name: true, createdBy: true },
-    });
+    try {
+      console.log('Finding workouts for user:', userId);
+      
+      // First, verify user exists
+      const user = await this.usersService.findOne(userId);
+      console.log('User exists:', !!user, user ? `email: ${user.email}` : 'not found');
+      
+      if (!user) {
+        console.error('User not found:', userId);
+        return [];
+      }
+      
+      // Get workouts created by the user (saved workouts) - this is the primary source
+      const workoutsCreatedByUser = await this.prisma.workout.findMany({
+        where: { createdBy: userId },
+        select: { id: true, name: true, createdBy: true },
+      }).catch((error) => {
+        console.error('Error fetching workouts created by user:', error);
+        throw new Error(`Failed to fetch user's workouts: ${error.message}`);
+      });
 
-    console.log('Workouts created by user:', workoutsCreatedByUser.length, workoutsCreatedByUser.map(w => ({ id: w.id, name: w.name })));
-    
-    const workoutIdsFromCreated = workoutsCreatedByUser.map(w => w.id);
-    
-    // Also get workouts from user's sessions (workouts they've done but didn't create)
-    const sessions = await this.prisma.sessionLog.findMany({
-      where: { userId },
-      select: { workoutId: true },
-      distinct: ['workoutId'],
-    });
+      console.log('Workouts created by user:', workoutsCreatedByUser.length, workoutsCreatedByUser.map(w => ({ id: w.id, name: w.name })));
+      
+      const workoutIdsFromCreated = workoutsCreatedByUser.map(w => w.id);
+      
+      // Also get workouts from user's sessions (workouts they've done but didn't create)
+      const sessions = await this.prisma.sessionLog.findMany({
+        where: { userId },
+        select: { workoutId: true },
+      }).catch((error) => {
+        console.error('Error fetching user sessions:', error);
+        // Don't throw - just log and continue with empty array
+        return [];
+      });
 
-    const workoutIdsFromSessions = sessions.map(s => s.workoutId).filter(Boolean);
-    console.log('Workout IDs from sessions:', workoutIdsFromSessions);
+      // Get unique workout IDs from sessions
+      const workoutIdsFromSessions = [...new Set(sessions.map(s => s.workoutId).filter(Boolean))];
+      console.log('Workout IDs from sessions:', workoutIdsFromSessions);
 
-    // Combine both sets of workout IDs (created OR done)
-    const allWorkoutIds = [...new Set([...workoutIdsFromCreated, ...workoutIdsFromSessions])];
-    console.log('All workout IDs to fetch:', allWorkoutIds.length, allWorkoutIds);
+      // Combine both sets of workout IDs (created OR done)
+      const allWorkoutIds = [...new Set([...workoutIdsFromCreated, ...workoutIdsFromSessions])];
+      console.log('All workout IDs to fetch:', allWorkoutIds.length, allWorkoutIds);
 
-    if (allWorkoutIds.length === 0) {
-      console.log('No workouts found for user');
-      return [];
-    }
+      if (allWorkoutIds.length === 0) {
+        console.log('No workouts found for user');
+        return [];
+      }
 
-    const workouts = await this.prisma.workout.findMany({
-      where: { id: { in: allWorkoutIds } },
-      include: {
-        sections: {
-          orderBy: { order: 'asc' },
-          include: {
-            blocks: {
-              orderBy: { order: 'asc' },
-              include: {
-                tierPrescriptions: true,
+      // Prisma doesn't handle empty arrays in 'in' clause well, but we already checked above
+      // Double-check to be safe
+      if (!allWorkoutIds || allWorkoutIds.length === 0) {
+        return [];
+      }
+
+      const workouts = await this.prisma.workout.findMany({
+        where: { id: { in: allWorkoutIds } },
+        include: {
+          sections: {
+            orderBy: { order: 'asc' },
+            include: {
+              blocks: {
+                orderBy: { order: 'asc' },
+                include: {
+                  tierPrescriptions: true,
+                },
               },
             },
           },
-        },
-        ratings: {
-          select: {
-            starRating: true,
+          ratings: {
+            select: {
+              starRating: true,
+            },
+          },
+          sessions: {
+            where: { userId },
+            select: {
+              id: true,
+              completed: true,
+            },
+          },
+          _count: {
+            select: {
+              ratings: true,
+            },
           },
         },
-        _count: {
-          select: {
-            ratings: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: { createdAt: 'desc' },
+      }).catch((error) => {
+        console.error('Error fetching workout details:', error);
+        throw new Error(`Failed to fetch workout details: ${error.message}`);
+      });
 
-    console.log(`Found ${workouts.length} workouts with full data`);
+      console.log(`Found ${workouts.length} workouts with full data`);
 
-    return workouts.map((workout) => {
-      // Calculate average rating
-      const ratingCount = workout.ratings.length;
-      const averageRating = ratingCount > 0
-        ? workout.ratings.reduce((sum, r) => sum + r.starRating, 0) / ratingCount
-        : null;
+      return workouts.map((workout) => {
+        try {
+          // Calculate average rating
+          const ratingCount = workout.ratings.length;
+          const averageRating = ratingCount > 0
+            ? workout.ratings.reduce((sum, r) => sum + r.starRating, 0) / ratingCount
+            : null;
 
-      return {
-        ...workout,
-        averageRating,
-        ratingCount,
-        sections: workout.sections.map((section) => ({
-          ...section,
-          blocks: section.blocks.map((block) => ({
-            ...block,
-            tierSilver: block.tierPrescriptions.find((t) => t.tier === 'SILVER') || null,
-            tierGold: block.tierPrescriptions.find((t) => t.tier === 'GOLD') || null,
-            tierBlack: block.tierPrescriptions.find((t) => t.tier === 'BLACK') || null,
-            tierPrescriptions: undefined,
-          })),
-        })),
-      };
-    });
+          // Determine if workout has been previewed
+          // A workout is "NEW" if it hasn't been opened in live deck yet (no sessions)
+          // Once opened (even if not completed), it's no longer NEW
+          const hasBeenPreviewed = workout.sessions.length > 0;
+
+          return {
+            ...workout,
+            averageRating,
+            ratingCount,
+            hasBeenPreviewed,
+            sections: workout.sections.map((section) => ({
+              ...section,
+              blocks: section.blocks.map((block) => ({
+                ...block,
+                tierSilver: block.tierPrescriptions.find((t) => t.tier === 'SILVER') || null,
+                tierGold: block.tierPrescriptions.find((t) => t.tier === 'GOLD') || null,
+                tierBlack: block.tierPrescriptions.find((t) => t.tier === 'BLACK') || null,
+                tierPrescriptions: undefined,
+              })),
+            })),
+          };
+        } catch (error: any) {
+          console.error('Error processing workout:', workout.id, error);
+          // Return a simplified version if processing fails
+          return {
+            ...workout,
+            averageRating: null,
+            ratingCount: 0,
+            hasBeenPreviewed: false,
+            sections: [],
+          };
+        }
+      });
+    } catch (error: any) {
+      console.error('Error in findByUser:', {
+        userId,
+        message: error?.message,
+        stack: error?.stack,
+        errorName: error?.name,
+        errorCode: error?.code,
+      });
+      throw error;
+    }
   }
 
   async deleteAdmin(workoutId: string) {

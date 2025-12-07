@@ -79,15 +79,20 @@ export default function LandingPage() {
           setXpStats(stats);
         } catch (err) {
           // Silently fail - stats are not critical for page functionality
-          // Only log if it's not a network/404 error
+          // Only log if it's not a network/404/401 error (401 is expected if token not ready yet)
           if (err && typeof err === 'object' && 'response' in err) {
             const httpError = err as any;
-            if (httpError.response?.status !== 404 && httpError.response?.status !== 0) {
+            const status = httpError.response?.status;
+            // Don't log 401 (auth not ready), 404 (endpoint doesn't exist), or 0 (network error)
+            if (status !== 404 && status !== 401 && status !== 0) {
               console.error('Failed to load XP stats:', err);
             }
           } else if (err && typeof err === 'object' && Object.keys(err).length > 0) {
-            // Only log if error object has content
-            console.error('Failed to load XP stats:', err);
+            // Only log if error object has content and it's not an auth error
+            const errorMessage = (err as any)?.message || '';
+            if (!errorMessage.includes('401') && !errorMessage.includes('Unauthorized')) {
+              console.error('Failed to load XP stats:', err);
+            }
           }
         }
       };
@@ -99,9 +104,10 @@ export default function LandingPage() {
           setPercentiles(percentilesData);
         } catch (err: any) {
           // Silently fail - percentiles are optional data
-          // Only log in development if it's not a 404 (endpoint doesn't exist)
-          if (process.env.NODE_ENV === 'development' && err?.response?.status !== 404) {
-            console.debug('Percentiles endpoint not available:', err?.response?.status || 'network error');
+          // Only log in development if it's not a 404/401 (endpoint doesn't exist or auth not ready)
+          const status = err?.response?.status;
+          if (process.env.NODE_ENV === 'development' && status !== 404 && status !== 401) {
+            console.debug('Percentiles endpoint not available:', status || 'network error');
           }
           setPercentiles(null);
         }

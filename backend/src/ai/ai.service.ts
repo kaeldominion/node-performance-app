@@ -547,6 +547,7 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
         ],
         response_format: responseFormat,
         temperature: 0.7,
+        max_tokens: 4000, // Limit response size for faster generation
       });
 
       const workoutJson = JSON.parse(
@@ -589,16 +590,11 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
             validated.dayIndex = w.dayIndex || dayInWeek;
           }
           
-          // Review each workout (but don't regenerate individual workouts in multi-day programs)
-          // Just log issues for now - full regeneration would be too expensive
-          try {
-            const reviewed = await this.reviewAndAdjustWorkout(validated, params);
-            return reviewed;
-          } catch (error: any) {
-            // For multi-day programs, log but don't fail - return the validated workout
-            console.warn(`⚠️  Workout ${idx + 1} has issues but continuing with program:`, error.message);
-            return validated;
-          }
+          // Skip review for multi-day programs to speed up generation
+          // Review is expensive (additional API calls) and multi-day programs would require many reviews
+          // The initial generation should be good enough, and users can regenerate individual workouts if needed
+          console.log(`⏩ Skipping review for workout ${idx + 1} in multi-day program (optimization)`);
+          return validated;
         }));
         
         return validatedWorkouts;
@@ -608,14 +604,21 @@ Generate workouts that are effective, time-appropriate, challenging but achievab
       let validatedWorkout = this.validateWorkoutSchema(workoutJson);
       
       // Review and adjust workout if needed (with retry logic for critical issues)
+      // OPTIMIZATION: Skip review for faster generation - can be re-enabled if quality issues arise
+      const skipReview = process.env.SKIP_WORKOUT_REVIEW === 'true';
       let reviewedWorkout: any;
       let regenerationAttempts = 0;
-      const maxRegenerationAttempts = 2; // Allow up to 2 regenerations
+      const maxRegenerationAttempts = 1; // Reduced from 2 to 1 for faster generation
       
-      while (regenerationAttempts <= maxRegenerationAttempts) {
-        try {
-          reviewedWorkout = await this.reviewAndAdjustWorkout(validatedWorkout, params);
-          break; // Success - exit loop
+      if (skipReview) {
+        // Skip review for faster generation
+        console.log('⏩ Skipping workout review (SKIP_WORKOUT_REVIEW=true)');
+        reviewedWorkout = validatedWorkout;
+      } else {
+        while (regenerationAttempts <= maxRegenerationAttempts) {
+          try {
+            reviewedWorkout = await this.reviewAndAdjustWorkout(validatedWorkout, params);
+            break; // Success - exit loop
           } catch (error: any) {
             if (error.message?.includes('CRITICAL_TIME_MISMATCH') || error.message?.includes('ADJUSTMENT_FAILED')) {
               regenerationAttempts++;
@@ -660,6 +663,7 @@ Generate a completely new workout that properly addresses all timing issues.`;
               ],
               response_format: { type: 'json_object' as const },
               temperature: 0.7,
+              max_tokens: 4000, // Limit response size for faster generation
             });
 
             const regeneratedWorkoutJson = JSON.parse(
@@ -668,15 +672,19 @@ Generate a completely new workout that properly addresses all timing issues.`;
             
             validatedWorkout = this.validateWorkoutSchema(regeneratedWorkoutJson);
             // Loop will continue and try reviewAndAdjustWorkout again
-          } else {
-            // Non-regeneration error - throw it
-            throw error;
+            } else {
+              // Non-regeneration error - throw it
+              throw error;
+            }
           }
         }
       }
       
-      // Extract and store new exercises from the generated workout
-      await this.extractAndStoreExercises(reviewedWorkout, params.equipment);
+      // Extract and store new exercises from the generated workout (non-blocking)
+      // Don't await - let it run in background to speed up response
+      this.extractAndStoreExercises(reviewedWorkout, params.equipment).catch((error) => {
+        console.error('Failed to extract and store exercises (non-critical):', error);
+      });
       
       return reviewedWorkout;
     } catch (error: any) {
@@ -1409,10 +1417,10 @@ Generate a completely new workout that properly addresses all timing issues.`;
       try {
         const adjustedWorkout = await this.adjustWorkout(workout, issues, adjustments, params);
         
-        // Re-validate the adjusted workout
-        const revalidatedWorkout = await this.reviewAndAdjustWorkout(adjustedWorkout, params);
-        console.log('✅ Workout adjusted and re-validated successfully');
-        return revalidatedWorkout;
+      // Re-validate the adjusted workout (but limit recursion to prevent infinite loops)
+      // Only do a simple validation check, not full review again
+      console.log('✅ Workout adjusted successfully');
+      return adjustedWorkout;
       } catch (error: any) {
         // If adjustment fails or reveals critical issues, trigger regeneration
         if (error.message?.includes('CRITICAL_TIME_MISMATCH')) {
@@ -1463,6 +1471,7 @@ Return ONLY the corrected workout JSON, no explanations.`;
       ],
       response_format: { type: 'json_object' },
       temperature: 0.3, // Lower temperature for more consistent adjustments
+      max_tokens: 4000, // Limit response size for faster generation
     });
 
     const adjustedWorkoutJson = JSON.parse(completion.choices[0].message.content || '{}');

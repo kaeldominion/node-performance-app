@@ -179,8 +179,15 @@ export default function Dashboard() {
       return;
     }
 
+    // Only load data if user is authenticated
+    // Add a small delay to ensure token is set in API interceptor
     if (user) {
-      loadDashboardData();
+      // Wait a bit for token to be set in the API client
+      const timer = setTimeout(() => {
+        loadDashboardData();
+      }, 100);
+      
+      return () => clearTimeout(timer);
     }
     
     // Listen for schedule updates
@@ -206,15 +213,60 @@ export default function Dashboard() {
       endDate.setHours(23, 59, 59, 999);
 
       const [schedule, recent, statsData, trendsData, workouts, scheduled, xpData, userData, badgesData] = await Promise.all([
-        userApi.getSchedule().catch(() => ({ today: null, upcoming: [] })),
-        sessionsApi.getRecent().catch(() => []),
-        analyticsApi.getStats().catch(() => null),
-        analyticsApi.getTrends(7).catch(() => []),
-        workoutsApi.getMyWorkouts().catch(() => []),
-        scheduleApi.getSchedule(startDate.toISOString(), endDate.toISOString()).catch(() => []),
-        gamificationApi.getStats().catch(() => null),
-        userApi.getMe().catch(() => null),
-        gamificationApi.getAllAchievements().catch(() => []),
+        userApi.getSchedule().catch((err) => {
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('Failed to load schedule:', err);
+          }
+          return { today: null, upcoming: [] };
+        }),
+        sessionsApi.getRecent().catch((err) => {
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('Failed to load recent sessions:', err);
+          }
+          return [];
+        }),
+        analyticsApi.getStats().catch((err) => {
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('Failed to load stats:', err);
+          }
+          return null;
+        }),
+        analyticsApi.getTrends(7).catch((err) => {
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('Failed to load trends:', err);
+          }
+          return [];
+        }),
+        workoutsApi.getMyWorkouts().catch((err) => {
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('Failed to load workouts:', err);
+          }
+          return [];
+        }),
+        scheduleApi.getSchedule(startDate.toISOString(), endDate.toISOString()).catch((err) => {
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('Failed to load schedule:', err);
+          }
+          return [];
+        }),
+        gamificationApi.getStats().catch((err) => {
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('Failed to load XP stats:', err);
+          }
+          return null;
+        }),
+        userApi.getMe().catch((err) => {
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('Failed to load user data:', err);
+          }
+          return null;
+        }),
+        gamificationApi.getAllAchievements().catch((err) => {
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('Failed to load achievements:', err);
+          }
+          return [];
+        }),
       ]);
 
       // Find today's workout from schedule
@@ -391,11 +443,11 @@ export default function Dashboard() {
               </div>
             </div>
             
-            <div className="flex-shrink-0 space-y-4 flex flex-col items-center">
+            <div className="flex-shrink-0 space-y-4 flex flex-col items-center w-full md:w-auto">
               {todaySession && (
                 <Link
                   href={`/workouts/${todaySession.workoutId}`}
-                  className="group relative bg-node-volt text-dark font-bold px-10 py-6 rounded-xl hover:opacity-90 transition-all text-lg shadow-2xl shadow-node-volt/30 hover:scale-105 transform block"
+                  className="group relative bg-node-volt text-dark font-bold px-10 py-6 rounded-xl hover:opacity-90 transition-all text-lg shadow-2xl shadow-node-volt/30 hover:scale-105 transform block w-full md:w-auto"
                   style={{ fontFamily: 'var(--font-space-grotesk)' }}
                 >
                   <span className="relative z-10">Start Today's Workout →</span>
@@ -404,7 +456,9 @@ export default function Dashboard() {
               )}
               
               {/* Mini AI Workout Generator Form */}
-              <AIMiniForm />
+              <div className="w-full md:w-auto">
+                <AIMiniForm />
+              </div>
             </div>
           </div>
         </div>

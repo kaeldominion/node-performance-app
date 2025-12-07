@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Param, UseGuards, Patch, Delete, Request, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, UseGuards, Patch, Delete, Request, Query, HttpException, HttpStatus } from '@nestjs/common';
 import { WorkoutsService } from './workouts.service';
 import { ClerkAdminGuard } from '../auth/clerk-admin.guard';
 import { ClerkAuthGuard } from '../auth/clerk.guard';
@@ -17,10 +17,28 @@ export class WorkoutsController {
   @UseGuards(ClerkAuthGuard)
   async findMyWorkouts(@Request() req: any) {
     try {
+      if (!req.user || !req.user.id) {
+        console.error('No user in request for my-workouts');
+        throw new HttpException('User not authenticated', HttpStatus.UNAUTHORIZED);
+      }
       return await this.workoutsService.findByUser(req.user.id);
     } catch (error: any) {
-      console.error('Error in findMyWorkouts:', error);
-      throw error;
+      console.error('Error in findMyWorkouts:', {
+        message: error?.message,
+        stack: error?.stack,
+        userId: req.user?.id,
+        errorName: error?.name,
+        errorCode: error?.code,
+      });
+      // Re-throw if it's already an HTTP exception
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      // Convert to HTTP exception
+      throw new HttpException(
+        `Failed to load workouts: ${error?.message || 'Unknown error'}`,
+        error?.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 

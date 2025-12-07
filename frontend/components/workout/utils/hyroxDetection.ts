@@ -17,3 +17,4 @@ export function isHyroxWorkout(workout: { name?: string; archetype?: string | nu
 }
 
 
+

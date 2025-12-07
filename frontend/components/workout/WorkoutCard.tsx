@@ -6,6 +6,8 @@ import { workoutsApi, scheduleApi } from '@/lib/api';
 import { Icons } from '@/lib/iconMapping';
 import { copyToClipboard } from '@/lib/clipboard';
 import ArchetypeBadge from './ArchetypeBadge';
+import HyroxBadge from './HyroxBadge';
+import NewBadge from './NewBadge';
 import { WorkoutShareModal } from './WorkoutShareModal';
 
 // ScheduleWorkoutModal component (inline, same as in workouts page)
@@ -120,6 +122,10 @@ interface WorkoutCardProps {
     sections?: any[];
     averageRating?: number | null;
     ratingCount?: number;
+    createdAt?: string;
+    isHyrox?: boolean; // Flag for HYROX workouts
+    aiGenerated?: boolean; // Flag for AI-generated workouts
+    hasBeenPreviewed?: boolean; // Flag indicating if workout has been opened in live deck
   };
   openMenuId?: string | null;
   setOpenMenuId?: (id: string | null) => void;
@@ -142,6 +148,17 @@ export function WorkoutCard({
   const [isFavorite, setIsFavorite] = useState(false);
   const [loadingFavorite, setLoadingFavorite] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  
+  // Detect HYROX workout from name or description
+  const isHyroxWorkout = workout.isHyrox || 
+    workout.name?.toUpperCase().includes('HYROX') || 
+    workout.description?.toUpperCase().includes('HYROX');
+  
+  // Detect AI-generated workout (workouts created recently without displayCode are likely AI-generated)
+  // Also check if name matches AI generation patterns
+  const isAiGenerated = workout.aiGenerated || 
+    (!workout.displayCode && workout.createdAt && 
+     new Date(workout.createdAt) > new Date(Date.now() - 24 * 60 * 60 * 1000)); // Created in last 24 hours
 
   // Load favorite status
   useEffect(() => {
@@ -233,98 +250,127 @@ export function WorkoutCard({
       <div
         className="group bg-panel thin-border rounded-lg p-6 hover:border-node-volt transition-all hover:shadow-lg hover:shadow-node-volt/20 relative"
       >
-        <div className="flex items-start justify-between mb-4">
-          <Link href={`/workouts/${workout.id}`} className="flex-1">
-            {workout.displayCode && (
-              <div className="text-node-volt font-mono text-sm mb-1">
-                {workout.displayCode}
-              </div>
-            )}
-            <h3 className="text-xl font-heading font-bold mb-2 group-hover:text-node-volt transition-colors">
-              {workout.name}
-            </h3>
-            {workout.archetype && (
-              <ArchetypeBadge archetype={workout.archetype} size="sm" />
-            )}
-          </Link>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={async (e) => {
-                e.stopPropagation();
-                if (loadingFavorite) return;
-                setLoadingFavorite(true);
-                try {
-                  if (isFavorite) {
-                    await workoutsApi.removeFavorite(workout.id);
-                    setIsFavorite(false);
-                  } else {
-                    await workoutsApi.addFavorite(workout.id);
-                    setIsFavorite(true);
-                  }
-                } catch (error) {
-                  console.error('Failed to toggle favorite:', error);
-                  alert('Failed to update favorite. Please try again.');
-                } finally {
-                  setLoadingFavorite(false);
+        {/* Action buttons - absolute positioned in top-right corner */}
+        <div className="absolute top-4 right-4 flex items-center gap-1.5 z-10">
+          <button
+            onClick={async (e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              if (loadingFavorite) return;
+              setLoadingFavorite(true);
+              try {
+                if (isFavorite) {
+                  await workoutsApi.removeFavorite(workout.id);
+                  setIsFavorite(false);
+                } else {
+                  await workoutsApi.addFavorite(workout.id);
+                  setIsFavorite(true);
                 }
-              }}
-              className={`opacity-0 group-hover:opacity-100 p-2 hover:bg-panel rounded transition-all ${
-                isFavorite ? 'opacity-100 text-yellow-400' : 'text-muted-text'
-              }`}
-              title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-              disabled={loadingFavorite}
-            >
-              <Icons.STAR size={18} className={isFavorite ? 'fill-current' : ''} />
-            </button>
+              } catch (error) {
+                console.error('Failed to toggle favorite:', error);
+                alert('Failed to update favorite. Please try again.');
+              } finally {
+                setLoadingFavorite(false);
+              }
+            }}
+            className={`opacity-0 group-hover:opacity-100 p-1.5 hover:bg-panel rounded transition-all ${
+              isFavorite ? 'opacity-100 text-yellow-400' : 'text-muted-text'
+            }`}
+            title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+            disabled={loadingFavorite}
+          >
+            <Icons.STAR size={16} className={isFavorite ? 'fill-current' : ''} />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              handleSchedule();
+            }}
+            className="opacity-0 group-hover:opacity-100 bg-node-volt/20 hover:bg-node-volt/30 text-node-volt p-1.5 rounded transition-all"
+            title="Schedule this workout"
+          >
+            <Icons.TIMER size={16} />
+          </button>
+          <div className="relative">
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleSchedule();
+                e.preventDefault();
+                setMenuId(menuId === workout.id ? null : workout.id);
               }}
-              className="opacity-0 group-hover:opacity-100 bg-node-volt/20 hover:bg-node-volt/30 text-node-volt px-3 py-1.5 rounded text-sm font-medium transition-all flex items-center gap-1"
-              title="Schedule this workout"
+              className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-panel rounded transition-all"
+              title="More options"
             >
-              <Icons.TIMER size={14} />
-              Schedule
+              <Icons.MORE_VERTICAL size={16} className="text-muted-text" />
             </button>
-            <div className="relative">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setMenuId(menuId === workout.id ? null : workout.id);
-                }}
-                className="opacity-0 group-hover:opacity-100 p-2 hover:bg-panel rounded transition-all"
-                title="More options"
-              >
-                <Icons.MORE_VERTICAL size={18} className="text-muted-text" />
-              </button>
-              {menuId === workout.id && (
-                <>
-                  <div
-                    className="fixed inset-0 z-10"
-                    onClick={() => setMenuId(null)}
-                  />
-                  <div className="absolute right-0 top-10 z-20 bg-panel thin-border rounded-lg shadow-lg min-w-[160px] overflow-hidden">
-                    <button
-                      onClick={handleShare}
-                      className="w-full text-left px-4 py-2 hover:bg-dark transition-colors flex items-center gap-2 text-sm"
-                    >
-                      <Icons.SHARE size={16} className="text-muted-text" />
-                      Share Workout
-                    </button>
-                    <button
-                      onClick={handleDelete}
-                      className="w-full text-left px-4 py-2 hover:bg-dark transition-colors flex items-center gap-2 text-sm text-red-400"
-                    >
-                      <Icons.TRASH size={16} />
-                      Delete Workout
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+            {menuId === workout.id && (
+              <>
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setMenuId(null)}
+                />
+                <div className="absolute right-0 top-10 z-20 bg-panel thin-border rounded-lg shadow-lg min-w-[160px] overflow-hidden">
+                  <button
+                    onClick={handleShare}
+                    className="w-full text-left px-4 py-2 hover:bg-dark transition-colors flex items-center gap-2 text-sm"
+                  >
+                    <Icons.SHARE size={16} className="text-muted-text" />
+                    Share Workout
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="w-full text-left px-4 py-2 hover:bg-dark transition-colors flex items-center gap-2 text-sm text-red-400"
+                  >
+                    <Icons.TRASH size={16} />
+                    Delete Workout
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
+
+        {/* Main content - full width */}
+        <Link href={`/workouts/${workout.id}`} className="block">
+          <div className="flex items-start gap-2 mb-2">
+            {workout.displayCode && (
+              <div className="text-node-volt font-mono text-sm flex-shrink-0">
+                {workout.displayCode}
+              </div>
+            )}
+            {isAiGenerated && (
+              <div className="flex items-center gap-1 text-node-volt flex-shrink-0" title="AI Generated">
+                <Icons.AI_BUILDER size={16} className="text-node-volt" />
+              </div>
+            )}
+            {workout.hasBeenPreviewed === false && (
+              <div className="flex-shrink-0">
+                <NewBadge size="sm" />
+              </div>
+            )}
+          </div>
+          <h3 className="text-xl font-heading font-bold mb-3 group-hover:text-node-volt transition-colors break-words pr-20" style={{ wordBreak: 'break-word', overflowWrap: 'break-word', lineHeight: '1.3' }}>
+            {workout.name}
+          </h3>
+          <div className="flex items-center gap-2 flex-wrap mb-2">
+            {isHyroxWorkout && (
+              <HyroxBadge size="sm" />
+            )}
+            {workout.archetype && (
+              <ArchetypeBadge archetype={workout.archetype} size="sm" />
+            )}
+          </div>
+          {workout.createdAt && (
+            <div className="text-xs text-muted-text mb-3">
+              Created {new Date(workout.createdAt).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+              })}
+            </div>
+          )}
+        </Link>
         {workout.description && (
           <p className="text-muted-text text-sm mb-4 line-clamp-2">
             {workout.description}
@@ -346,12 +392,9 @@ export function WorkoutCard({
             </span>
           </div>
         )}
-        <Link href={`/workouts/${workout.id}`}>
-          <div className="flex items-center justify-between text-sm text-muted-text">
-            <span>{workout.sections?.length || 0} sections</span>
-            <span className="text-node-volt font-semibold">Start →</span>
-          </div>
-        </Link>
+        <div className="text-xs text-muted-text">
+          {workout.sections?.length || 0} sections
+        </div>
       </div>
 
       {/* Schedule Modal - only show if using local state */}

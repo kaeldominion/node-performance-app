@@ -244,7 +244,6 @@ model Workout {
   description   String? // Archetype-specific description
   shareId       String?           @unique // For shareable workouts
   isRecommended Boolean           @default(false) // Admin-curated recommended workouts
-  assignedByCoach Boolean        @default(false)
 
   sections          WorkoutSection[]
   sessions          SessionLog[]
@@ -397,8 +396,7 @@ model SessionLog {
   // Gym class tracking
   gymClassAttendance GymClassAttendance?
 
-  // Coach assignment tracking
-  coachAssignmentId String? @unique
+  // Coach assignment tracking (relation from CoachWorkoutAssignment.sessionLogId)
   coachAssignment  CoachWorkoutAssignment? @relation("SessionLogAssignment")
   inPersonSession   InPersonSession?
 

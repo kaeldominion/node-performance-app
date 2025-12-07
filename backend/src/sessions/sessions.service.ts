@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
@@ -18,53 +18,85 @@ export class SessionsService {
   ) {}
 
   async create(userId: string, createSessionDto: CreateSessionDto) {
-    const session = await this.prisma.sessionLog.create({
-      data: {
-        userId,
-        ...createSessionDto,
-      },
-      include: {
-        workout: {
-          select: {
-            id: true,
-            name: true,
-            displayCode: true,
+    try {
+      // Verify workout exists before creating session
+      const workout = await this.prisma.workout.findUnique({
+        where: { id: createSessionDto.workoutId },
+        select: { id: true },
+      });
+
+      if (!workout) {
+        throw new NotFoundException(`Workout with id ${createSessionDto.workoutId} not found`);
+      }
+
+      const session = await this.prisma.sessionLog.create({
+        data: {
+          userId,
+          ...createSessionDto,
+        },
+        include: {
+          workout: {
+            select: {
+              id: true,
+              name: true,
+              displayCode: true,
+            },
+          },
+          user: {
+            select: {
+              name: true,
+              username: true,
+            },
           },
         },
-        user: {
-          select: {
-            name: true,
-            username: true,
+      });
+
+      // Log activity (non-blocking) - don't let this fail the session creation
+      try {
+        const userName = session.user?.username ? `@${session.user.username}` : session.user?.name || 'Someone';
+        const workoutName = session.workout?.name || 'a workout';
+        
+        const activityLog = await this.activityService.createActivity(
+          userId,
+          'SESSION_STARTED',
+          `${userName} started ${workoutName}`,
+          {
+            entityType: 'session',
+            entityId: session.id,
+            metadata: {
+              workoutId: session.workoutId,
+              workoutName: session.workout?.name,
+            },
           },
-        },
-      },
-    });
+        ).catch((error) => {
+          console.error('Error creating activity log:', error);
+          return null;
+        });
 
-    // Log activity
-    const userName = session.user?.username ? `@${session.user.username}` : session.user?.name || 'Someone';
-    const workoutName = session.workout?.name || 'a workout';
-    
-    const activityLog = await this.activityService.createActivity(
-      userId,
-      'SESSION_STARTED',
-      `${userName} started ${workoutName}`,
-      {
-        entityType: 'session',
-        entityId: session.id,
-        metadata: {
-          workoutId: session.workoutId,
-          workoutName: session.workout?.name,
-        },
-      },
-    ).catch(() => null);
+        // Notify friends (non-blocking) - don't let this fail the session creation
+        await this.notifyFriends(userId, 'FRIEND_WORKOUT_STARTED', {
+          workoutName,
+          activityLogId: activityLog?.id,
+        }).catch((error) => {
+          console.error('Error notifying friends:', error);
+        });
+      } catch (error) {
+        // Log but don't fail - activity logging is non-critical
+        console.error('Error in activity/notification logging (non-critical):', error);
+      }
 
-    // Notify friends
-    await this.notifyFriends(userId, 'FRIEND_WORKOUT_STARTED', {
-      workoutName,
-      activityLogId: activityLog?.id,
-    }).catch(() => {});
-
-    return session;
+      return session;
+    } catch (error) {
+      console.error('Error creating session:', error);
+      // Re-throw HTTP exceptions as-is
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      // Wrap other errors in InternalServerErrorException
+      throw new InternalServerErrorException(
+        error?.message || 'Failed to create session',
+      );
+    }
   }
 
   async getUser(userId: string) {

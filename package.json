@@ -5,6 +5,7 @@
   "scripts": {
     "dev:setup": "./scripts/dev-setup.sh",
     "dev:start": "./scripts/dev-start.sh",
+    "dev:fix": "./scripts/auto-fix-localhost.sh",
     "dev:db:up": "docker-compose up -d postgres",
     "dev:db:down": "docker-compose down",
     "dev:db:logs": "docker-compose logs -f postgres",

@@ -217,21 +217,41 @@ function WorkoutBuilderPageContent() {
         const availableMinutes = isHyrox ? 90 : 55; // Standard: 50-60min (use 55), HYROX: 90min
         
         // Start generation phase - reviewing will start after generation completes
-        const workout = await aiApi.generateWorkout({
+        // Prepare request data, filtering out undefined values to avoid validation errors
+        const requestData: any = {
           goal: isHyrox ? 'CONDITIONING' : formData.goal, // HYROX always uses CONDITIONING
           trainingLevel: 'ADVANCED', // Used only for workout complexity/duration guidance
           equipment: formData.equipment,
           availableMinutes: availableMinutes,
-          // Only pass archetype for single workouts (not HYROX, not multi-day)
-          // For multi-day programs, AI will randomly select archetypes based on goal
-          archetype: (formData.workoutType === 'single' && !isHyrox) ? formData.archetype : undefined,
           sectionPreferences: formData.sectionPreferences,
           workoutType: formData.workoutType,
-          // Don't pass cycle for 4-week programs (automatic progression)
-          cycle: formData.workoutType === 'month' ? undefined : formData.cycle,
-          isHyrox: isHyrox, // Only true for single HYROX workouts
-          includeHyrox: formData.workoutType !== 'single' ? formData.includeHyrox : undefined, // For multi-day programs
-        });
+        };
+        
+        // Only include archetype if it's a valid value for single workouts (not HYROX, not multi-day)
+        // Valid archetype values: PR1ME, FORGE, ENGIN3, CIRCUIT_X, CAPAC1TY, FLOWSTATE
+        if (formData.workoutType === 'single' && !isHyrox && formData.archetype) {
+          const validArchetypes = ['PR1ME', 'FORGE', 'ENGIN3', 'CIRCUIT_X', 'CAPAC1TY', 'FLOWSTATE'];
+          if (validArchetypes.includes(formData.archetype)) {
+            requestData.archetype = formData.archetype;
+          }
+        }
+        
+        // Only include cycle if it's not a 4-week program (automatic progression)
+        if (formData.workoutType !== 'month' && formData.cycle) {
+          requestData.cycle = formData.cycle;
+        }
+        
+        // Only include isHyrox if it's true (for single HYROX workouts)
+        if (isHyrox) {
+          requestData.isHyrox = true;
+        }
+        
+        // Only include includeHyrox for multi-day programs if it's set
+        if (formData.workoutType !== 'single' && formData.includeHyrox !== undefined) {
+          requestData.includeHyrox = formData.includeHyrox;
+        }
+        
+        const workout = await aiApi.generateWorkout(requestData);
         
         // Generation is complete - now start review phase (only for single workouts)
         // The review happens in reviewAndAdjustWorkout on the backend, but we show it in UI
@@ -298,13 +318,40 @@ function WorkoutBuilderPageContent() {
         }
       } catch (err: any) {
         console.error('Workout generation error:', err);
+        console.error('Error response data:', err.response?.data);
+        console.error('Error status:', err.response?.status);
+        // Log the actual validation message array
+        if (err.response?.data?.message && Array.isArray(err.response.data.message)) {
+          console.error('Validation errors:', err.response.data.message);
+          err.response.data.message.forEach((msg: string, idx: number) => {
+            console.error(`  Validation error ${idx + 1}:`, msg);
+          });
+        }
         
         // Handle different error types
         let errorMessage = 'Failed to generate workout. Please try again.';
         
-        if (err.response?.data?.message) {
-          // Backend returned a specific error message
-          errorMessage = err.response.data.message;
+        if (err.response?.data) {
+          // Backend returned error data
+          if (err.response.status === 400) {
+            // Validation error - show detailed message
+            if (Array.isArray(err.response.data.message)) {
+              errorMessage = `Validation Error: ${err.response.data.message.join(', ')}`;
+            } else if (err.response.data.message) {
+              errorMessage = `Validation Error: ${err.response.data.message}`;
+            } else if (err.response.data.error) {
+              errorMessage = `Validation Error: ${err.response.data.error}`;
+            } else {
+              errorMessage = 'Invalid request data. Please check your workout parameters and try again.';
+            }
+          } else if (err.response.data.message) {
+            // Other backend errors
+            if (Array.isArray(err.response.data.message)) {
+              errorMessage = err.response.data.message.join(', ');
+            } else {
+              errorMessage = err.response.data.message;
+            }
+          }
         } else if (!err.response && err.request) {
           // Network error - no response from server
           const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';

@@ -11,6 +11,7 @@ import { Icons } from '@/lib/iconMapping';
 import { Moon, Sun } from 'lucide-react';
 import { UserMenu } from './UserMenu';
 import { NotificationBell } from './notifications/NotificationBell';
+import { GenerationIndicator } from './workout/GenerationIndicator';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -37,13 +38,16 @@ export default function Navbar() {
                 Dashboard
               </Link>
             )}
-            <Link
-              href="/ai/workout-builder"
-              className="relative text-sm font-bold text-node-volt hover:text-node-volt/80 transition-colors flex items-center gap-2 px-3 py-1.5 rounded-lg bg-node-volt/10 border border-node-volt/30"
-            >
-              <Icons.AI_BUILDER size={18} />
-              AI Builder
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/ai/workout-builder"
+                className="relative text-sm font-bold text-node-volt hover:text-node-volt/80 transition-colors flex items-center gap-2 px-3 py-1.5 rounded-lg bg-node-volt/10 border border-node-volt/30"
+              >
+                <Icons.AI_BUILDER size={18} />
+                AI Builder
+              </Link>
+              <GenerationIndicator />
+            </div>
             <Link href="/workouts" className="text-sm text-muted-text hover:text-text-white transition-colors">
               Workouts
             </Link>
@@ -154,14 +158,19 @@ export default function Navbar() {
                 Dashboard
               </Link>
             )}
-            <Link
-              href="/ai/workout-builder"
-              className="flex items-center gap-2 text-node-volt font-bold hover:text-node-volt/80 transition-colors px-4 py-2 rounded-lg bg-node-volt/10 border border-node-volt/30 mx-4"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <Icons.AI_BUILDER size={18} />
-              AI Builder
-            </Link>
+            <div className="px-4 space-y-2">
+              <Link
+                href="/ai/workout-builder"
+                className="flex items-center gap-2 text-node-volt font-bold hover:text-node-volt/80 transition-colors px-4 py-2 rounded-lg bg-node-volt/10 border border-node-volt/30"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Icons.AI_BUILDER size={18} />
+                AI Builder
+              </Link>
+              <div className="px-4">
+                <GenerationIndicator />
+              </div>
+            </div>
             <Link href="/workouts" className="block px-4 py-2 text-muted-text hover:text-text-white hover:bg-panel/50 transition-colors rounded" onClick={() => setMobileMenuOpen(false)}>
               Workouts
             </Link>

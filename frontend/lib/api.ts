@@ -15,7 +15,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 180000, // 180 seconds (3 minutes) timeout for long-running AI requests - increased to handle Railway's proxy timeout
+  timeout: 300000, // 300 seconds (5 minutes) timeout for long-running AI requests
 });
 
 // Token will be set by components using useApiToken hook
@@ -89,37 +89,126 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // First, log the raw error to see what we're actually dealing with
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 Raw error received in interceptor:', {
-        error,
+    // IMMEDIATE logging of raw error for debugging - ALWAYS log, not just in development
+    console.log('🔍 [INTERCEPTOR] Raw error received:', {
+      error,
+      errorType: typeof error,
+      errorConstructor: error?.constructor?.name,
+      errorKeys: error && typeof error === 'object' ? Object.keys(error) : [],
+      errorMessage: error?.message,
+      errorCode: error?.code,
+      errorName: error?.name,
+      errorStack: error?.stack,
+      isAxiosError: error?.isAxiosError,
+      hasResponse: !!error?.response,
+      hasRequest: !!error?.request,
+      hasConfig: !!error?.config,
+      configUrl: error?.config?.url,
+      configMethod: error?.config?.method,
+      // Try direct property access
+      directMessage: (error as any)?.message,
+      directCode: (error as any)?.code,
+      directName: (error as any)?.name,
+    });
+    
+    // Safety check: ensure error is an object
+    if (!error || typeof error !== 'object') {
+      console.error('❌ API call failed - Invalid error type:', {
+        errorType: typeof error,
+        errorValue: error,
+        errorString: String(error),
+      });
+      return Promise.reject(error);
+    }
+    
+    // Handle case where error is an empty object or has no useful properties
+    const errorKeys = Object.keys(error || {});
+    if (errorKeys.length === 0) {
+      // Try to get properties using Object.getOwnPropertyNames (includes non-enumerable)
+      const allProps = error && typeof error === 'object' ? Object.getOwnPropertyNames(error) : [];
+      console.error('❌ API call failed - Empty error object (enumerable keys):', {
         errorType: typeof error,
         errorConstructor: error?.constructor?.name,
-        errorKeys: error ? Object.keys(error) : [],
         errorString: String(error),
+        enumerableKeys: errorKeys,
+        allPropertyNames: allProps,
+        stack: error?.stack,
+        // Try to access common error properties directly
+        message: (error as any)?.message,
+        name: (error as any)?.name,
+        code: (error as any)?.code,
+        response: (error as any)?.response,
+        request: (error as any)?.request,
+        config: (error as any)?.config,
+        isAxiosError: (error as any)?.isAxiosError,
+      });
+      // Try to get more info from the error itself
+      const fallbackError = {
+        message: (error as any)?.message || 'Unknown error - empty error object',
+        name: (error as any)?.name || 'Error',
+        code: (error as any)?.code,
+        stack: (error as any)?.stack,
+        toString: (error as any)?.toString?.(),
+        isAxiosError: (error as any)?.isAxiosError,
+        hasResponse: !!(error as any)?.response,
+        hasRequest: !!(error as any)?.request,
+        hasConfig: !!(error as any)?.config,
+      };
+      console.error('❌ API call failed (fallback with direct property access):', fallbackError);
+      return Promise.reject(error);
+    }
+    
+    // Extract error status early to determine if we should log verbosely
+    const errorStatus = error?.response?.status || error?.status || error?.statusCode;
+    const isExpected401 = errorStatus === 401 && !currentToken;
+    
+    // Only log raw error details in development for unexpected errors
+    if (process.env.NODE_ENV === 'development' && !isExpected401) {
+      console.debug('🔍 Error received in interceptor:', {
+        status: errorStatus,
+        url: error?.config?.url,
         hasResponse: !!error?.response,
         hasRequest: !!error?.request,
-        hasConfig: !!error?.config,
+        errorKeys: Object.keys(error || {}),
       });
     }
     
     // Check if this is a public endpoint - log less verbosely for public endpoints
     const isPublicEndpoint = (error?.config as any)?.isPublicEndpoint;
     
-    // Check if it's a network error (no response from server)
+    // Check if it's a network error (no response from server) or timeout
     const isNetworkError = !error?.response && error?.request;
+    const isTimeoutError = error?.code === 'ECONNABORTED' || error?.message?.includes('timeout') || error?.message?.includes('TIMEOUT');
     
-    if (isNetworkError) {
+    if (isNetworkError || isTimeoutError) {
       // Network error - backend is likely not running or unreachable
       const baseURL = error?.config?.baseURL || api.defaults.baseURL;
       const fullURL = baseURL + error?.config?.url;
       
-      // Log network errors as warnings (not errors) since backend may be intentionally offline
-      // Only log once per session to avoid console spam
+      // Log network/timeout errors with full details
+      const errorType = isTimeoutError ? 'Request timed out' : 'Connection failed';
+      console.error(`❌ ${errorType}:`, {
+        baseURL: baseURL,
+        endpoint: error?.config?.url,
+        method: error?.config?.method,
+        fullURL: fullURL,
+        errorCode: error?.code,
+        errorMessage: error?.message,
+        errorName: error?.name,
+        errorType: typeof error,
+        errorKeys: error && typeof error === 'object' ? Object.keys(error) : [],
+        timeout: isTimeoutError,
+        envAPIUrl: process.env.NEXT_PUBLIC_API_URL || 'NOT SET (using default)',
+        // Log raw error for debugging
+        rawError: error,
+      });
+      
+      // Only log troubleshooting once per session to avoid console spam
       if (!(window as any).__backendUnreachableLogged) {
-        console.warn('⚠️ Backend unreachable - some features may be unavailable', {
+        console.warn('⚠️ Backend unreachable or request timed out - some features may be unavailable', {
           baseURL: baseURL,
           endpoint: error?.config?.url,
+          errorType,
         });
         (window as any).__backendUnreachableLogged = true;
         
@@ -128,7 +217,7 @@ api.interceptors.response.use(
           console.debug('💡 TROUBLESHOOTING:', {
             attemptedURL: fullURL,
             method: error?.config?.method,
-            timeout: error?.code === 'ECONNABORTED' ? 'Request timed out' : 'Connection failed',
+            timeout: isTimeoutError ? 'Request timed out' : 'Connection failed',
             errorCode: error?.code,
             errorMessage: error?.message,
             envAPIUrl: process.env.NEXT_PUBLIC_API_URL || 'NOT SET (using default)',
@@ -136,6 +225,10 @@ api.interceptors.response.use(
           console.debug('1. Make sure the backend is running on', baseURL);
           console.debug('2. Start the backend: cd backend && npm run start:dev');
           console.debug('3. Verify NEXT_PUBLIC_API_URL is set correctly');
+          if (isTimeoutError) {
+            console.debug('4. Request timed out - the AI generation may be taking too long');
+            console.debug('5. Check backend logs for OpenAI API issues');
+          }
         }
       }
     } else if (isPublicEndpoint) {
@@ -152,114 +245,368 @@ api.interceptors.response.use(
       // First, check if error is actually an object and has properties
       const errorIsValid = error && typeof error === 'object' && Object.keys(error).length > 0;
       
+      // Extract error details first
+      const errorStatus = error?.response?.status || error?.status || error?.statusCode;
+      const errorUrl = error?.config?.url || error?.request?.responseURL || error?.url || 'unknown';
+      const errorMethod = (error?.config?.method || error?.method || 'unknown').toUpperCase();
+      
+      // Check if this is an expected 401 (no token = expected, token present = unexpected)
+      const isExpected401 = errorStatus === 401 && !currentToken;
+      
       if (!errorIsValid) {
         // Error is empty, null, undefined, or not an object
-        console.error('❌ API call failed - Invalid error object:', {
-          errorType: typeof error,
-          errorValue: error,
-          errorString: String(error),
-          errorKeys: error ? Object.keys(error) : [],
-        });
-      } else {
-        // Safely extract error information
-        const errorUrl = error?.config?.url || error?.request?.responseURL || error?.url;
-        const errorMethod = error?.config?.method || error?.method;
-        const errorStatus = error?.response?.status || error?.status || error?.statusCode;
-        const errorMessage = error?.response?.data?.message || 
-                           error?.response?.data?.error || 
-                           error?.message || 
-                           (typeof error === 'string' ? error : String(error));
-        
-        // Build error info object, only including properties that have values
-        const errorInfo: any = {};
-        if (errorMethod && errorMethod !== 'unknown') errorInfo.method = errorMethod;
-        if (errorUrl && errorUrl !== 'unknown') errorInfo.url = errorUrl;
-        if (errorStatus) errorInfo.status = errorStatus;
-        if (errorMessage && errorMessage !== 'Unknown error') errorInfo.message = errorMessage;
-        if (error?.response) errorInfo.hasResponse = true;
-        if (error?.request) errorInfo.hasRequest = true;
-        if (error?.config) errorInfo.hasConfig = true;
-        const errorType = error?.constructor?.name || typeof error;
-        if (errorType && errorType !== 'object') errorInfo.errorType = errorType;
-        
-        // Only log if we have meaningful content (at least one non-boolean property)
-        const meaningfulKeys = Object.keys(errorInfo).filter(key => 
-          key !== 'hasResponse' && key !== 'hasRequest' && key !== 'hasConfig'
-        );
-        
-        if (meaningfulKeys.length > 0) {
-          console.error('❌ API call failed:', errorInfo);
-        } else if (errorInfo.hasResponse || errorInfo.hasRequest || errorInfo.hasConfig) {
-          // At least we know something about the error structure
-          console.error('❌ API call failed:', errorInfo);
-        } else {
-          // Error is completely empty or malformed
-          console.error('⚠️ API call failed - Error object appears empty or malformed:', {
+        if (!isExpected401) {
+          console.error('❌ API call failed - Invalid error object:', {
             errorType: typeof error,
-            errorConstructor: error?.constructor?.name,
+            errorValue: error,
+            errorString: String(error),
             errorKeys: error ? Object.keys(error) : [],
-            rawError: error,
           });
+        }
+      } else {
+        // Safely extract error information - always try to get useful details
+        const errorStatusText = error?.response?.statusText;
+        const errorData = error?.response?.data;
+        
+        // Extract error message with better handling for validation errors
+        let errorMessage = error?.message || 'Unknown error';
+        if (errorData) {
+          // Check for validation error array (NestJS validation pipe format)
+          if (Array.isArray(errorData.message)) {
+            errorMessage = `Validation failed: ${errorData.message.join(', ')}`;
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error?.message) {
+            errorMessage = errorData.error.message;
+          } else if (typeof errorData === 'string') {
+            errorMessage = errorData;
+          }
+        }
+        
+        // Build comprehensive error info - ALWAYS include method and URL (even if 'unknown')
+        // Extract method with multiple fallbacks
+        let extractedMethod = errorMethod;
+        if (!extractedMethod || extractedMethod === 'UNKNOWN' || extractedMethod === 'unknown') {
+          extractedMethod = error?.config?.method?.toUpperCase() || 
+                           error?.method?.toUpperCase() || 
+                           'UNKNOWN';
+        }
+        
+        // Extract URL with multiple fallbacks
+        let extractedUrl = errorUrl;
+        if (!extractedUrl || extractedUrl === 'unknown') {
+          extractedUrl = error?.config?.url || 
+                        error?.config?.baseURL || 
+                        error?.request?.responseURL || 
+                        error?.url || 
+                        'unknown';
+        }
+        
+        // Build errorInfo object - always ensure it has at least method and url
+        const errorInfo: any = {
+          method: extractedMethod,
+          url: extractedUrl,
+        };
+        
+        // Always include status if available
+        if (errorStatus) {
+          errorInfo.status = errorStatus;
+          if (errorStatusText) errorInfo.statusText = errorStatusText;
+        }
+        
+        // Include message if available and meaningful
+        if (errorMessage && errorMessage !== 'Unknown error' && errorMessage !== '') {
+          errorInfo.message = errorMessage;
+        }
+        
+        // Include response data if available (but limit size)
+        if (errorData) {
           try {
-            console.error('Error stringified:', JSON.stringify(error, null, 2));
+            if (typeof errorData === 'object' && errorData !== null) {
+              const dataStr = JSON.stringify(errorData);
+              if (dataStr.length < 500) {
+                errorInfo.data = errorData;
+              } else {
+                errorInfo.data = 'Response data too large to display';
+              }
+            } else {
+              errorInfo.data = String(errorData);
+            }
           } catch (e) {
-            console.error('Could not stringify error:', e);
+            errorInfo.data = 'Could not serialize response data';
+          }
+        }
+        
+        // Add diagnostic info to help with debugging - always add these
+        errorInfo.hasResponse = !!error?.response;
+        errorInfo.hasRequest = !!error?.request;
+        errorInfo.hasConfig = !!error?.config;
+        
+        // Always add raw error details for debugging if we don't have good info
+        if (!errorInfo.status && !errorInfo.message) {
+          errorInfo.errorType = typeof error;
+          errorInfo.errorConstructor = error?.constructor?.name;
+          if (error?.message) errorInfo.rawMessage = error.message;
+          if (error?.stack) errorInfo.hasStack = true;
+          // Add all available error properties for debugging
+          if (error && typeof error === 'object') {
+            errorInfo.errorKeys = Object.keys(error);
+            // Try to extract any useful info from the error object
+            if (error.code) errorInfo.code = error.code;
+            if (error.name) errorInfo.name = error.name;
+          }
+        }
+        
+        // Handle 401 errors differently based on whether token exists
+        if (errorStatus === 401) {
+          if (!currentToken) {
+            // Expected 401 - no token yet (during initial load)
+            // Only log in development and as debug, not error
+            if (process.env.NODE_ENV === 'development') {
+              console.debug('🔐 Authentication required (no token yet):', {
+                url: errorInfo.url,
+                method: errorInfo.method,
+                note: 'This is expected during initial page load before auth is ready',
+              });
+            }
+            // Don't log as error - this is expected behavior
+            return Promise.reject(error);
+          } else {
+            // Unexpected 401 - token exists but is invalid/expired
+            console.warn('🔐 Authentication failed (token may be expired):', errorInfo);
+            console.warn('   Token exists but was rejected - user may need to log in again');
+          }
+        } else {
+          // For non-401 errors, always log
+          // Ensure errorInfo is a valid object with at least some properties
+          const errorInfoKeys = Object.keys(errorInfo || {});
+          const hasValidMethod = errorInfo?.method && errorInfo.method !== 'UNKNOWN' && errorInfo.method !== 'unknown';
+          const hasValidUrl = errorInfo?.url && errorInfo.url !== 'unknown';
+          
+          // If errorInfo is empty or invalid, use fallback
+          if (errorInfoKeys.length === 0 || !hasValidMethod || !hasValidUrl) {
+            // Fallback: log raw error with all available info
+            const fallbackInfo: any = {
+              method: extractedMethod || error?.config?.method || error?.method || 'UNKNOWN',
+              url: extractedUrl || error?.config?.url || error?.request?.responseURL || error?.url || 'unknown',
+              status: error?.response?.status || error?.status || error?.statusCode,
+              message: error?.message || error?.response?.data?.message || 'No error message available',
+              errorType: typeof error,
+              errorConstructor: error?.constructor?.name,
+              errorKeys: error && typeof error === 'object' ? Object.keys(error) : [],
+              hasResponse: !!error?.response,
+              hasRequest: !!error?.request,
+              hasConfig: !!error?.config,
+            };
+            
+            // Try to extract more info from nested objects
+            if (error?.config) {
+              fallbackInfo.configKeys = Object.keys(error.config);
+              fallbackInfo.configUrl = error.config.url;
+              fallbackInfo.configMethod = error.config.method;
+              fallbackInfo.configBaseURL = error.config.baseURL;
+            }
+            if (error?.response) {
+              fallbackInfo.responseStatus = error.response.status;
+              fallbackInfo.responseStatusText = error.response.statusText;
+              fallbackInfo.responseData = error.response.data;
+            }
+            if (error?.request) {
+              fallbackInfo.requestResponseURL = error.request.responseURL;
+            }
+            
+            console.error('❌ API call failed (fallback logging):', fallbackInfo);
+            // Also log the raw error for deep debugging
+            if (process.env.NODE_ENV === 'development') {
+              console.error('Raw error object:', error);
+              console.error('ErrorInfo that was empty:', errorInfo);
+              console.error('ErrorInfo keys:', errorInfoKeys);
+            }
+          } else {
+            // Ensure errorInfo is properly formatted before logging
+            // Always include base properties, even if they're defaults
+            const logInfo: any = {
+              method: String(errorInfo?.method || 'UNKNOWN'),
+              url: String(errorInfo?.url || 'unknown'),
+              hasResponse: errorInfo?.hasResponse ?? false,
+              hasRequest: errorInfo?.hasRequest ?? false,
+              hasConfig: errorInfo?.hasConfig ?? false,
+            };
+            
+            // Add optional properties if they exist
+            if (errorInfo?.status) logInfo.status = errorInfo.status;
+            if (errorInfo?.statusText) logInfo.statusText = errorInfo.statusText;
+            if (errorInfo?.message) logInfo.message = errorInfo.message;
+            if (errorInfo?.data) logInfo.data = errorInfo.data;
+            
+            // Check if we have meaningful info
+            const hasMeaningfulInfo = logInfo.status || logInfo.message || 
+              (logInfo.method && logInfo.method !== 'UNKNOWN' && logInfo.url && logInfo.url !== 'unknown');
+            
+            // ALWAYS log something - if logInfo seems empty, add raw error details
+            // Also check if logInfo will serialize to {} (only has undefined/null values)
+            const logInfoKeys = Object.keys(logInfo).filter(k => logInfo[k] !== undefined && logInfo[k] !== null);
+            const willBeEmpty = logInfoKeys.length === 0 || (!hasMeaningfulInfo && logInfoKeys.length <= 3);
+            
+            if (willBeEmpty) {
+              // Try to extract all possible error information
+              const rawErrorDetails: any = {
+                errorType: typeof error,
+                errorConstructor: error?.constructor?.name,
+                errorKeys: error && typeof error === 'object' ? Object.keys(error) : [],
+                errorMessage: error?.message,
+                errorStack: error?.stack,
+                // Axios-specific
+                isAxiosError: error?.isAxiosError,
+                code: error?.code,
+                name: error?.name,
+                // Config info
+                configUrl: error?.config?.url,
+                configMethod: error?.config?.method,
+                configBaseURL: error?.config?.baseURL,
+                configTimeout: error?.config?.timeout,
+                // Response info
+                responseStatus: error?.response?.status,
+                responseStatusText: error?.response?.statusText,
+                responseData: error?.response?.data,
+                responseHeaders: error?.response?.headers,
+                // Request info
+                requestReadyState: error?.request?.readyState,
+                requestStatus: error?.request?.status,
+                requestResponseURL: error?.request?.responseURL,
+                // Try to stringify the entire error
+                errorString: String(error),
+              };
+              
+              // Try to get all property names (including non-enumerable)
+              if (error && typeof error === 'object') {
+                try {
+                  rawErrorDetails.allPropertyNames = Object.getOwnPropertyNames(error);
+                  // Try to access common properties directly
+                  rawErrorDetails.directProperties = {
+                    message: (error as any).message,
+                    name: (error as any).name,
+                    code: (error as any).code,
+                    stack: (error as any).stack,
+                    isAxiosError: (error as any).isAxiosError,
+                    response: (error as any).response,
+                    request: (error as any).request,
+                    config: (error as any).config,
+                  };
+                } catch (e) {
+                  rawErrorDetails.propertyExtractionError = String(e);
+                }
+              }
+              
+              console.error('❌ API call failed - Empty error info, logging comprehensive error details:', rawErrorDetails);
+              console.error('❌ Raw error object (full dump):', error);
+              // Also try to stringify the error to see if it has hidden properties
+              try {
+                console.error('❌ Error JSON (if possible):', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+              } catch (e) {
+                console.error('❌ Could not stringify error:', e);
+              }
+            } else {
+              // Build final log info with all available data
+              const finalLogInfo: any = {
+                method: logInfo.method,
+                url: logInfo.url,
+                hasResponse: logInfo.hasResponse,
+                hasRequest: logInfo.hasRequest,
+                hasConfig: logInfo.hasConfig,
+              };
+              
+              // Add optional fields if they exist
+              if (logInfo.status) finalLogInfo.status = logInfo.status;
+              if (logInfo.statusText) finalLogInfo.statusText = logInfo.statusText;
+              if (logInfo.message) finalLogInfo.message = logInfo.message;
+              if (logInfo.data) finalLogInfo.data = logInfo.data;
+              
+              // If we still don't have meaningful info, add error details
+              if (!finalLogInfo.status && !finalLogInfo.message && 
+                  (finalLogInfo.method === 'UNKNOWN' || finalLogInfo.url === 'unknown')) {
+                finalLogInfo.errorDetails = {
+                  errorType: typeof error,
+                  errorConstructor: error?.constructor?.name,
+                  errorMessage: error?.message,
+                  errorCode: error?.code,
+                  errorName: error?.name,
+                  isAxiosError: error?.isAxiosError,
+                  hasResponse: !!error?.response,
+                  hasRequest: !!error?.request,
+                  hasConfig: !!error?.config,
+                  configUrl: error?.config?.url,
+                  configMethod: error?.config?.method,
+                  responseStatus: error?.response?.status,
+                  responseData: error?.response?.data,
+                  requestStatus: error?.request?.status,
+                };
+              }
+              
+              // For 400 errors, always log the response data to see validation errors
+              if (finalLogInfo.status === 400 && error?.response?.data) {
+                console.error('❌ Validation Error Details:', error.response.data);
+                if (Array.isArray(error.response.data.message)) {
+                  console.error('❌ Validation Error Messages:');
+                  error.response.data.message.forEach((msg: string, idx: number) => {
+                    console.error(`  ${idx + 1}. ${msg}`);
+                  });
+                }
+                finalLogInfo.validationErrors = error.response.data;
+                if (Array.isArray(error.response.data.message)) {
+                  finalLogInfo.validationMessages = error.response.data.message;
+                }
+              }
+              
+              // For 500 errors, also log the response data to see server errors
+              if (finalLogInfo.status === 500 && error?.response?.data) {
+                console.error('❌ Server Error Details:', error.response.data);
+                console.error('❌ Server Error Message:', error.response.data.message || error.response.data.error || 'Unknown server error');
+                finalLogInfo.serverError = error.response.data;
+              }
+              
+              console.error('❌ API call failed:', finalLogInfo);
+              
+              // ALWAYS log raw error for debugging
+              console.error('❌ Raw error object:', error);
+              console.error('❌ Error keys:', error && typeof error === 'object' ? Object.keys(error) : []);
+              console.error('❌ Error string:', String(error));
+            }
+          }
+          
+          // If errorInfo seems incomplete, also log raw error for debugging
+          if (!errorInfo.status && !errorInfo.message && process.env.NODE_ENV === 'development') {
+            console.debug('Raw error object for debugging:', {
+              errorType: typeof error,
+              errorConstructor: error?.constructor?.name,
+              errorKeys: error ? Object.keys(error) : [],
+              hasResponse: !!error?.response,
+              hasRequest: !!error?.request,
+              hasConfig: !!error?.config,
+              fullError: error,
+            });
           }
         }
       }
       
-      // Log full details in development
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Error type:', typeof error);
-        console.error('Error constructor:', error?.constructor?.name);
-        console.error('Error message:', error?.message);
-        console.error('Error response:', error?.response);
-        console.error('Error response data:', error?.response?.data);
-        console.error('Error response status:', error?.response?.status);
-        console.error('Error response statusText:', error?.response?.statusText);
-        console.error('Error request:', error?.request);
-        console.error('Error config:', error?.config);
-        console.error('Error config URL:', error?.config?.url);
-        console.error('Error config method:', error?.config?.method);
-        console.error('Error stack:', error?.stack);
-        
-        // Try to stringify for debugging
-        try {
-          console.error('Error JSON:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-        } catch (e) {
-          console.error('Could not stringify error:', e);
-        }
-        
-        // Also log in a more readable format
+      // Log additional details in development for non-expected errors
+      if (process.env.NODE_ENV === 'development' && !isExpected401) {
         if (error?.response) {
-          // Server responded with error
-          console.error('❌ Server Error Response:', {
+          // Server responded with error - log details
+          console.debug('📋 Server error details:', {
             status: error.response.status,
             statusText: error.response.statusText,
-            data: error.response.data,
             url: error.config?.url,
             method: error.config?.method,
-            headers: error.response.headers,
           });
-          // Log the actual error message from server
-          if (error.response.data?.message) {
-            console.error('📋 Server error message:', error.response.data.message);
-          }
-        } else if (error?.request) {
-          // Request made but no response (network error)
-          // Only log as warning for network errors - backend might be unavailable
-          console.warn('⚠️ Network Error - Backend may be unavailable:', {
+        } else if (error?.request && !error?.response) {
+          // Network error - already handled above, but log additional context
+          console.debug('📋 Network error details:', {
             url: error.config?.url,
             method: error.config?.method,
             message: error.message,
           });
         }
-      } else {
-        // Error setting up request
-        console.error('❌ Request Setup Error:', {
-          message: error?.message,
-          error: String(error),
-        });
       }
     }
     
@@ -609,6 +956,19 @@ export const aiApi = {
     isHyrox?: boolean;
     includeHyrox?: boolean;
   }) => {
+    // Log the request data for debugging
+    console.log('📤 Sending workout generation request:', {
+      goal: data.goal,
+      trainingLevel: data.trainingLevel,
+      equipment: data.equipment,
+      availableMinutes: data.availableMinutes,
+      archetype: data.archetype,
+      sectionPreferences: data.sectionPreferences,
+      workoutType: data.workoutType,
+      cycle: data.cycle,
+      isHyrox: data.isHyrox,
+      includeHyrox: data.includeHyrox,
+    });
     const response = await api.post('/ai/generate-workout', data);
     return response.data;
   },

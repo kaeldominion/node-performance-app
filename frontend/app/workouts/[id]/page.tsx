@@ -78,7 +78,7 @@ export default function WorkoutPlayerPage() {
     // Allow viewing shared workouts without login
     if (workoutId) {
       loadWorkout();
-      // Don't auto-start session - only start when user actually begins a timer
+      // Session will be created by LiveDeckPlayer when it mounts
     }
   }, [user, authLoading, workoutId]);
 
@@ -149,7 +149,9 @@ export default function WorkoutPlayerPage() {
         sessionStorage.setItem('newAchievements', JSON.stringify(result._achievements));
       }
       
-      router.push('/');
+      // Refresh workouts list when returning
+      window.dispatchEvent(new Event('workout-completed'));
+      router.push('/workouts?tab=my-workouts');
     } catch (error) {
       console.error('Failed to complete session:', error);
       alert('Failed to save session. Please try again.');
