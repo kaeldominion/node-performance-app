@@ -12,8 +12,18 @@ import { NetworkActivityFeed } from '@/components/landing/NetworkActivityFeed';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Moon, Sun, Calendar, BarChart3, Monitor, ArrowUp, ArrowDown } from 'lucide-react';
 
-export default function LandingPage() {
-  const { isSignedIn, isLoaded: clerkLoaded } = useUser();
+// Component that safely uses Clerk - wraps content and handles missing ClerkProvider
+function SafeClerkWrapper({ children }: { children: (props: { isSignedIn: boolean; isLoaded: boolean }) => React.ReactNode }) {
+  // Always call hook unconditionally - if ClerkProvider isn't available, error boundary will catch
+  const userData = useUser();
+  const isSignedIn = userData?.isSignedIn || false;
+  const isLoaded = userData?.isLoaded ?? false;
+  
+  return <>{children({ isSignedIn, isLoaded })}</>;
+}
+
+// Landing page content that uses Clerk state
+function LandingPageContent({ isSignedIn, isLoaded: clerkLoaded }: { isSignedIn: boolean; isLoaded: boolean }) {
   const { theme, toggleTheme } = useTheme();
   const router = useRouter();
   const [redirecting, setRedirecting] = useState(false);
@@ -1362,4 +1372,24 @@ function AIGeneratorPreview() {
       )}
     </div>
   );
+}
+
+// Export default with Clerk wrapper - handles missing ClerkProvider gracefully
+export default function LandingPage() {
+  const clerkKey = typeof window !== 'undefined' 
+    ? (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '').trim().replace(/\$$/, '')
+    : '';
+  const hasClerkKey = clerkKey && clerkKey.length >= 10;
+
+  // If Clerk key exists, use Clerk wrapper. Otherwise, render without Clerk.
+  if (hasClerkKey) {
+    return (
+      <SafeClerkWrapper>
+        {(props) => <LandingPageContent {...props} />}
+      </SafeClerkWrapper>
+    );
+  }
+
+  // No Clerk key - render landing page without auth (user not signed in)
+  return <LandingPageContent isSignedIn={false} isLoaded={true} />;
 }

@@ -10,6 +10,17 @@
     "dev:db:down": "docker-compose down",
     "dev:db:logs": "docker-compose logs -f postgres",
     "dev:backend": "cd backend && npm run start:dev",
-    "dev:frontend": "cd frontend && npm run dev"
+    "dev:frontend": "cd frontend && npm run dev",
+    "beta:setup": "echo 'Beta setup: Copy .env.beta.example files and run beta:db:up'",
+    "beta:start": "./scripts/dev-start-beta.sh",
+    "beta:db:up": "docker-compose -f docker-compose.beta.yml up -d postgres-beta",
+    "beta:db:down": "docker-compose -f docker-compose.beta.yml down",
+    "beta:db:logs": "docker-compose -f docker-compose.beta.yml logs -f postgres-beta",
+    "beta:backend": "cd backend && PORT=4001 npm run start:dev",
+    "beta:frontend": "cd frontend && PORT=3001 npm run dev"
+  },
+  "devDependencies": {
+    "@prisma/client": "^6.19.1",
+    "prisma": "^6.19.1"
   }
 }

@@ -80,7 +80,12 @@ export function ClerkErrorBoundary({ children, fallback }: ClerkErrorBoundaryPro
         keyPreview: clerkKey.substring(0, 20) 
       });
     }
-    return <>{children}</>;
+    // Render children without ClerkProvider - components using Clerk hooks will need to handle this
+    return (
+      <ClerkErrorBoundaryClass isProduction={isProduction} isDevMode={isDevMode}>
+        {children}
+      </ClerkErrorBoundaryClass>
+    );
   }
 
   // Always try to render ClerkProvider, let error boundary catch failures

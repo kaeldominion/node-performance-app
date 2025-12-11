@@ -14,7 +14,9 @@ async function bootstrap() {
     'https://node-performance-app-frontend.vercel.app',
     'https://www.nodeos.app',
     'https://nodeos.app',
-    'http://localhost:3000',
+    'https://beta.nodeos.app', // Beta frontend
+    'http://localhost:3000', // Production local
+    'http://localhost:3001', // Beta local
   ].filter(Boolean);
 
   app.enableCors({

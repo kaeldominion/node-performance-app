@@ -1,0 +1,22 @@
+services:
+  postgres-beta:
+    image: postgres:16-alpine
+    container_name: node-postgres-beta
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: node_user_beta
+      POSTGRES_PASSWORD: node_password_beta
+      POSTGRES_DB: node_db_beta
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data_beta:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U node_user_beta -d node_db_beta"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data_beta:
+
